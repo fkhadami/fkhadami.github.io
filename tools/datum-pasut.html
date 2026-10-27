@@ -1,0 +1,847 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pemandu Datum Pasut</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=STIX+Two+Text:ital,wght@0,400;1,400&display=swap">
+<style>
+/* Layout: chart-room workbench — sticky tab bar, one working view at a time, list+detail and form+result splits that stack on phones */
+:root{
+  --paper:#eef3f6; --surface:#ffffff; --sunk:#e4ebf0; --ink:#10222f; --muted:#506574; --line:#cfdae2;
+  --accent:#0a6a85; --accent-ink:#ffffff; --accent-soft:#d8ecf2;
+  --s-ihon:#0a6a85; --s-ihop:#2f7d5b; --s-noaa:#4b56a8; --s-uk:#7a5a9c; --s-id:#a55a1f; --s-hist:#6b7480;
+  --ok:#2f7d5b; --warn:#a55a1f; --bad:#b3322f;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --f-math:"STIX Two Text","Cambria Math","Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0a141c; --surface:#111f2a; --sunk:#0d1922; --ink:#e2ecf2; --muted:#8fa4b3; --line:#23384a;
+  --accent:#4cbfd9; --accent-ink:#06202a; --accent-soft:#123446;
+  --s-ihon:#4cbfd9; --s-ihop:#5fc394; --s-noaa:#929cf0; --s-uk:#c09ae6; --s-id:#e8a064; --s-hist:#9aa5b1;
+  --ok:#5fc394; --warn:#e8a064; --bad:#f07a74; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0a141c; --surface:#111f2a; --sunk:#0d1922; --ink:#e2ecf2; --muted:#8fa4b3; --line:#23384a;
+  --accent:#4cbfd9; --accent-ink:#06202a; --accent-soft:#123446;
+  --s-ihon:#4cbfd9; --s-ihop:#5fc394; --s-noaa:#929cf0; --s-uk:#c09ae6; --s-id:#e8a064; --s-hist:#9aa5b1;
+  --ok:#5fc394; --warn:#e8a064; --bad:#f07a74; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--f-body);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;text-wrap:balance;margin:0}
+h1{font-size:clamp(28px,4.4vw,40px);line-height:1.05}
+h2{font-size:26px;line-height:1.1}
+h3{font-size:19px;line-height:1.15}
+.eyebrow{font:500 11.5px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+var,.m{font-family:var(--f-math);font-style:italic;font-size:1.08em}
+.m-up{font-family:var(--f-math);font-style:normal;font-size:1.08em}
+
+/* header */
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{padding-block:22px 14px;display:flex;flex-wrap:wrap;gap:12px 28px;align-items:end;justify-content:space-between}
+header.top p{margin:6px 0 0;max-width:62ch;color:var(--muted)}
+.scale{display:flex;gap:3px;align-items:end;height:38px}
+.scale i{display:block;width:5px;background:var(--accent);opacity:.85;border-radius:1px}
+
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+nav.tabs .wrap{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+nav.tabs a{flex:0 0 auto;text-decoration:none;color:var(--muted);font:600 15px/1 var(--f-display);letter-spacing:.04em;text-transform:uppercase;padding:13px 12px 11px;border-bottom:3px solid transparent}
+nav.tabs a:hover{color:var(--ink)}
+nav.tabs a[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent)}
+
+main .wrap{padding-block:26px 56px}
+section.view{display:grid;gap:22px}
+.lead{max-width:70ch;margin:6px 0 0}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px}
+.split{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;align-items:start}
+.split > *{min-width:0}
+@media (max-width:860px){.split{grid-template-columns:minmax(0,1fr)}}
+
+/* chips / pills */
+.q{display:grid;gap:8px;padding:14px 0;border-top:1px solid var(--line)}
+.q:first-of-type{border-top:0;padding-top:0}
+.q legend,.q .ql{font-weight:600;font-size:14px;padding:0;margin-bottom:2px}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.chip span{display:inline-block;padding:6px 11px;border:1px solid var(--line);border-radius:999px;font-size:13.5px;background:var(--surface);color:var(--ink);cursor:pointer;user-select:none}
+.chip input:checked + span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+.pill{display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1 var(--f-mono);letter-spacing:.04em;padding:4px 8px;border-radius:3px;border:1px solid currentColor;white-space:nowrap}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.st-ihon{color:var(--s-ihon)} .st-ihop{color:var(--s-ihop)} .st-noaa{color:var(--s-noaa)} .st-uk{color:var(--s-uk)} .st-id{color:var(--s-id)} .st-hist{color:var(--s-hist)}
+
+button,.btn{font:600 14px/1 var(--f-body);border-radius:4px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:9px 14px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+button.ghost,.btn.ghost{background:transparent;color:var(--accent)}
+button:disabled{opacity:.6;cursor:progress}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+/* result card (pemandu) */
+.verdict{border-left:4px solid var(--accent);padding-left:16px;display:grid;gap:12px}
+.verdict .big{font:700 34px/1 var(--f-display);letter-spacing:.01em}
+.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 16px;margin:0}
+.kv dt{color:var(--muted);font-size:13px;padding-top:2px}
+.kv dd{margin:0}
+ol.steps{margin:0;padding-left:1.4em;display:grid;gap:6px}
+ul.warn{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+ul.warn li{padding:8px 10px;border-radius:4px;background:var(--sunk);border-left:3px solid var(--warn);font-size:14px}
+ul.warn li.ok{border-left-color:var(--ok)}
+
+/* katalog */
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.list{display:grid;gap:2px;max-height:none}
+.list button{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:10px 12px;border-radius:4px;cursor:pointer;border:1px solid transparent}
+.list button:hover{background:var(--sunk)}
+.list button[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.list button:focus-visible{outline:2px solid var(--accent)}
+.list .nm{font-weight:600}
+.list .sub{grid-column:1/-1;font-size:12.5px;color:var(--muted)}
+.detail{display:grid;gap:16px}
+.formula{background:var(--sunk);border:1px solid var(--line);border-radius:4px;padding:14px 16px;font-family:var(--f-math);font-size:18px;line-height:1.7;overflow-x:auto}
+.formula div + div{margin-top:4px}
+.formula sub{font-size:.7em}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.meta > div{border-top:1px solid var(--line);padding-top:8px}
+.meta b{display:block;font-size:12px;color:var(--muted);font-weight:500;margin-bottom:2px}
+.note{font-size:14px;padding:10px 12px;border-radius:4px;background:var(--sunk)}
+
+/* kalkulator */
+.ctab{width:100%;border-collapse:collapse;font-size:14px}
+.ctab th{font:500 11.5px/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 6px;border-bottom:1px solid var(--line)}
+.ctab td{padding:4px 6px;border-bottom:1px solid var(--line)}
+.ctab td:first-child{font-family:var(--f-mono);font-weight:500}
+.ctab input{width:100%;min-width:0;font:400 14px var(--f-mono);font-variant-numeric:tabular-nums;padding:6px 7px;border:1px solid var(--line);border-radius:3px;background:var(--surface);color:var(--ink)}
+input[type=number],textarea,select{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:3px;padding:6px 8px}
+textarea{width:100%;font:13px/1.5 var(--f-mono);min-height:84px}
+.field{display:grid;gap:4px;font-size:13px}
+.field span{color:var(--muted)}
+.scroll{overflow-x:auto}
+.res{width:100%;border-collapse:collapse;font-size:14px}
+.res th{font:500 11.5px/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:7px 8px;border-bottom:1px solid var(--line)}
+.res td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.res td.v{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.res tr.hl td{background:var(--accent-soft)}
+.res details summary{cursor:pointer;color:var(--accent);font-size:13px}
+.res details .calc{font-family:var(--f-math);font-size:15px;margin-top:6px;line-height:1.6}
+.stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat > div{border:1px solid var(--line);border-radius:4px;padding:10px 12px;background:var(--surface)}
+.stat b{display:block;font:500 11px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.stat span{font:600 24px/1.2 var(--f-display)}
+.status-line{font-size:13px;color:var(--muted)}
+svg text{font-family:var(--f-mono)}
+.chart{width:100%;height:auto;display:block}
+
+/* glossary */
+.gl{width:100%;border-collapse:collapse;font-size:14px}
+.gl th{text-align:left;font:500 11.5px/1.2 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:7px 8px;border-bottom:1px solid var(--line)}
+.gl td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.gl td:first-child{font-family:var(--f-mono);font-weight:500;white-space:nowrap}
+.gl tr.grp td{font:600 14px var(--f-display);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--sunk);padding-top:10px}
+ol.refs{display:grid;gap:10px;padding-left:1.4em;margin:0;max-width:85ch}
+.foot{font-size:12.5px;color:var(--muted);margin-top:8px}
+@media (prefers-reduced-motion:no-preference){.list button,.chip span,nav.tabs a{transition:background .15s,color .15s,border-color .15s}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">IHO Res. 3/1919 · S-44 · C-13 · IOC M&amp;G 14 · NOAA CO-OPS · SNI 7646:2010</div>
+      <h1>Pemandu Datum Pasut</h1>
+      <p>Pilih standar yang tepat untuk tujuan dan panjang data Anda, lihat rumus dan langkahnya, lalu hitung datum langsung dari konstanta harmonik.</p>
+    </div>
+    <div class="scale" aria-hidden="true"><i style="height:22%"></i><i style="height:48%"></i><i style="height:80%"></i><i style="height:100%"></i><i style="height:78%"></i><i style="height:44%"></i><i style="height:18%"></i><i style="height:30%"></i><i style="height:62%"></i><i style="height:74%"></i><i style="height:52%"></i><i style="height:26%"></i></div>
+  </div>
+</header>
+<nav class="tabs" aria-label="Bagian">
+  <div class="wrap">
+    <a href="#pemandu">Pemandu standar</a>
+    <a href="#katalog">Rumus &amp; langkah</a>
+    <a href="#kalkulator">Kalkulator harmonik</a>
+    <a href="#transfer">Transfer datum</a>
+    <a href="#singkatan">Singkatan</a>
+    <a href="#referensi">Referensi</a>
+  </div>
+</nav>
+
+<main><div class="wrap">
+
+<!-- PEMANDU -->
+<section class="view" id="v-pemandu">
+  <div>
+    <h2>Standar mana yang dipakai?</h2>
+    <p class="lead muted">Jawab empat pertanyaan. Rekomendasi diperbarui langsung, beserta standar acuan dan urutan perhitungannya.</p>
+  </div>
+  <div class="split">
+    <form class="panel" id="wiz" onsubmit="return false">
+      <fieldset class="q"><legend>Untuk apa datum ini?</legend><div class="chips" data-name="tujuan"></div></fieldset>
+      <fieldset class="q"><legend>Berapa panjang data muka air?</legend><div class="chips" data-name="panjang"></div></fieldset>
+      <fieldset class="q"><legend>Ada stasiun kontrol jangka panjang di dekatnya?</legend><div class="chips" data-name="kontrol"></div></fieldset>
+      <fieldset class="q"><legend>Tunggang pasut di lokasi</legend><div class="chips" data-name="tunggang"></div></fieldset>
+    </form>
+    <div class="panel" id="wiz-out" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- KATALOG -->
+<section class="view" id="v-katalog" hidden>
+  <div>
+    <h2>Rumus dan cara menghitung</h2>
+    <p class="lead muted">Setiap datum dengan status standarnya, rumus, langkah perhitungan, data minimum, dan referensi. Tanda warna menunjukkan tingkat kekuatan standar.</p>
+  </div>
+  <div class="filters" id="filters" role="group" aria-label="Saring menurut status"></div>
+  <div class="split">
+    <div class="panel"><div class="list" id="list" role="listbox" aria-label="Daftar datum"></div></div>
+    <article class="panel detail" id="detail"></article>
+  </div>
+</section>
+
+<!-- KALKULATOR -->
+<section class="view" id="v-kalkulator" hidden>
+  <div>
+    <h2>Kalkulator datum dari konstanta harmonik</h2>
+    <p class="lead muted">Masukkan amplitudo dan fase (Greenwich, UTC) hasil analisis harmonik. LAT dan HAT dihitung dari prediksi 18,61 tahun berinterval 10 menit dengan koreksi nodal, sesuai butir 8 Resolusi IHO 3/1919. Nilai awal adalah <b>contoh ilustratif</b>, bukan data stasiun nyata.</p>
+  </div>
+  <div class="split">
+    <div class="panel" style="display:grid;gap:14px">
+      <div class="row" style="justify-content:space-between">
+        <h3>Konstanta harmonik</h3>
+        <button class="ghost" type="button" id="btn-sample">Isi contoh</button>
+      </div>
+      <label class="field"><span>S₀ / MSL terhadap nol palem (m)</span><input type="number" step="0.001" id="s0" value="1.500"></label>
+      <div class="scroll">
+        <table class="ctab" id="ctab"><thead><tr><th>Konstituen</th><th>A (m)</th><th>g (°)</th></tr></thead><tbody></tbody></table>
+      </div>
+      <details>
+        <summary style="cursor:pointer;color:var(--accent);font-size:14px">Tempel dari keluaran UTide / T_TIDE</summary>
+        <p class="foot">Satu baris per konstituen: nama, amplitudo (m), fase (°). Pemisah spasi, koma, atau tab. Konstituen yang tidak dikenali dilewati.</p>
+        <textarea id="paste" placeholder="M2  0.420  210.5&#10;K1  0.300  305.0"></textarea>
+        <div class="row" style="margin-top:6px"><button type="button" class="ghost" id="btn-paste">Terapkan</button><span class="status-line" id="paste-msg"></span></div>
+      </details>
+      <label class="row" style="font-size:14px;gap:8px"><input type="checkbox" id="incl-sa"> Sertakan Sa dan Ssa dalam LAT/HAT</label>
+      <p class="foot" style="margin:0">Sa dan Ssa sebagian besar bersumber dari musim dan cuaca. Banyak kantor hidrografi mengecualikannya dari LAT karena LAT didefinisikan sebagai pasut astronomis. Nyatakan pilihan Anda di laporan.</p>
+      <div class="row"><button type="button" id="btn-run">Hitung datum</button><span class="status-line" id="run-msg"></span></div>
+    </div>
+    <div style="display:grid;gap:16px;min-width:0">
+      <div class="stat" id="stats"></div>
+      <div class="panel" style="display:grid;gap:10px">
+        <div class="row" style="justify-content:space-between">
+          <h3>Tangga datum</h3>
+          <label class="field" style="grid-template-columns:auto auto;align-items:center;gap:8px"><span>Acuan nol</span>
+            <select id="ref"><option value="lat">LAT (chart datum)</option><option value="msl">MSL</option><option value="tg">Nol palem</option></select></label>
+        </div>
+        <div id="ladder"></div>
+      </div>
+      <div class="panel" style="display:grid;gap:8px">
+        <h3>Prediksi 30 hari pertama</h3>
+        <div id="plot"></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel" style="display:grid;gap:10px">
+    <div class="row" style="justify-content:space-between"><h3>Hasil dan cara hitung</h3><button class="ghost" type="button" id="btn-copy">Salin hasil</button></div>
+    <div class="scroll"><table class="res" id="res"></table></div>
+    <p class="foot">MHHW, MLLW, MHW, dan MLW di sini dihitung dari tahun pertama <i>prediksi</i>, sehingga hanya pendekatan. Definisi NOAA memakai air tinggi/rendah <i>terobservasi</i> selama epoch 19 tahun. Fase dianggap terhadap UTC; pergeseran zona waktu yang konsisten tidak mengubah LAT dan HAT.</p>
+  </div>
+</section>
+
+<!-- TRANSFER -->
+<section class="view" id="v-transfer" hidden>
+  <div>
+    <h2>Transfer datum dari stasiun kontrol</h2>
+    <p class="lead muted">Untuk pengamatan pendek (1 bulan sampai 1 tahun) yang berjalan bersamaan dengan stasiun kontrol berepoch. Metode mengikuti NOAA NOS CO-OPS 2 dan prosedur transfer datum di IHO C-13. Nilai awal adalah contoh.</p>
+  </div>
+  <div class="split">
+    <form class="panel" id="tf" onsubmit="return false" style="display:grid;gap:14px">
+      <fieldset class="q" style="padding-top:0;border:0"><legend>Metode</legend><div class="chips" data-name="tmethod"></div></fieldset>
+      <div id="tf-fields" style="display:grid;gap:14px"></div>
+    </form>
+    <div class="panel" id="tf-out" style="display:grid;gap:12px"></div>
+  </div>
+</section>
+
+<!-- SINGKATAN -->
+<section class="view" id="v-singkatan" hidden>
+  <div>
+    <h2>Singkatan dan simbol</h2>
+    <p class="lead muted">Ketik untuk menyaring.</p>
+  </div>
+  <div class="panel" style="display:grid;gap:12px">
+    <label class="field"><span>Cari singkatan atau arti</span><input type="search" id="gq" placeholder="mis. LAT, nodal, NOAA" style="font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--ink)"></label>
+    <div class="scroll"><table class="gl" id="gl"></table></div>
+  </div>
+</section>
+
+<!-- REFERENSI -->
+<section class="view" id="v-referensi" hidden>
+  <div><h2>Referensi</h2><p class="lead muted">Dokumen standar lebih dulu, lalu literatur pendukung.</p></div>
+  <div class="panel" style="display:grid;gap:18px">
+    <div><div class="eyebrow" style="margin-bottom:8px">Dokumen standar</div>
+    <ol class="refs">
+      <li>IHO. <b>Resolution 3/1919 (as amended), Datums and Bench Marks</b>, dalam IHO Publication M-3. Revisi diadopsi melalui <a href="https://iho.int/mtg_docs/circular_letters/english/2017/CL10.pdf" target="_blank" rel="noopener">Circular Letter 10/2017</a>. Teks bersih: <a href="https://legacy.iho.int/mtg_docs/com_wg/IHOTC/TWCWG1/TWCWG1-7.1.2b-Resolution_3-1919-Clean.pdf" target="_blank" rel="noopener">TWCWG1</a>.</li>
+      <li>IHO. <b>S-44, Standards for Hydrographic Surveys</b>, Edisi 6.x. Monaco.</li>
+      <li>IHO. <b>C-13, Manual on Hydrography</b>, bab Tides and Water Levels. Monaco.</li>
+      <li>IHO. <b>S-32, Hydrographic Dictionary</b>. Monaco.</li>
+      <li>IOC-UNESCO. <b>Manual on Sea Level Measurement and Interpretation</b>, Manuals and Guides No. 14, Vol. I–V. Paris.</li>
+      <li>NOAA. <b>Tidal Datums and Their Applications</b>, Special Publication NOS CO-OPS 1 (2000).</li>
+      <li>NOAA. <b>Computational Techniques for Tidal Datums Handbook</b>, Technical Report NOS CO-OPS 2 (2003).</li>
+      <li>BSN. <b>SNI 7646:2010</b>, Survei hidrografi menggunakan singlebeam echosounder.</li>
+    </ol></div>
+    <div><div class="eyebrow" style="margin-bottom:8px">Literatur pendukung</div>
+    <ol class="refs">
+      <li>Foreman, M.G.G. (1977). Manual for Tidal Heights Analysis and Prediction. Pacific Marine Science Report 77-10.</li>
+      <li>Pawlowicz, R., Beardsley, B., &amp; Lentz, S. (2002). Classical tidal harmonic analysis including error estimates in MATLAB using T_TIDE. <i>Computers &amp; Geosciences</i> 28, 929–937.</li>
+      <li>Pugh, D. &amp; Woodworth, P. (2014). <i>Sea-Level Science</i>. Cambridge University Press.</li>
+      <li>Poerbandono &amp; Djunarsjah, E. (2005). <i>Survei Hidrografi</i>. Bandung: Refika Aditama.</li>
+      <li>de Azkue et al. (2021). <a href="https://old.scielo.br/pdf/ocr/v69/2675-2824-ocr-69-e21020.pdf" target="_blank" rel="noopener">Empirical chart datum model</a>, <i>Ocean and Coastal Research</i> 69:e21020.</li>
+      <li>Dewantara, D.O. &amp; Khomsin (2022). <a href="https://iptek.its.ac.id/index.php/geoid/article/download/10347/7061" target="_blank" rel="noopener">Analisis perbandingan nilai chart datum berdasarkan lama pengamatan</a>, <i>Geoid</i> ITS.</li>
+      <li><a href="https://proceeding.isas.or.id/index.php/sentrinov/article/download/1379/725/3552" target="_blank" rel="noopener">Perbandingan chart datum persamaan Dishidros dan IHO</a>, Prosiding Sentrinov.</li>
+    </ol></div>
+    <p class="foot">Konstanta TVU S-44 dan nomor edisi perlu dicek ulang pada dokumen resmi yang Anda rujuk.</p>
+  </div>
+</section>
+
+</div></main>
+
+<script>
+(function(){
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ---------- status ---------- */
+const STATUS={
+  ihon:{t:"Normatif IHO",d:"Wajib/direkomendasikan resolusi atau standar IHO"},
+  ihop:{t:"Prosedur IHO/IOC",d:"Prosedur dalam manual IHO C-13 atau IOC M&G 14"},
+  noaa:{t:"NOAA",d:"Standar nasional AS, rujukan komputasi internasional de facto"},
+  uk:{t:"UKHO / S-32",d:"Definisi IHO S-32, praktik Inggris/Commonwealth"},
+  id:{t:"Praktik nasional",d:"Praktik Indonesia (SNI 7646:2010, Pushidrosal)"},
+  hist:{t:"Pendekatan historis",d:"Pendekatan terhadap LAT, bukan metode baku IHO"}
+};
+const pill=k=>`<span class="pill st-${k}" title="${esc(STATUS[k].d)}">${STATUS[k].t}</span>`;
+
+/* ---------- katalog ---------- */
+const v=x=>`<var>${x}</var>`;
+const A=c=>`${v("A")}<sub>${c}</sub>`;
+const CAT=[
+ {id:"harmonik",name:"Model harmonik",sub:"Dasar semua datum astronomis",st:"ihop",
+  f:[`${v("η")}(${v("t")}) = ${v("S")}<sub>0</sub> + Σ<sub>${v("i")}</sub> ${v("f")}<sub>${v("i")}</sub>·${v("A")}<sub>${v("i")}</sub>·cos(${v("ω")}<sub>${v("i")}</sub>${v("t")} + ${v("V")}<sub>${v("i")}</sub> + ${v("u")}<sub>${v("i")}</sub> − ${v("g")}<sub>${v("i")}</sub>)`,`min Σ [${v("η")}<sub>obs</sub>(${v("t")}) − ${v("η")}(${v("t")})]²`],
+  steps:["QC data: buang spike, isi gap pendek, periksa pergeseran nol palem atau sensor.","Pilih konstituen yang lolos kriteria Rayleigh untuk panjang data T.","Selesaikan Aᵢ dan gᵢ dengan kuadrat terkecil, sertakan koreksi nodal fᵢ dan uᵢ pada waktu tengah seri.","Periksa residu dan SNR; buang konstituen dengan SNR di bawah 2."],
+  data:"Rayleigh: |ωᵢ − ωⱼ|·T ≥ 360°",refs:"IHO C-13; IOC M&G 14; Foreman (1977); Pawlowicz et al. (2002)",calc:null,
+  note:"Pada data 15 hari, S2–K2 dan K1–P1 belum terpisah (perlu sekitar 183 hari). Data 369 hari memisahkan Sa dan Ssa."},
+ {id:"formzahl",name:"Formzahl",sub:"Tipe pasut",st:"ihop",
+  f:[`${v("F")} = (${A("K1")} + ${A("O1")}) / (${A("M2")} + ${A("S2")})`],
+  steps:["Ambil amplitudo K1, O1, M2, S2 dari analisis harmonik.","Hitung F.","Klasifikasi: F < 0,25 semidiurnal; 0,25–1,5 campuran dominan ganda; 1,5–3,0 campuran dominan tunggal; > 3,0 diurnal.","Tipe pasut menentukan metode transfer datum: Standard untuk semidiurnal, Modified-Range-Ratio untuk campuran/diurnal."],
+  data:"≥ 29 hari",refs:"IHO C-13; Pugh & Woodworth (2014)",calc:"F"},
+ {id:"msl",name:"MSL",sub:"Mean Sea Level",st:"ihop",
+  f:[`${v("MSL")} = (1/${v("N")}) Σ ${v("X0")}<sub>${v("k")}</sub>`,`${v("X0")}(${v("t")}) = Σ<sub>${v("j")}</sub> ${v("w")}<sub>${v("j")}</sub>·${v("η")}(${v("t")}+${v("j")})`],
+  steps:["Saring data per jam dengan filter low-pass (Doodson X0, 39 jam, atau Demerliac) untuk menghapus sinyal pasut.","Rata-ratakan menjadi nilai harian, bulanan, lalu tahunan.","MSL = rata-rata selama periode referensi.","Untuk seri pendek, pakai S₀ hasil analisis harmonik dan catat bias musimannya, atau koreksi ke stasiun jangka panjang."],
+  data:"Ideal 19 tahun; minimal 1 tahun",refs:"IOC M&G 14 Vol. IV; IHO Res. 29/1919 (M-3)",calc:"MSL",
+  note:"Di perairan Indonesia, variabilitas monsun, ENSO/IOD, dan gelombang Kelvin intraseasonal bisa mencapai beberapa desimeter."},
+ {id:"lat",name:"LAT",sub:"Lowest Astronomical Tide · chart datum",st:"ihon",
+  f:[`${v("LAT")} = min{ ${v("η")}<sub>pred</sub>(${v("t")}) } − ${v("MSL")},  ${v("t")} ∈ [${v("t")}<sub>0</sub>, ${v("t")}<sub>0</sub> + 19 thn]`,`${v("η")}<sub>pred</sub>(${v("t")}) = ${v("S")}<sub>0</sub> + Σ ${v("f")}<sub>${v("i")}</sub>(${v("t")})·${v("A")}<sub>${v("i")}</sub>·cos(${v("ω")}<sub>${v("i")}</sub>${v("t")} + ${v("V")}<sub>${v("i")}</sub> + ${v("u")}<sub>${v("i")}</sub>(${v("t")}) − ${v("g")}<sub>${v("i")}</sub>)`],
+  steps:["Peroleh konstanta harmonik dari analisis data minimal satu tahun.","Prediksi pasut astronomis selama minimal 18,61 tahun (IHO: 19 tahun), interval 1 jam atau lebih rapat, dengan fᵢ dan uᵢ diperbarui berkala.","Ambil nilai prediksi terendah.","Nyatakan LAT sebagai jarak di bawah MSL, lalu ikatkan ke BM dan datum geodetik.","Laporkan ketidakpastian LAT."],
+  data:"Konstanta dari observasi ≥ 1 tahun",refs:"IHO Res. 3/1919 butir 6 & 8 (CL 10/2017); IHO C-13; IHO S-32",calc:"LAT",
+  note:"Durasi 19 tahun dipakai karena nutasi bulan berperiode 18,61 tahun memodulasi amplitudo konstituen."},
+ {id:"hat",name:"HAT",sub:"Highest Astronomical Tide · tinggi bebas",st:"ihon",
+  f:[`${v("HAT")} = max{ ${v("η")}<sub>pred</sub>(${v("t")}) } − ${v("MSL")}`],
+  steps:["Gunakan seri prediksi 19 tahun yang sama dengan LAT.","Ambil nilai tertinggi.","Pakai sebagai acuan tinggi bebas di bawah jembatan dan kabel udara."],
+  data:"Konstanta dari observasi ≥ 1 tahun",refs:"IHO Res. 3/1919 butir 7 & 8; IHO C-13",calc:"HAT"},
+ {id:"mhhw",name:"MHHW",sub:"Mean Higher High Water",st:"noaa",
+  f:[`${v("MHHW")} = (1/${v("N")}<sub>d</sub>) Σ ${v("HHW")}<sub>${v("k")}</sub>`],
+  steps:["Identifikasi semua puncak air tinggi terobservasi (interpolasi kurva pada data 6 menit).","Di setiap hari pasut (24,84 jam), pilih air tinggi yang lebih tinggi.","Rata-ratakan selama epoch 19 tahun."],
+  data:"19 tahun (NTDE)",refs:"NOAA NOS CO-OPS 1 & 2",calc:"MHHW"},
+ {id:"mllw",name:"MLLW",sub:"Mean Lower Low Water",st:"noaa",
+  f:[`${v("MLLW")} = (1/${v("N")}<sub>d</sub>) Σ ${v("LLW")}<sub>${v("k")}</sub>`],
+  steps:["Identifikasi semua lembah air rendah terobservasi.","Di setiap hari pasut, pilih air rendah yang lebih rendah.","Rata-ratakan selama epoch 19 tahun."],
+  data:"19 tahun",refs:"NOAA NOS CO-OPS 1 & 2",calc:"MLLW",
+  note:"MLLW adalah rata-rata terobservasi, bukan minimum astronomis, sehingga posisinya lebih tinggi dari LAT."},
+ {id:"mhw",name:"MHW / MLW",sub:"Mean High / Low Water",st:"noaa",
+  f:[`${v("MHW")} = Σ ${v("HW")} / ${v("N")}<sub>H</sub>`,`${v("MLW")} = Σ ${v("LW")} / ${v("N")}<sub>L</sub>`],
+  steps:["Kumpulkan semua air tinggi (dan semua air rendah) terobservasi selama epoch.","Rata-ratakan masing-masing tanpa memilih yang tertinggi atau terendah harian."],
+  data:"19 tahun",refs:"NOAA NOS CO-OPS 1 & 2",calc:"MHW"},
+ {id:"turunan",name:"MTL, DTL, MN, GT",sub:"Besaran turunan",st:"noaa",
+  f:[`${v("MTL")} = (${v("MHW")} + ${v("MLW")}) / 2      ${v("DTL")} = (${v("MHHW")} + ${v("MLLW")}) / 2`,`${v("MN")} = ${v("MHW")} − ${v("MLW")}      ${v("GT")} = ${v("MHHW")} − ${v("MLLW")}`],
+  steps:["Hitung dari MHW, MLW, MHHW, MLLW.","MTL dan DTL adalah titik tengah; MN dan GT adalah tunggang.","Keempatnya menjadi masukan metode transfer datum."],
+  data:"19 tahun",refs:"NOAA NOS CO-OPS 1",calc:null},
+ {id:"standard",name:"Transfer: Standard Method",sub:"Pasut semidiurnal",st:"noaa",
+  f:[`${v("MTL")}<sub>s</sub> = ${v("MTL")}<sub>s,obs</sub> + (${v("MTL")}<sub>c</sub> − ${v("MTL")}<sub>c,obs</sub>)`,`${v("MN")}<sub>s</sub> = ${v("MN")}<sub>c</sub> · (${v("MN")}<sub>s,obs</sub> / ${v("MN")}<sub>c,obs</sub>)`,`${v("MLW")}<sub>s</sub> = ${v("MTL")}<sub>s</sub> − ${v("MN")}<sub>s</sub>/2      ${v("MHW")}<sub>s</sub> = ${v("MLW")}<sub>s</sub> + ${v("MN")}<sub>s</sub>`],
+  steps:["Pasang palem/gauge sementara (s) bersamaan dengan stasiun kontrol (c) yang sudah memiliki datum epoch.","Hitung MTL dan MN kedua stasiun untuk periode simultan.","Koreksi nilai stasiun s dengan selisih (MTL) dan rasio (MN) stasiun kontrol terhadap epoch.","Turunkan MLW dan MHW stasiun s."],
+  data:"1 bulan–1 tahun simultan",refs:"NOAA NOS CO-OPS 2; IHO C-13",calc:"transfer"},
+ {id:"mrr",name:"Transfer: Modified-Range-Ratio",sub:"Pasut campuran/diurnal",st:"noaa",
+  f:[`${v("DTL")}<sub>s</sub> = ${v("DTL")}<sub>s,obs</sub> + (${v("DTL")}<sub>c</sub> − ${v("DTL")}<sub>c,obs</sub>)`,`${v("GT")}<sub>s</sub> = ${v("GT")}<sub>c</sub> · (${v("GT")}<sub>s,obs</sub> / ${v("GT")}<sub>c,obs</sub>)`,`${v("MLLW")}<sub>s</sub> = ${v("DTL")}<sub>s</sub> − ${v("GT")}<sub>s</sub>/2      ${v("MHHW")}<sub>s</sub> = ${v("MLLW")}<sub>s</sub> + ${v("GT")}<sub>s</sub>`],
+  steps:["Pengamatan simultan seperti Standard Method.","Hitung DTL dan GT dari air tinggi tertinggi dan air rendah terendah harian.","Koreksi ke epoch stasiun kontrol dengan selisih dan rasio.","Turunkan MLLW dan MHHW stasiun s."],
+  data:"1 bulan–1 tahun + kontrol",refs:"NOAA NOS CO-OPS 2",calc:"transfer",note:"Paling sesuai untuk tipe pasut campuran yang umum di perairan Indonesia."},
+ {id:"ampratio",name:"Transfer: Amplitude-Ratio",sub:"Data pendek atau berderau",st:"noaa",
+  f:[`${v("GT")}<sub>s</sub> = ${v("GT")}<sub>c</sub> · (Σ${v("A")}<sub>s</sub> / Σ${v("A")}<sub>c</sub>)`],
+  steps:["Analisis harmonik kedua stasiun pada periode simultan.","Hitung rasio amplitudo konstituen utama.","Skalakan datum stasiun kontrol dengan rasio tersebut."],
+  data:"1 bulan–1 tahun + kontrol",refs:"NOAA NOS CO-OPS 2",calc:null},
+ {id:"islw",name:"ISLW",sub:"Indian Spring Low Water",st:"hist",
+  f:[`${v("ISLW")} = ${v("MSL")} − (${A("M2")} + ${A("S2")} + ${A("K1")} + ${A("O1")})`],
+  steps:["Jumlahkan amplitudo M2, S2, K1, O1.","Kurangkan dari MSL."],
+  data:"≥ 29 hari",refs:"IHO C-13; IHO S-32",calc:"ISLW",note:"Mengasumsikan keempat lembah berimpit. Bisa lebih tinggi atau lebih rendah dari LAT bergantung kontribusi N2, K2, P1, dan konstituen perairan dangkal."},
+ {id:"mlws",name:"MLWS / MHWS",sub:"Pasang purnama",st:"uk",
+  f:[`${v("MLWS")} = ${v("MSL")} − (${A("M2")} + ${A("S2")})`,`${v("MHWS")} = ${v("MSL")} + (${A("M2")} + ${A("S2")})`],
+  steps:["Jumlahkan amplitudo M2 dan S2.","Kurangkan (MLWS) atau tambahkan (MHWS) terhadap MSL."],
+  data:"≥ 29 hari",refs:"IHO S-32; UKHO Admiralty Tide Tables",calc:"MLWS",note:"Bermakna untuk pasut semidiurnal."},
+ {id:"mlwn",name:"MLWN / MHWN",sub:"Pasang perbani",st:"uk",
+  f:[`${v("MLWN")} = ${v("MSL")} − (${A("M2")} − ${A("S2")})`,`${v("MHWN")} = ${v("MSL")} + (${A("M2")} − ${A("S2")})`],
+  steps:["Hitung selisih amplitudo M2 dan S2.","Kurangkan atau tambahkan terhadap MSL."],
+  data:"≥ 29 hari",refs:"IHO S-32; UKHO ATT",calc:"MLWN"},
+ {id:"llwl",name:"LLWL / Z₀",sub:"Praktik Pushidrosal",st:"id",
+  f:[`${v("Z")}<sub>0</sub> = ${A("M2")}+${A("S2")}+${A("K1")}+${A("O1")}+${A("N2")}+${A("K2")}+${A("P1")}+${A("M4")}+${A("MS4")}`,`${v("LLWL")} = ${v("S")}<sub>0</sub> − ${v("Z")}<sub>0</sub>`],
+  steps:["Analisis harmonik (sering metode Admiralty untuk data 15 atau 29 hari).","Jumlahkan amplitudo sembilan konstituen.","Kurangkan dari S₀."],
+  data:"≥ 15 hari (umumnya 29 hari)",refs:"SNI 7646:2010; Poerbandono & Djunarsjah (2005)",calc:"LLWL",
+  note:"Bukan metode baku IHO. Mengasumsikan semua fase berimpit, sehingga umumnya lebih rendah (lebih konservatif) dari LAT. Beberapa sumber hanya memakai M2, S2, K1, O1. Bila laporan menuntut kepatuhan IHO, laporkan selisih LLWL terhadap LAT."},
+ {id:"hhwl",name:"HHWL",sub:"Praktik nasional",st:"id",
+  f:[`${v("HHWL")} = ${v("S")}<sub>0</sub> + ${v("Z")}<sub>0</sub>`],
+  steps:["Pakai jumlah amplitudo yang sama dengan LLWL.","Tambahkan ke S₀. Dipakai untuk elevasi dermaga dan bangunan pantai."],
+  data:"≥ 15–29 hari",refs:"SNI 7646:2010; Pushidrosal",calc:"HHWL"},
+ {id:"latmodel",name:"LAT berbasis model / grid",sub:"Permukaan LAT dan separasi CD–elipsoid",st:"ihon",
+  f:[`${v("LAT")}(${v("x")},${v("y")}) = min{ ${v("η")}<sub>model</sub>(${v("x")},${v("y")},${v("t")}) }`,`${v("N")}<sub>CD</sub>(${v("x")},${v("y")}) = ${v("h")}<sub>MSL</sub>(${v("x")},${v("y")}) − ${v("LAT")}(${v("x")},${v("y")})`],
+  steps:["Gunakan model pasut regional/global (FES, TPXO, atau model hidrodinamika lokal).","Validasi konstanta model terhadap tide gauge dan koreksi biasnya.","Prediksi minimal 19 tahun di setiap titik grid untuk permukaan LAT.","Gabungkan dengan tinggi MSL di atas elipsoid (altimetri/MDT + geoid) untuk separasi CD–elipsoid."],
+  data:"Model tervalidasi",refs:"IHO Res. 3/1919 butir 8 (other proven methods); NOAA VDatum; UKHO VORF",calc:null},
+ {id:"nontidal",name:"Datum non-pasut / mikrotidal",sub:"Tunggang ≤ 0,3 m",st:"ihon",
+  f:[`${v("CD")} = ${v("P")}<sub>${v("p")}</sub>(${v("η")}<sub>obs</sub>)   atau   ${v("CD")} = ${v("MSL")} − ${v("k")}·${v("σ")}<sub>${v("η")}</sub>`],
+  steps:["Kumpulkan seri muka air multi-tahun.","Tetapkan CD sebagai persentil rendah (mis. 1–5%) atau MSL dikurangi kelipatan simpangan baku.","Nilai p dan k mengikuti kebijakan nasional."],
+  data:"Multi-tahun",refs:"IHO Res. 3/1919; IHO C-13",calc:null},
+ {id:"tvu",name:"Ketidakpastian TVU",sub:"Anggaran ketidakpastian vertikal",st:"ihon",
+  f:[`${v("TVU")}<sub>maks</sub>(${v("d")}) = √[ ${v("a")}² + (${v("b")}·${v("d")})² ]`,`${v("σ")}<sub>TVU</sub> = √( Σ ${v("σ")}<sub>${v("j")}</sub>² )`],
+  steps:["Hitung TVU maksimum untuk orde survei pada kedalaman d.","Susun anggaran ketidakpastian: sounder, pasut, datum, heave, sound speed, dan lainnya.","Jumlahkan secara kuadratik dan bandingkan dengan TVU maksimum."],
+  data:"Sesuai orde survei",refs:"IHO S-44 Ed. 6.x; SNI 7646:2010",calc:null,
+  note:"Contoh: Special Order a = 0,25 m, b = 0,0075; Order 1a/1b a = 0,5 m, b = 0,013. Periksa tabel resmi S-44 edisi yang Anda rujuk."},
+ {id:"unc",name:"Ketidakpastian datum seri pendek",sub:"Wajib dilaporkan",st:"ihon",
+  f:[`${v("σ")}<sub>datum</sub> ≈ ${v("σ")}<sub>res</sub> / √${v("N")}<sub>eff</sub>`],
+  steps:["Analitis: dari residu analisis harmonik dan derajat kebebasan efektif, dengan memperhitungkan autokorelasi residu.","Empiris: potong seri panjang stasiun kontrol menjadi segmen sepanjang data Anda, hitung LAT tiap segmen, ambil simpangan bakunya terhadap LAT 19 tahun.","Interval kepercayaan amplitudo diperoleh dari UTide atau T_TIDE."],
+  data:"—",refs:"IHO Res. 3/1919; NOAA NOS CO-OPS 2; Pawlowicz et al. (2002)",calc:null},
+ {id:"geodetik",name:"Pengikatan ke datum geodetik",sub:"BM, SRGI, elipsoid",st:"ihon",
+  f:[`${v("H")}<sub>CD</sub> = ${v("H")}<sub>BM</sub> − Δ${v("h")} − (${v("MSL")} − ${v("LAT")})`,`${v("h")}<sub>CD</sub> = ${v("H")}<sub>CD</sub> + ${v("N")}`],
+  steps:["Sipat datar dari nol palem/gauge ke BM terdekat, pergi-pulang.","Ikat BM ke JKG/SRGI untuk tinggi ortometrik H.","Pengamatan GNSS statik di BM untuk tinggi elipsoid h.","Nyatakan MSL, LAT, HAT relatif terhadap BM, geoid, dan elipsoid.","Ulangi berkala untuk mendeteksi penurunan tanah."],
+  data:"Satu kali + kontrol berkala",refs:"IHO Res. 3/1919 butir 3; IOC M&G 14; Perka BIG SRGI2013",calc:null}
+];
+
+/* ---------- router ---------- */
+const VIEWS=["pemandu","katalog","kalkulator","transfer","singkatan","referensi"];
+function route(){
+  let h=(location.hash||"").slice(1); if(!VIEWS.includes(h)) h="pemandu";
+  VIEWS.forEach(k=>{$("#v-"+k).hidden=(k!==h)});
+  document.querySelectorAll("nav.tabs a").forEach(a=>a.setAttribute("aria-current",a.getAttribute("href")==="#"+h?"page":"false"));
+  if(h==="kalkulator" && !calcDone) runCalc();
+}
+window.addEventListener("hashchange",()=>{route();window.scrollTo(0,0)});
+function go(view,catId){ if(catId) selectCat(catId); location.hash=view; }
+
+/* ---------- chips helper ---------- */
+function chips(container,name,opts,def,onchange){
+  container.innerHTML=opts.map(o=>`<label class="chip"><input type="radio" name="${name}" id="${name}-${o[0]}" value="${o[0]}"${o[0]===def?" checked":""}><span>${o[1]}</span></label>`).join("");
+  container.addEventListener("change",onchange);
+}
+const val=n=>{const e=document.querySelector(`input[name="${n}"]:checked`);return e?e.value:null};
+
+/* ---------- pemandu ---------- */
+const W=$("#wiz");
+chips(W.querySelector('[data-name=tujuan]'),"tujuan",[["nav","Peta navigasi / chart datum"],["survei","Reduksi survei batimetri"],["clear","Tinggi bebas jembatan/kabel"],["desain","Desain bangunan pantai"],["nasional","Laporan sesuai SNI/Pushidrosal"]],"survei",wiz);
+chips(W.querySelector('[data-name=panjang]'),"panjang",[["lt15","< 15 hari"],["d15","15–29 hari"],["m1","1–6 bulan"],["y1","≥ 1 tahun"],["y19","≥ 19 tahun"]],"d15",wiz);
+chips(W.querySelector('[data-name=kontrol]'),"kontrol",[["ya","Ada, berepoch / ≥ 1 tahun"],["tidak","Tidak ada"]],"ya",wiz);
+chips(W.querySelector('[data-name=tunggang]'),"tunggang",[["besar","> 0,3 m"],["kecil","≤ 0,3 m (mikrotidal)"]],"besar",wiz);
+
+function wiz(){
+  const T=val("tujuan"),P=val("panjang"),K=val("kontrol")==="ya",R=val("tunggang");
+  let datum,st,method,steps=[],warns=[],cards=[],calc=false;
+  const geo={t:"Ikat nol palem ke BM, JKG/SRGI, dan elipsoid (IHO Res. 3/1919 butir 3).",c:"geodetik"};
+  const unc={t:"Laporkan ketidakpastian datum dan masukkan ke anggaran TVU (S-44).",c:"tvu"};
+  if(R==="kecil"){
+    datum="Datum non-pasut"; st="ihon"; method="Statistik muka air terobservasi (persentil rendah atau MSL − k·σ)";
+    steps=["Kumpulkan seri muka air multi-tahun.","Tetapkan CD dari persentil rendah atau MSL − k·σ sesuai kebijakan nasional.","Tetap hitung LAT bila data memungkinkan, sebagai pembanding."];
+    cards=["nontidal","msl","lat"];
+    warns.push({t:"Res. 3/1919 mengizinkan datum selain LAT di perairan yang pasutnya tidak dominan."});
+  } else if(T==="clear"){
+    datum="HAT"; st="ihon"; method="Maksimum prediksi pasut astronomis ≥ 19 tahun"; cards=["hat","lat","geodetik"]; calc=true;
+  } else if(T==="desain"){
+    datum="HAT + MSL"; st="ihon"; method="HAT dan MSL sebagai acuan, ditambah analisis muka air ekstrem"; cards=["hat","msl","hhwl"]; calc=true;
+    warns.push({t:"Datum pasut bukan muka air desain. Tambahkan storm surge, wave setup, kenaikan muka laut, dan penurunan tanah dengan analisis nilai ekstrem."});
+  } else if(T==="nasional"){
+    datum="LLWL / Z₀ + LAT"; st="id"; method="Jumlah amplitudo 9 konstituen (Pushidrosal), dilaporkan berdampingan dengan LAT"; cards=["llwl","lat","islw"]; calc=true;
+    warns.push({t:"LLWL bukan metode baku IHO. Laporkan selisih LLWL terhadap LAT agar setara standar internasional."});
+  } else {
+    datum="LAT"; st="ihon"; method="Minimum prediksi pasut astronomis ≥ 19 tahun"; cards=["lat","harmonik","msl"]; calc=true;
+  }
+  // method detail by data length (for tidal cases)
+  if(R!=="kecil"){
+    const tgt = T==="nasional" ? "LLWL dan LAT" : (T==="clear"?"HAT":(T==="desain"?"HAT dan MSL":"LAT"));
+    if(P==="lt15"){
+      steps=["Perpanjang pengamatan minimal 15 hari, sebaiknya 29 hari atau lebih.","Bila tidak mungkin, ikatkan ke stasiun kontrol dengan transfer datum dan tandai hasil sebagai sementara."];
+      warns.push({t:"Data kurang dari 15 hari tidak memenuhi syarat analisis harmonik untuk datum."});
+      if(K) cards.push("mrr");
+    } else if(P==="y19"){
+      steps=["Analisis harmonik (atau gunakan seri 19 tahun langsung).",`Hitung ${tgt} dari prediksi 19 tahun.`,"Hitung MSL dari rata-rata 19 tahun."];
+      warns.push({cls:"ok",t:"Data memenuhi syarat IHO secara penuh."});
+    } else if(P==="y1"){
+      steps=["Analisis harmonik least squares dengan koreksi nodal (≥ 369 hari memisahkan Sa dan Ssa).",`Prediksi ≥ 19 tahun dan ambil ${tgt}.`,"MSL dari rata-rata tahunan; koreksi ke stasiun jangka panjang bila ada."];
+      warns.push({cls:"ok",t:"Memenuhi butir 8 Res. 3/1919: konstanta dari observasi minimal satu tahun."});
+    } else {
+      if(K){
+        steps=["Analisis harmonik seri pendek di lokasi.","Transfer datum dari stasiun kontrol: Modified-Range-Ratio untuk pasut campuran/diurnal, Standard Method untuk semidiurnal.","Koreksi konstanta K1–P1, S2–K2 dengan rasio dari stasiun kontrol (inferensi).",`Prediksi ≥ 19 tahun dan ambil ${tgt}.`];
+        cards.push("mrr","standard","formzahl");
+      } else {
+        steps=["Analisis harmonik seri pendek dengan inferensi K1–P1 dan S2–K2.",`Prediksi ≥ 19 tahun dan ambil ${tgt}.`,"Tetapkan ketidakpastian yang lebih besar."];
+        warns.push({t:"Tanpa stasiun kontrol, LAT dari data kurang dari 1 tahun memiliki ketidakpastian besar. Rencanakan pengamatan ≥ 1 tahun."});
+      }
+      cards.push("unc");
+    }
+  }
+  steps.push(geo.t, unc.t); cards.push("geodetik");
+  cards=[...new Set(cards)];
+  const out=$("#wiz-out");
+  out.innerHTML=`<div class="verdict">
+    <div class="eyebrow">Datum yang direkomendasikan</div>
+    <div class="row" style="gap:12px"><span class="big">${datum}</span>${pill(st)}</div>
+    <dl class="kv"><dt>Metode</dt><dd>${method}</dd><dt>Standar acuan</dt><dd>${standarFor(st,T,R)}</dd></dl>
+  </div>
+  <div style="margin-top:18px"><div class="eyebrow" style="margin-bottom:8px">Urutan perhitungan</div><ol class="steps">${steps.map(s=>`<li>${s}</li>`).join("")}</ol></div>
+  ${warns.length?`<div style="margin-top:18px"><div class="eyebrow" style="margin-bottom:8px">Catatan</div><ul class="warn">${warns.map(w=>`<li class="${w.cls||""}">${w.t}</li>`).join("")}</ul></div>`:""}
+  <div style="margin-top:18px"><div class="eyebrow" style="margin-bottom:8px">Buka rumusnya</div><div class="row">${cards.map(id=>{const c=CAT.find(x=>x.id===id);return `<button type="button" class="ghost" data-go="${id}">${c.name}</button>`}).join("")}</div></div>
+  ${calc?`<div class="row" style="margin-top:18px"><a class="btn" href="#kalkulator">Hitung dengan kalkulator harmonik</a>${(P==="m1"||P==="d15")&&K?`<a class="btn ghost" href="#transfer">Transfer datum</a>`:""}</div>`:""}`;
+  out.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>go("katalog",b.dataset.go)));
+}
+function standarFor(st,T,R){
+  if(R==="kecil") return "IHO Res. 3/1919; IHO C-13";
+  if(st==="id") return "SNI 7646:2010 dan praktik Pushidrosal; pembanding IHO Res. 3/1919";
+  if(T==="clear") return "IHO Res. 3/1919 butir 7 & 8";
+  if(T==="desain") return "IHO Res. 3/1919; IOC M&G 14 (MSL); analisis ekstrem di luar cakupan datum";
+  return "IHO Res. 3/1919 butir 6 & 8; IHO S-44 (ketidakpastian); IHO C-13 (prosedur)";
+}
+
+/* ---------- katalog ---------- */
+let catFilter="all", catSel="lat";
+const F=$("#filters");
+F.innerHTML=`<label class="chip"><input type="radio" name="cf" value="all" checked><span>Semua (${CAT.length})</span></label>`+
+  Object.keys(STATUS).map(k=>`<label class="chip"><input type="radio" name="cf" value="${k}"><span>${STATUS[k].t} (${CAT.filter(c=>c.st===k).length})</span></label>`).join("");
+F.addEventListener("change",()=>{catFilter=val("cf");renderList()});
+function renderList(){
+  const items=CAT.filter(c=>catFilter==="all"||c.st===catFilter);
+  if(!items.find(c=>c.id===catSel)&&items.length) catSel=items[0].id;
+  $("#list").innerHTML=items.map(c=>`<button type="button" role="option" aria-selected="${c.id===catSel}" data-id="${c.id}"><span class="nm">${c.name}</span>${pill(c.st)}<span class="sub">${c.sub}</span></button>`).join("");
+  $("#list").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{selectCat(b.dataset.id); if(window.innerWidth<860) $("#detail").scrollIntoView({behavior:"smooth",block:"start"});}));
+  renderDetail();
+}
+function selectCat(id){catSel=id; const c=CAT.find(x=>x.id===id); if(c&&catFilter!=="all"&&c.st!==catFilter){catFilter="all"; const r=$('input[name=cf][value=all]'); if(r) r.checked=true;} renderList();}
+function renderDetail(){
+  const c=CAT.find(x=>x.id===catSel); if(!c){$("#detail").innerHTML="";return}
+  const calcBtn = c.calc==="transfer" ? `<a class="btn" href="#transfer">Hitung di Transfer datum</a>` : (c.calc ? `<a class="btn" href="#kalkulator">Hitung di kalkulator</a>` : "");
+  $("#detail").innerHTML=`
+    <div style="display:grid;gap:8px"><div class="row" style="gap:10px">${pill(c.st)}<span class="muted" style="font-size:13px">${STATUS[c.st].d}</span></div>
+    <h2>${c.name}</h2><div class="muted">${c.sub}</div></div>
+    <div><div class="eyebrow" style="margin-bottom:6px">Rumus</div><div class="formula">${c.f.map(x=>`<div>${x}</div>`).join("")}</div></div>
+    <div><div class="eyebrow" style="margin-bottom:8px">Cara menghitung</div><ol class="steps">${c.steps.map(s=>`<li>${s}</li>`).join("")}</ol></div>
+    ${c.note?`<div class="note">${c.note}</div>`:""}
+    <div class="meta"><div><b>Data minimum</b>${c.data}</div><div><b>Referensi</b>${c.refs}</div></div>
+    ${calcBtn?`<div class="row">${calcBtn}</div>`:""}`;
+}
+renderList();
+
+/* ---------- konstituen & astronomi ---------- */
+// Doodson: [tau, s, h, p, extra phase], speed derived
+const CONS={
+ M2:{d:[2,0,0,0,0],nod:"M2"}, S2:{d:[2,2,-2,0,0],nod:"1"}, N2:{d:[2,-1,0,1,0],nod:"M2"}, K2:{d:[2,2,0,0,0],nod:"K2"},
+ K1:{d:[1,1,0,0,90],nod:"K1"}, O1:{d:[1,-1,0,0,-90],nod:"O1"}, P1:{d:[1,1,-2,0,-90],nod:"1"}, Q1:{d:[1,-2,0,1,-90],nod:"O1"},
+ M4:{d:[4,0,0,0,0],nod:"M4"}, MS4:{d:[4,2,-2,0,0],nod:"M2"}, Sa:{d:[0,0,1,0,0],nod:"1",lp:1}, Ssa:{d:[0,0,2,0,0],nod:"1",lp:1}
+};
+const ORDER=["M2","S2","N2","K2","K1","O1","P1","Q1","M4","MS4","Sa","Ssa"];
+const RATE={s:13.17639648/24,h:0.98564736/24,p:0.11140353/24,N:-0.05295377/24};
+const RATE_TAU=15+RATE.h-RATE.s;
+ORDER.forEach(k=>{const d=CONS[k].d;CONS[k].w=d[0]*RATE_TAU+d[1]*RATE.s+d[2]*RATE.h+d[3]*RATE.p});
+const R2D=Math.PI/180;
+function nodal(N){ // N in degrees
+  const c=Math.cos(N*R2D),c2=Math.cos(2*N*R2D),c3=Math.cos(3*N*R2D),s=Math.sin(N*R2D),s2=Math.sin(2*N*R2D),s3=Math.sin(3*N*R2D);
+  const M2={f:1.0004-0.0373*c+0.0002*c2,u:-2.14*s};
+  return {"1":{f:1,u:0},M2,
+    K2:{f:1.0241+0.2863*c+0.0083*c2-0.0015*c3,u:-17.74*s+0.68*s2-0.04*s3},
+    K1:{f:1.0060+0.1150*c-0.0088*c2+0.0006*c3,u:-8.86*s+0.68*s2-0.07*s3},
+    O1:{f:1.0089+0.1871*c-0.0147*c2+0.0014*c3,u:10.80*s-1.34*s2+0.19*s3},
+    M4:{f:M2.f*M2.f,u:2*M2.u}};
+}
+function astro0(dateMs){ // angles at epoch (UTC)
+  const D=(dateMs-Date.UTC(2000,0,1,12))/86400000;
+  const s=218.3165+13.17639648*D, h=280.4661+0.98564736*D, p=83.3535+0.11140353*D, N=125.0445-0.05295377*D;
+  const hourUTC=((dateMs/3600000)%24+24)%24;
+  const T=180+15*hourUTC; const tau=T+h-s;
+  return {tau,s,h,p,N};
+}
+function V0(k,a){const d=CONS[k].d;return d[0]*a.tau+d[1]*a.s+d[2]*a.h+d[3]*a.p+d[4]}
+
+/* ---------- kalkulator ---------- */
+const SAMPLE={S0:1.500,M2:[0.420,210.0],S2:[0.220,255.0],N2:[0.080,195.0],K2:[0.060,250.0],K1:[0.300,305.0],O1:[0.170,280.0],P1:[0.100,300.0],Q1:[0.030,265.0],M4:[0.020,120.0],MS4:[0.015,170.0],Sa:[0.060,200.0],Ssa:[0.020,50.0]};
+const tb=$("#ctab tbody");
+tb.innerHTML=ORDER.map(k=>`<tr><td>${k}</td><td><input type="number" step="0.001" id="a-${k}" aria-label="Amplitudo ${k}"></td><td><input type="number" step="0.1" id="g-${k}" aria-label="Fase ${k}"></td></tr>`).join("");
+function fillSample(){ $("#s0").value=SAMPLE.S0.toFixed(3); ORDER.forEach(k=>{$("#a-"+k).value=SAMPLE[k][0].toFixed(3);$("#g-"+k).value=SAMPLE[k][1].toFixed(1)}); }
+fillSample();
+$("#btn-sample").addEventListener("click",()=>{fillSample();runCalc()});
+$("#btn-paste").addEventListener("click",()=>{
+  const lines=$("#paste").value.split(/\n/);let n=0;
+  const map={};ORDER.forEach(k=>map[k.toUpperCase()]=k);
+  lines.forEach(l=>{const p=l.trim().split(/[\s,;\t]+/);if(p.length<3)return;const k=map[p[0].replace(/['"*]/g,"").toUpperCase()];const a=parseFloat(p[1]),g=parseFloat(p[2]);
+    if(k&&isFinite(a)&&isFinite(g)){$("#a-"+k).value=a;$("#g-"+k).value=g;n++}});
+  $("#paste-msg").textContent = n? `${n} konstituen diterapkan.` : "Tidak ada baris yang dikenali. Format: nama amplitudo fase.";
+  if(n) runCalc();
+});
+function readC(){
+  const S0=parseFloat($("#s0").value)||0; const C={};
+  ORDER.forEach(k=>{C[k]={A:Math.max(0,parseFloat($("#a-"+k).value)||0),g:parseFloat($("#g-"+k).value)||0}});
+  return {S0,C};
+}
+let calcDone=false, last=null;
+$("#btn-run").addEventListener("click",runCalc);
+$("#incl-sa").addEventListener("change",runCalc);
+$("#ref").addEventListener("change",()=>{if(last) drawLadder(last)});
+
+function runCalc(){
+  calcDone=true;
+  const btn=$("#btn-run"); btn.disabled=true; $("#run-msg").textContent="Menghitung prediksi 18,61 tahun…";
+  setTimeout(()=>{
+    const t0=performance.now();
+    const r=compute(readC(), $("#incl-sa").checked);
+    last=r; render(r);
+    btn.disabled=false; $("#run-msg").textContent=`Selesai: ${r.nSteps.toLocaleString("id-ID")} titik prediksi dalam ${Math.round(performance.now()-t0)} ms.`;
+  },30);
+}
+
+function compute(inp,inclSa){
+  const {S0,C}=inp;
+  const start=Date.UTC(2026,0,1,0,0);
+  const a0=astro0(start);
+  const keys=ORDER.filter(k=>C[k].A>0);
+  const keysLAT=keys.filter(k=>inclSa||!CONS[k].lp);
+  const dt=1/6; // jam (10 menit)
+  const hours=18.61*365.25*24; const nSteps=Math.ceil(hours/dt);
+  const stepsPerDay=144;
+  const Ak=keysLAT.map(k=>C[k].A), w=keysLAT.map(k=>CONS[k].w*R2D*dt), base=keysLAT.map(k=>V0(k,a0)-C[k].g), nod=keysLAT.map(k=>CONS[k].nod);
+  const n=keysLAT.length; const fA=new Float64Array(n), ph=new Float64Array(n);
+  let mn=Infinity,mx=-Infinity,tmn=0,tmx=0;
+  const yearN=Math.ceil(365.25*24/dt); const year=new Float32Array(yearN);
+  for(let i=0;i<nSteps;i++){
+    if(i%stepsPerDay===0){
+      const tH=i*dt; const N=a0.N+RATE.N*(tH+12); const nd=nodal(N);
+      for(let j=0;j<n;j++){const q=nd[nod[j]];fA[j]=q.f*Ak[j];ph[j]=(base[j]+q.u)*R2D+w[j]*i/1;}
+      // ph holds phase at step i; recompute exact from base each day to avoid drift
+      for(let j=0;j<n;j++){ph[j]=(base[j]+nd[nod[j]].u)*R2D+w[j]*i;}
+    }
+    let y=S0; const off=i%stepsPerDay;
+    for(let j=0;j<n;j++) y+=fA[j]*Math.cos(ph[j]+w[j]*off);
+    if(i<yearN) year[i]=y;
+    if(y<mn){mn=y;tmn=i}
+    if(y>mx){mx=y;tmx=i}
+  }
+  // 30 hari, semua konstituen (termasuk Sa/Ssa bila ada) untuk plot
+  const plotN=30*48, plot=new Float32Array(plotN);
+  {const nd=nodal(a0.N);for(let i=0;i<plotN;i++){let y=S0;const tH=i*0.5;for(const k of keys){const q=nd[CONS[k].nod];y+=q.f*C[k].A*Math.cos((V0(k,a0)+q.u-C[k].g+CONS[k].w*tH)*R2D)}plot[i]=y}}
+  // HW/LW dari prediksi tahun pertama
+  const ext=extrema(year,dt);
+  const A_=k=>C[k].A;
+  const z0List=["M2","S2","K1","O1","N2","K2","P1","M4","MS4"];
+  const Z0=z0List.reduce((s,k)=>s+A_(k),0);
+  const islw=A_("M2")+A_("S2")+A_("K1")+A_("O1");
+  const spr=A_("M2")+A_("S2"), nep=A_("M2")-A_("S2");
+  const Fz=(A_("M2")+A_("S2"))>0?(A_("K1")+A_("O1"))/(A_("M2")+A_("S2")):NaN;
+  const dateOf=i=>new Date(start+i*dt*3600000);
+  return {S0,C,keys,keysLAT,inclSa,Fz,Z0,islw,spr,nep,ext,plot,nSteps,start,
+    LAT:mn-S0,HAT:mx-S0,tLAT:dateOf(tmn),tHAT:dateOf(tmx),z0List};
+}
+function extrema(y,dt){
+  const win=Math.round(2/dt); // ±2 jam
+  const H=[],L=[];
+  for(let i=win;i<y.length-win;i++){
+    const v=y[i];let isH=true,isL=true;
+    for(let j=i-win;j<=i+win;j++){if(j===i)continue;if(y[j]>v||(y[j]===v&&j<i))isH=false;if(y[j]<v||(y[j]===v&&j<i))isL=false;if(!isH&&!isL)break}
+    if(isH)H.push([i*dt,v]); if(isL)L.push([i*dt,v]);
+  }
+  const td=24.8412; const nd=Math.floor((y.length*dt)/td);
+  const hh=[],ll=[];
+  for(let d=0;d<nd;d++){const a=d*td,b=a+td;
+    const hs=H.filter(x=>x[0]>=a&&x[0]<b), ls=L.filter(x=>x[0]>=a&&x[0]<b);
+    if(hs.length) hh.push(Math.max(...hs.map(x=>x[1]))); if(ls.length) ll.push(Math.min(...ls.map(x=>x[1])));}
+  const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
+  return {MHW:mean(H.map(x=>x[1])),MLW:mean(L.map(x=>x[1])),MHHW:mean(hh),MLLW:mean(ll),nH:H.length,nL:L.length};
+}
+
+const f3=x=>(x<0?"−":"")+Math.abs(x).toFixed(3);
+const f3s=x=>(x>=0?"+":"−")+Math.abs(x).toFixed(3);
+function tipe(F){ if(!isFinite(F)) return "—"; if(F<0.25) return "Semidiurnal"; if(F<=1.5) return "Campuran, dominan ganda"; if(F<=3) return "Campuran, dominan tunggal"; return "Diurnal"; }
+const fmtDate=d=>d.toLocaleString("id-ID",{timeZone:"UTC",year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+" UTC";
+
+function rows(r){
+  const S0=r.S0, a=k=>r.C[k].A;
+  const sumStr=list=>list.map(k=>a(k).toFixed(3)).join(" + ");
+  const E=r.ext;
+  return [
+   {key:"HAT",name:"HAT",st:"ihon",cat:"hat",rel:r.HAT,hl:1,
+    calc:`max{η<sub>pred</sub>} − MSL = ${f3(r.HAT+S0)} − ${f3(S0)} = <b>${f3(r.HAT)} m</b><br><span class="muted">terjadi ${fmtDate(r.tHAT)}; ${r.keysLAT.length} konstituen${r.inclSa?" (termasuk Sa/Ssa)":" (tanpa Sa/Ssa)"}</span>`},
+   {key:"HHWL",name:"HHWL",st:"id",cat:"hhwl",rel:r.Z0,
+    calc:`S₀ + Z₀ − MSL = Z₀ = ${sumStr(r.z0List)} = <b>${f3(r.Z0)} m</b>`},
+   {key:"MHWS",name:"MHWS",st:"uk",cat:"mlws",rel:r.spr,calc:`MSL + (A<sub>M2</sub> + A<sub>S2</sub>) = 0 + (${a("M2").toFixed(3)} + ${a("S2").toFixed(3)}) = <b>${f3(r.spr)} m</b>`},
+   {key:"MHHW",name:"MHHW",st:"noaa",cat:"mhhw",rel:E.MHHW-S0,calc:`rata-rata air tinggi tertinggi per hari pasut, prediksi tahun pertama = ${f3(E.MHHW)} − ${f3(S0)} = <b>${f3(E.MHHW-S0)} m</b>`},
+   {key:"MHW",name:"MHW",st:"noaa",cat:"mhw",rel:E.MHW-S0,calc:`rata-rata ${E.nH} air tinggi prediksi tahun pertama = ${f3(E.MHW)} − ${f3(S0)} = <b>${f3(E.MHW-S0)} m</b>`},
+   {key:"MHWN",name:"MHWN",st:"uk",cat:"mlwn",rel:r.nep,calc:`MSL + (A<sub>M2</sub> − A<sub>S2</sub>) = 0 + (${a("M2").toFixed(3)} − ${a("S2").toFixed(3)}) = <b>${f3(r.nep)} m</b>`},
+   {key:"MSL",name:"MSL",st:"ihop",cat:"msl",rel:0,hl:1,calc:`MSL ≈ S₀ = <b>${f3(S0)} m</b> di atas nol palem (acuan relatif = 0)`},
+   {key:"MLWN",name:"MLWN",st:"uk",cat:"mlwn",rel:-r.nep,calc:`MSL − (A<sub>M2</sub> − A<sub>S2</sub>) = 0 − (${a("M2").toFixed(3)} − ${a("S2").toFixed(3)}) = <b>${f3(-r.nep)} m</b>`},
+   {key:"MLW",name:"MLW",st:"noaa",cat:"mhw",rel:E.MLW-S0,calc:`rata-rata ${E.nL} air rendah prediksi tahun pertama = ${f3(E.MLW)} − ${f3(S0)} = <b>${f3(E.MLW-S0)} m</b>`},
+   {key:"MLLW",name:"MLLW",st:"noaa",cat:"mllw",rel:E.MLLW-S0,calc:`rata-rata air rendah terendah per hari pasut, prediksi tahun pertama = ${f3(E.MLLW)} − ${f3(S0)} = <b>${f3(E.MLLW-S0)} m</b>`},
+   {key:"MLWS",name:"MLWS",st:"uk",cat:"mlws",rel:-r.spr,calc:`MSL − (A<sub>M2</sub> + A<sub>S2</sub>) = 0 − (${a("M2").toFixed(3)} + ${a("S2").toFixed(3)}) = <b>${f3(-r.spr)} m</b>`},
+   {key:"ISLW",name:"ISLW",st:"hist",cat:"islw",rel:-r.islw,calc:`MSL − (A<sub>M2</sub>+A<sub>S2</sub>+A<sub>K1</sub>+A<sub>O1</sub>) = 0 − (${sumStr(["M2","S2","K1","O1"])}) = <b>${f3(-r.islw)} m</b>`},
+   {key:"LAT",name:"LAT",st:"ihon",cat:"lat",rel:r.LAT,hl:1,
+    calc:`min{η<sub>pred</sub>} − MSL = ${f3(r.LAT+S0)} − ${f3(S0)} = <b>${f3(r.LAT)} m</b><br><span class="muted">terjadi ${fmtDate(r.tLAT)}; prediksi 18,61 tahun, interval 10 menit, koreksi nodal harian</span>`},
+   {key:"LLWL",name:"LLWL / Z₀",st:"id",cat:"llwl",rel:-r.Z0,
+    calc:`S₀ − Z₀ − MSL = −(${sumStr(r.z0List)}) = <b>${f3(-r.Z0)} m</b>`}
+  ].sort((x,y)=>y.rel-x.rel);
+}
+
+function render(r){
+  const latTG=r.S0+r.LAT;
+  $("#stats").innerHTML=`
+    <div><b>Formzahl F</b><span class="num">${isFinite(r.Fz)?r.Fz.toFixed(2):"—"}</span><div class="muted" style="font-size:12.5px">${tipe(r.Fz)}</div></div>
+    <div><b>LAT terhadap MSL</b><span class="num">${f3(r.LAT)} m</span><div class="muted" style="font-size:12.5px">${f3(latTG)} m dari nol palem</div></div>
+    <div><b>HAT terhadap MSL</b><span class="num">${f3s(r.HAT)} m</span><div class="muted" style="font-size:12.5px">rentang HAT−LAT ${(r.HAT-r.LAT).toFixed(3)} m</div></div>
+    <div><b>LLWL − LAT</b><span class="num">${f3s(-r.Z0-r.LAT)} m</span><div class="muted" style="font-size:12.5px">${(-r.Z0-r.LAT)<0?"LLWL lebih rendah dari LAT":"LLWL lebih tinggi dari LAT"}</div></div>`;
+  const R=rows(r);
+  $("#res").innerHTML=`<thead><tr><th>Datum</th><th>Status</th><th style="text-align:right">thd MSL (m)</th><th style="text-align:right">thd LAT (m)</th><th style="text-align:right">thd nol palem (m)</th><th>Cara hitung</th></tr></thead><tbody>`+
+   R.map(x=>`<tr class="${x.hl?"hl":""}"><td><b>${x.name}</b></td><td>${pill(x.st)}</td><td class="v">${f3s(x.rel)}</td><td class="v">${f3s(x.rel-r.LAT)}</td><td class="v">${f3(x.rel+r.S0)}</td>
+     <td><details><summary>Lihat perhitungan</summary><div class="calc">${x.calc}</div><button type="button" class="ghost" style="margin-top:6px;padding:5px 9px;font-size:12.5px" data-go="${x.cat}">Rumus dan standar</button></details></td></tr>`).join("")+
+   `<tr><td><b>Formzahl</b></td><td>${pill("ihop")}</td><td class="v" colspan="3">F = ${isFinite(r.Fz)?r.Fz.toFixed(3):"—"}</td><td><details><summary>Lihat perhitungan</summary><div class="calc">F = (A<sub>K1</sub> + A<sub>O1</sub>) / (A<sub>M2</sub> + A<sub>S2</sub>) = (${r.C.K1.A.toFixed(3)} + ${r.C.O1.A.toFixed(3)}) / (${r.C.M2.A.toFixed(3)} + ${r.C.S2.A.toFixed(3)}) = <b>${isFinite(r.Fz)?r.Fz.toFixed(3):"—"}</b> → ${tipe(r.Fz)}</div></details></td></tr></tbody>`;
+  $("#res").querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>go("katalog",b.dataset.go)));
+  drawLadder(r); drawPlot(r);
+}
+
+function drawLadder(r){
+  const ref=$("#ref").value; const R=rows(r);
+  const off= ref==="lat"? -r.LAT : (ref==="tg"? r.S0 : 0);
+  const vals=R.map(x=>({...x,y:x.rel+off}));
+  const W=640,H=420,padT=18,padB=18,axX=120;
+  const ymax=Math.max(...vals.map(x=>x.y)),ymin=Math.min(...vals.map(x=>x.y));
+  const span=(ymax-ymin)||1; const top=ymax+span*0.04, bot=ymin-span*0.04;
+  const sy=v=>padT+(top-v)/(top-bot)*(H-padT-padB);
+  // label placement
+  const minGap=17; const lab=vals.map(x=>({...x,py:sy(x.y)})).sort((a,b)=>a.py-b.py);
+  for(let i=1;i<lab.length;i++){ if(lab[i].py<lab[i-1].ly+minGap){} lab[i].ly=Math.max(lab[i].py,(lab[i-1].ly??lab[i-1].py)+minGap)}
+  lab[0].ly=lab[0].ly??lab[0].py;
+  const over=lab[lab.length-1].ly-(H-padB); if(over>0){ for(let i=lab.length-1;i>=0;i--){ lab[i].ly-=over; if(i<lab.length-1&&lab[i].ly>lab[i+1].ly-minGap) lab[i].ly=lab[i+1].ly-minGap } }
+  // ticks
+  const step=niceStep(top-bot); let ticks=[]; for(let t=Math.ceil(bot/step)*step;t<=top+1e-9;t+=step) ticks.push(+t.toFixed(6));
+  const color=st=>`var(--s-${st})`;
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Tangga datum relatif terhadap ${ref==="lat"?"LAT":ref==="msl"?"MSL":"nol palem"}">`;
+  ticks.forEach(t=>{s+=`<line x1="${axX-6}" x2="${axX}" y1="${sy(t)}" y2="${sy(t)}" stroke="var(--muted)"/><text x="${axX-10}" y="${sy(t)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${t.toFixed(step<0.1?2:1)}</text><line x1="${axX}" x2="${W-8}" y1="${sy(t)}" y2="${sy(t)}" stroke="var(--line)" stroke-dasharray="2 4"/>`});
+  s+=`<line x1="${axX}" x2="${axX}" y1="${padT}" y2="${H-padB}" stroke="var(--muted)"/>`;
+  s+=`<text x="8" y="12" font-size="11" fill="var(--muted)">m</text>`;
+  const barX=axX+14, barW=150, labX=barX+barW+40;
+  s+=`<rect x="${barX}" y="${sy(Math.max(...vals.filter(x=>x.key==="HAT").map(x=>x.y)))}" width="${barW}" height="${Math.max(1,sy(vals.find(x=>x.key==="LAT").y)-sy(vals.find(x=>x.key==="HAT").y))}" fill="var(--accent-soft)"/>`;
+  lab.forEach(x=>{
+    const strong=x.hl?2.2:1.2;
+    s+=`<line x1="${barX}" x2="${barX+barW}" y1="${x.py}" y2="${x.py}" stroke="${color(x.st)}" stroke-width="${strong}"/>`;
+    s+=`<polyline points="${barX+barW},${x.py} ${barX+barW+16},${x.py} ${labX-6},${x.ly}" fill="none" stroke="var(--line)"/>`;
+    s+=`<text x="${labX}" y="${x.ly+4}" font-size="12" fill="var(--ink)" font-weight="${x.hl?600:400}">${x.name.replace(" / Z₀","")}</text><text x="${W-8}" y="${x.ly+4}" font-size="12" text-anchor="end" fill="${color(x.st)}">${f3s(x.y)}</text>`;
+  });
+  s+=`</svg>`;
+  $("#ladder").innerHTML=s+`<div class="row" style="gap:6px 12px;font-size:12px">${["ihon","ihop","noaa","uk","id","hist"].map(k=>`<span class="st-${k}">● <span style="color:var(--muted)">${STATUS[k].t}</span></span>`).join("")}</div>`;
+}
+function niceStep(range){const raw=range/7;const p=Math.pow(10,Math.floor(Math.log10(raw)));const m=raw/p;return (m<1.5?1:m<3?2:m<7?5:10)*p}
+
+function drawPlot(r){
+  const y=Array.from(r.plot).map(v=>v-r.S0);
+  const W=640,H=230,L=46,Rr=60,T=12,B=28;
+  const lines=[["HAT",r.HAT,"ihon"],["MSL",0,"ihop"],["LAT",r.LAT,"ihon"],["LLWL",-r.Z0,"id"]];
+  const all=y.concat(lines.map(l=>l[1]));
+  const top=Math.max(...all)+0.05, bot=Math.min(...all)-0.05;
+  const sx=i=>L+i/(y.length-1)*(W-L-Rr), sy=v=>T+(top-v)/(top-bot)*(H-T-B);
+  const step=niceStep(top-bot);
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Prediksi muka air 30 hari terhadap MSL">`;
+  for(let t=Math.ceil(bot/step)*step;t<=top;t+=step){s+=`<line x1="${L}" x2="${W-Rr}" y1="${sy(t)}" y2="${sy(t)}" stroke="var(--line)"/><text x="${L-6}" y="${sy(t)+4}" font-size="10.5" text-anchor="end" fill="var(--muted)">${t.toFixed(step<0.1?2:1)}</text>`}
+  for(let d=0;d<=30;d+=5){const x=sx(d*48<y.length?d*48:y.length-1);s+=`<text x="${x}" y="${H-8}" font-size="10.5" text-anchor="middle" fill="var(--muted)">hari ${d}</text>`}
+  let pth="";y.forEach((v,i)=>{pth+=(i?"L":"M")+sx(i).toFixed(1)+" "+sy(v).toFixed(1)});
+  s+=`<path d="${pth}" fill="none" stroke="var(--ink)" stroke-width="1.1" stroke-opacity=".8"/>`;
+  lines.forEach(([n,v,st])=>{s+=`<line x1="${L}" x2="${W-Rr}" y1="${sy(v)}" y2="${sy(v)}" stroke="var(--s-${st})" stroke-width="1.4" ${n==="LLWL"||n==="MSL"?'stroke-dasharray="5 4"':""}/><text x="${W-Rr+6}" y="${sy(v)+4}" font-size="11" fill="var(--s-${st})">${n}</text>`});
+  s+=`<text x="4" y="${T+4}" font-size="10.5" fill="var(--muted)">m</text></svg>`;
+  $("#plot").innerHTML=s+`<p class="foot" style="margin:0">Mulai 1 Jan 2026 00:00 UTC, interval 30 menit, semua konstituen terisi. Muka air relatif terhadap MSL.</p>`;
+}
+
+$("#btn-copy").addEventListener("click",async()=>{
+  if(!last) return; const R=rows(last);
+  const txt=["Datum\tthd MSL (m)\tthd LAT (m)\tthd nol palem (m)"].concat(R.map(x=>`${x.name}\t${x.rel.toFixed(3)}\t${(x.rel-last.LAT).toFixed(3)}\t${(x.rel+last.S0).toFixed(3)}`)).concat([`Formzahl\t${last.Fz.toFixed(3)}\t${tipe(last.Fz)}`]).join("\n");
+  const b=$("#btn-copy");
+  try{await navigator.clipboard.writeText(txt);b.textContent="Tersalin"}catch(e){
+    const ta=document.createElement("textarea");ta.value=txt;b.after(ta);ta.select();b.textContent="Teks dipilih, salin manual";}
+  setTimeout(()=>b.textContent="Salin hasil",2500);
+});
+
+/* ---------- transfer ---------- */
+const TF={
+  standard:{label:"Standard Method",groups:[
+    ["Stasiun kontrol, nilai epoch (m)",[["c_hw","MHW_c",2.180],["c_lw","MLW_c",1.020]]],
+    ["Stasiun kontrol, periode simultan (m)",[["co_hw","MHW_c,obs",2.240],["co_lw","MLW_c,obs",1.060]]],
+    ["Stasiun sementara, periode simultan (m)",[["so_hw","MHW_s,obs",3.410],["so_lw","MLW_s,obs",2.110]]]]},
+  mrr:{label:"Modified-Range-Ratio",groups:[
+    ["Stasiun kontrol, nilai epoch (m)",[["c_hw","MHHW_c",2.360],["c_lw","MLLW_c",0.780]]],
+    ["Stasiun kontrol, periode simultan (m)",[["co_hw","MHHW_c,obs",2.420],["co_lw","MLLW_c,obs",0.840]]],
+    ["Stasiun sementara, periode simultan (m)",[["so_hw","MHHW_s,obs",3.620],["so_lw","MLLW_s,obs",1.880]]]]}
+};
+chips($('#tf [data-name=tmethod]'),"tmethod",[["mrr","Modified-Range-Ratio (campuran/diurnal)"],["standard","Standard (semidiurnal)"]],"mrr",renderTF);
+function sub(n){const p=n.split("_");return p.length>1?`${p[0]}<sub>${p.slice(1).join(",")}</sub>`:n}
+function renderTF(){
+  const m=val("tmethod"),cfg=TF[m];
+  $("#tf-fields").innerHTML=cfg.groups.map(([t,fs])=>`<fieldset style="display:grid;gap:8px"><legend class="eyebrow" style="margin-bottom:6px">${t}</legend><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px">${fs.map(([id,lab,d])=>`<label class="field"><span class="m-up">${sub(lab)}</span><input type="number" step="0.001" id="tf-${m}-${id}" value="${d.toFixed(3)}"></label>`).join("")}</div></fieldset>`).join("");
+  $("#tf-fields").querySelectorAll("input").forEach(i=>i.addEventListener("input",calcTF));
+  calcTF();
+}
+function calcTF(){
+  const m=val("tmethod"); const g=id=>parseFloat($(`#tf-${m}-${id}`).value);
+  const hw=g("c_hw"),lw=g("c_lw"),ohw=g("co_hw"),olw=g("co_lw"),shw=g("so_hw"),slw=g("so_lw");
+  const isM=m==="mrr"; const MT=isM?"DTL":"MTL", MN=isM?"GT":"MN", HI=isM?"MHHW":"MHW", LO=isM?"MLLW":"MLW";
+  const tl_c=(hw+lw)/2,rn_c=hw-lw,tl_co=(ohw+olw)/2,rn_co=ohw-olw,tl_so=(shw+slw)/2,rn_so=shw-slw;
+  const tl_s=tl_so+(tl_c-tl_co), rn_s=rn_c*(rn_so/rn_co), lo_s=tl_s-rn_s/2, hi_s=lo_s+rn_s;
+  const ok=[hw,lw,ohw,olw,shw,slw].every(isFinite)&&rn_co!==0;
+  const V=x=>ok?x.toFixed(3):"—";
+  $("#tf-out").innerHTML=`
+   <div class="eyebrow">Hasil ${TF[m].label}</div>
+   <div class="stat"><div><b>${LO}<sub>s</sub></b><span class="num">${V(lo_s)} m</span></div><div><b>${HI}<sub>s</sub></b><span class="num">${V(hi_s)} m</span></div><div><b>${MT}<sub>s</sub></b><span class="num">${V(tl_s)} m</span></div><div><b>${MN}<sub>s</sub></b><span class="num">${V(rn_s)} m</span></div></div>
+   <div><div class="eyebrow" style="margin-bottom:8px">Cara hitung</div>
+   <ol class="steps" style="font-family:var(--f-math);font-size:15.5px">
+     <li>${MT}<sub>c</sub> = (${hw.toFixed(3)} + ${lw.toFixed(3)})/2 = ${V(tl_c)};  ${MN}<sub>c</sub> = ${hw.toFixed(3)} − ${lw.toFixed(3)} = ${V(rn_c)}</li>
+     <li>${MT}<sub>c,obs</sub> = ${V(tl_co)};  ${MN}<sub>c,obs</sub> = ${V(rn_co)};  ${MT}<sub>s,obs</sub> = ${V(tl_so)};  ${MN}<sub>s,obs</sub> = ${V(rn_so)}</li>
+     <li>${MT}<sub>s</sub> = ${MT}<sub>s,obs</sub> + (${MT}<sub>c</sub> − ${MT}<sub>c,obs</sub>) = ${V(tl_so)} + (${V(tl_c)} − ${V(tl_co)}) = <b>${V(tl_s)}</b></li>
+     <li>${MN}<sub>s</sub> = ${MN}<sub>c</sub> · ${MN}<sub>s,obs</sub>/${MN}<sub>c,obs</sub> = ${V(rn_c)} · ${V(rn_so)}/${V(rn_co)} = <b>${V(rn_s)}</b></li>
+     <li>${LO}<sub>s</sub> = ${MT}<sub>s</sub> − ${MN}<sub>s</sub>/2 = <b>${V(lo_s)}</b>;  ${HI}<sub>s</sub> = ${LO}<sub>s</sub> + ${MN}<sub>s</sub> = <b>${V(hi_s)}</b></li>
+   </ol></div>
+   <p class="foot" style="margin:0">Semua nilai stasiun s terhadap nol palem sementara. Untuk memperoleh LAT di stasiun s, lakukan analisis harmonik seri pendeknya dengan inferensi dari stasiun kontrol, lalu hitung di kalkulator harmonik.</p>
+   <div class="row"><button type="button" class="ghost" data-go="${m}">Rumus dan standar</button></div>`;
+  $("#tf-out").querySelector("[data-go]").addEventListener("click",e=>go("katalog",e.currentTarget.dataset.go));
+}
+renderTF();
+
+/* ---------- singkatan ---------- */
+const GL=[
+ ["Datum dan besaran muka air",[["MSL","Mean Sea Level","Muka laut rata-rata"],["LAT","Lowest Astronomical Tide","Pasut astronomis terendah dalam ≥ 19 tahun"],["HAT","Highest Astronomical Tide","Pasut astronomis tertinggi dalam ≥ 19 tahun"],["CD","Chart Datum","Bidang acuan kedalaman peta laut"],["MHHW","Mean Higher High Water","Rata-rata air tinggi tertinggi harian"],["MLLW","Mean Lower Low Water","Rata-rata air rendah terendah harian"],["MHW","Mean High Water","Rata-rata semua air tinggi"],["MLW","Mean Low Water","Rata-rata semua air rendah"],["MTL","Mean Tide Level","Titik tengah MHW dan MLW"],["DTL","Diurnal Tide Level","Titik tengah MHHW dan MLLW"],["MN","Mean Range of Tide","Tunggang rata-rata (MHW − MLW)"],["GT","Great Diurnal Range","Tunggang harian besar (MHHW − MLLW)"],["HW / LW","High Water / Low Water","Air tinggi / air rendah"],["HHW / LLW","Higher High Water / Lower Low Water","Air tinggi tertinggi / air rendah terendah dalam satu hari pasut"],["ISLW","Indian Spring Low Water","MSL − (M2 + S2 + K1 + O1)"],["MHWS / MLWS","Mean High / Low Water Springs","Air tinggi / rendah rata-rata saat pasang purnama"],["MHWN / MLWN","Mean High / Low Water Neaps","Air tinggi / rendah rata-rata saat pasang perbani"],["LWS","Low Water Spring","Air rendah purnama"],["HHWL","Highest High Water Level","Muka air tinggi tertinggi (praktik Indonesia)"],["LLWL","Lowest Low Water Level","Muka air rendah terendah (praktik Indonesia)"],["Z₀","—","Jarak MSL ke chart datum dari jumlah amplitudo"],["S₀","—","Suku konstan (muka air rata-rata) dari analisis harmonik"],["X0","—","Muka air rata-rata harian hasil filter Doodson"]]],
+ ["Konstituen pasut",[["M2","Principal lunar semidiurnal","12,42 jam · ganda"],["S2","Principal solar semidiurnal","12,00 jam · ganda"],["N2","Larger lunar elliptic semidiurnal","12,66 jam · ganda"],["K2","Lunisolar semidiurnal","11,97 jam · ganda"],["K1","Lunisolar diurnal","23,93 jam · tunggal"],["O1","Principal lunar diurnal","25,82 jam · tunggal"],["P1","Principal solar diurnal","24,07 jam · tunggal"],["Q1","Larger lunar elliptic diurnal","26,87 jam · tunggal"],["M4","Shallow-water overtide of M2","6,21 jam · perairan dangkal"],["MS4","Shallow-water compound M2 + S2","6,10 jam · perairan dangkal"],["Sa","Solar annual","≈ 1 tahun · periode panjang"],["Ssa","Solar semiannual","≈ ½ tahun · periode panjang"]]],
+ ["Simbol dalam rumus",[["η(t)","—","Tinggi muka air pada waktu t"],["Aᵢ","—","Amplitudo konstituen ke-i"],["gᵢ","—","Fase (keterlambatan fase) konstituen ke-i"],["ωᵢ","—","Kecepatan sudut konstituen ke-i (°/jam)"],["Vᵢ","—","Argumen astronomis (equilibrium argument)"],["fᵢ, uᵢ","—","Faktor amplitudo nodal dan koreksi fase nodal"],["N","—","Bujur titik naik orbit bulan (18,61 tahun); pada rumus geodetik = undulasi geoid"],["F","—","Bilangan Formzahl"],["T","—","Panjang seri data"],["N_d, N_H, N_L, N_eff","—","Jumlah hari pasut, air tinggi, air rendah; derajat kebebasan efektif"],["Δ_obs","—","Selisih terobservasi antar-stasiun pada periode simultan"],["s, c","—","Stasiun sementara (sekunder), stasiun kontrol"],["σ, σ_res","—","Simpangan baku; simpangan baku residu"],["Pₚ","—","Persentil ke-p"],["a, b, d","—","Konstanta TVU S-44; kedalaman"],["H, h","—","Tinggi ortometrik; tinggi elipsoid"],["Δh","—","Beda tinggi hasil sipat datar"],["SNR","Signal-to-Noise Ratio","Rasio sinyal terhadap derau"]]],
+ ["Lembaga, dokumen, dan istilah teknis",[["IHO","International Hydrographic Organization",""],["IOC","Intergovernmental Oceanographic Commission","UNESCO"],["GLOSS","Global Sea Level Observing System",""],["NOAA","National Oceanic and Atmospheric Administration","Amerika Serikat"],["NOS","National Ocean Service","NOAA"],["CO-OPS","Center for Operational Oceanographic Products and Services","NOAA"],["NTDE","National Tidal Datum Epoch","Epoch 19 tahun NOAA"],["UKHO","United Kingdom Hydrographic Office",""],["ATT","Admiralty Tide Tables",""],["BSH","Bundesamt für Seeschifffahrt und Hydrographie","Jerman"],["Res.","Resolution","Resolusi IHO"],["CL","Circular Letter","Surat Edaran IHO"],["M-3","IHO Publication M-3","Resolutions of the IHO"],["C-13","IHO Publication C-13","Manual on Hydrography"],["S-32","IHO Publication S-32","Hydrographic Dictionary"],["S-44","IHO Publication S-44","Standards for Hydrographic Surveys"],["S-100 / S-104","IHO Universal Hydrographic Data Model / Water Level Information","Spesifikasi produk informasi muka air"],["IOC M&G 14","IOC Manuals and Guides No. 14","Manual on Sea Level Measurement and Interpretation"],["ISO","International Organization for Standardization",""],["SNI","Standar Nasional Indonesia",""],["BSN","Badan Standardisasi Nasional",""],["BIG","Badan Informasi Geospasial",""],["Perka","Peraturan Kepala","BIG"],["SRGI","Sistem Referensi Geospasial Indonesia",""],["JKG","Jaring Kontrol Geodesi",""],["Pushidrosal","Pusat Hidrografi dan Oseanografi TNI AL","Dahulu Dishidros"],["TVU","Total Vertical Uncertainty",""],["TWCWG","Tides, Water Level and Currents Working Group","IHO"],["BM","Bench Mark","Titik tetap tinggi"],["GNSS","Global Navigation Satellite System",""],["MDT","Mean Dynamic Topography",""],["QC","Quality Control",""],["VDatum","—","Perangkat transformasi datum vertikal NOAA"],["VORF","Vertical Offshore Reference Frames","UKHO"],["BLAST","Bringing Land and Sea Together","Proyek datum Laut Utara"],["FES, TPXO","Finite Element Solution; TOPEX/Poseidon cross-over","Model pasut global"],["UTide, T_TIDE","—","Perangkat lunak analisis harmonik pasut"]]]
+];
+function renderGL(){
+  const q=$("#gq").value.trim().toLowerCase(); let h=`<thead><tr><th>Singkatan</th><th>Kepanjangan</th><th>Keterangan</th></tr></thead><tbody>`; let any=false;
+  GL.forEach(([g,rows])=>{const f=rows.filter(r=>!q||r.join(" ").toLowerCase().includes(q)); if(!f.length)return; any=true;
+    h+=`<tr class="grp"><td colspan="3">${g}</td></tr>`+f.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("")});
+  if(!any) h+=`<tr><td colspan="3" class="muted">Tidak ada yang cocok dengan “${esc(q)}”.</td></tr>`;
+  $("#gl").innerHTML=h+"</tbody>";
+}
+$("#gq").addEventListener("input",renderGL); renderGL();
+
+wiz(); route();
+})();
+</script>

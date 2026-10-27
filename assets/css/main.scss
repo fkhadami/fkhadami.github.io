@@ -1,0 +1,54 @@
+---
+---
+
+/*
+ * This file controls what is imported from /_sass
+ *
+ * Note that the files are processed in the order they are imported, so they are partly
+   sorted by the dependencies. Also, the first two lines of the file are required by Jekyll.
+ */
+
+@import
+    "vendor/breakpoint/breakpoint",
+
+    "themes",
+    "theme/{{ site.site_theme | default: 'default' | append: '_light' }}",
+    "theme/{{ site.site_theme | default: 'default' | append: '_dark' }}",
+
+    "include/mixins",
+    "vendor/susy/susy",
+
+    "layout/reset",
+    "layout/base",
+
+    "include/utilities",
+    "layout/tables",
+    "layout/buttons",
+    "layout/notices",
+    "layout/masthead",
+    "layout/navigation",
+    "layout/footer",
+    "syntax",
+
+    "layout/forms",
+
+    "layout/page",
+    "layout/archive",
+    "layout/sidebar"
+;
+/* ---- Penyesuaian situs Faruq Khadami ---- */
+.home-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1em; margin: 1em 0 1.5em; }
+.home-card, .tool-card {
+  display: block; border: 1px solid var(--global-border-color); border-radius: 6px;
+  padding: 1em 1.2em; background: var(--global-bg-color); color: var(--global-text-color);
+}
+a.home-card { text-decoration: none; transition: border-color .15s; }
+a.home-card:hover { border-color: var(--global-link-color); }
+.home-card strong { display: block; color: var(--global-link-color); margin-bottom: .3em; }
+.home-card span { font-size: .85em; }
+.tool-list { display: grid; gap: 1.2em; margin-top: 1.2em; }
+.tool-card h2 { margin: .1em 0 .4em; border: 0; padding: 0; }
+.tool-card p { font-size: .9em; }
+.tool-card p:last-child { margin-bottom: 0; }
+.tool-tag { text-transform: uppercase; letter-spacing: .06em; font-size: .7em !important; color: var(--global-text-color-light); margin: 0; }
+.cv-frame { width: 100%; min-height: 900px; border: 1px solid var(--global-border-color); border-radius: 6px; background: #fff; }

@@ -1,0 +1,1583 @@
+<!doctype html><html><head><meta charset=utf8>
+<meta name="viewport" content="width=device-width, initial-scale=1"><meta name=viewport content="width=device-width,initial-scale=1"><style>:root{color-scheme:light}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Bengkel Arus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f6f8f8; --surface:#ffffff; --surface-2:#eef2f2; --surface-3:#e4ebeb;
+  --ink:#0b1416; --ink-2:#465254; --ink-muted:#7c8b8d;
+  --line:#dde5e5; --line-strong:#c1cdcd;
+  --brand:#0f6b73; --brand-strong:#0a4d53; --brand-ink:#ffffff; --brand-soft:#e2f0f1;
+  --accent:#d9663a; --accent-ink:#ffffff; --accent-soft:#fbe7dc;
+  --good:#0ca30c; --warning:#b06f00; --serious:#c1502c; --critical:#d03b3b;
+  --chart-surface:#fcfcfb; --chart-grid:#e5e4dd; --chart-axis:#c3c2b7;
+  --chart-ink:#0b0b0b; --chart-ink-2:#52514e; --chart-muted:#898781;
+  --u-color:#2a78d6; --v-color:#c65a25; --s-color:#158f63; --dir-color:#7a5cd6;
+  --seq-1:#86b6ef; --seq-2:#5598e7; --seq-3:#2a78d6; --seq-4:#1c5cab; --seq-5:#104281;
+  --shadow: 0 1px 2px rgba(11,20,22,.06), 0 4px 14px rgba(11,20,22,.06);
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#0c1112; --surface:#161c1d; --surface-2:#1f2727; --surface-3:#283131;
+    --ink:#f1f5f5; --ink-2:#c1cccd; --ink-muted:#889a9c;
+    --line:#2b3536; --line-strong:#3d4a4b;
+    --brand:#4bb2b8; --brand-strong:#69c3c8; --brand-ink:#06181a; --brand-soft:#123338;
+    --accent:#ef8a5c; --accent-ink:#241004; --accent-soft:#3a2419;
+    --good:#0ca30c; --warning:#e0a02c; --serious:#ec835a; --critical:#e66767;
+    --chart-surface:#1a1a19; --chart-grid:#2c2c2a; --chart-axis:#484846;
+    --chart-ink:#ffffff; --chart-ink-2:#c3c2b7; --chart-muted:#8f8d86;
+    --u-color:#5b9ee8; --v-color:#e2884f; --s-color:#39b98c; --dir-color:#a596ea;
+    --seq-1:#9ec5f4; --seq-2:#6da7ec; --seq-3:#3987e5; --seq-4:#256abf; --seq-5:#184f95;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#0c1112; --surface:#161c1d; --surface-2:#1f2727; --surface-3:#283131;
+  --ink:#f1f5f5; --ink-2:#c1cccd; --ink-muted:#889a9c;
+  --line:#2b3536; --line-strong:#3d4a4b;
+  --brand:#4bb2b8; --brand-strong:#69c3c8; --brand-ink:#06181a; --brand-soft:#123338;
+  --accent:#ef8a5c; --accent-ink:#241004; --accent-soft:#3a2419;
+  --good:#0ca30c; --warning:#e0a02c; --serious:#ec835a; --critical:#e66767;
+  --chart-surface:#1a1a19; --chart-grid:#2c2c2a; --chart-axis:#484846;
+  --chart-ink:#ffffff; --chart-ink-2:#c3c2b7; --chart-muted:#8f8d86;
+  --u-color:#5b9ee8; --v-color:#e2884f; --s-color:#39b98c; --dir-color:#a596ea;
+  --seq-1:#9ec5f4; --seq-2:#6da7ec; --seq-3:#3987e5; --seq-4:#256abf; --seq-5:#184f95;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box;}
+body{background:var(--bg); color:var(--ink); font-family:var(--font-ui); margin:0;}
+h1,h2,h3,h4{font-family:var(--font-ui); font-weight:600; text-wrap:balance; margin:0;}
+p{margin:0; line-height:1.5;}
+table{border-collapse:collapse;}
+button{font-family:var(--font-ui); cursor:pointer;}
+input,select,textarea{font-family:var(--font-ui);}
+code,.mono,.num{font-family:var(--font-mono); font-variant-numeric:tabular-nums;}
+::selection{background:var(--brand); color:var(--brand-ink);}
+
+.app{display:grid; grid-template-columns:250px 1fr; grid-template-rows:auto 1fr; min-height:100vh;}
+.topbar{grid-column:1/-1; display:flex; align-items:center; gap:14px; padding:12px 20px; flex-wrap:wrap; background:var(--surface); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20;}
+.brand{display:flex; align-items:center; gap:10px; flex:0 0 auto;}
+.brand-mark{width:34px; height:34px; border-radius:9px; background:linear-gradient(155deg, var(--brand), var(--brand-strong)); display:flex; align-items:center; justify-content:center; color:var(--brand-ink); font-weight:700; font-size:15px; flex:none;}
+.brand-text{display:flex; flex-direction:column; line-height:1.15;}
+.brand-text b{font-size:15px; font-weight:700;}
+.brand-text span{font-size:11px; color:var(--ink-muted);}
+.topbar-status{margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+.pill{display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:5px 10px; border-radius:99px; background:var(--surface-2); color:var(--ink-2); border:1px solid var(--line); white-space:nowrap;}
+.pill b{color:var(--ink); font-weight:600;}
+.pill.demo{background:var(--accent-soft); color:var(--accent); border-color:transparent; font-weight:600;}
+
+.stepper{background:var(--surface); border-right:1px solid var(--line); padding:14px 10px; overflow-y:auto;}
+.step-group-label{font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); padding:12px 10px 6px;}
+.step{display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 10px; border-radius:9px; border:none; background:transparent; color:var(--ink-2); margin-bottom:2px; font-size:13.5px;}
+.step:hover{background:var(--surface-2);}
+.step.active{background:var(--brand-soft); color:var(--brand); font-weight:600;}
+.step-num{font-family:var(--font-mono); font-size:10.5px; width:30px; flex:none; color:var(--ink-muted); font-weight:600;}
+.step.active .step-num{color:var(--brand);}
+.step-dot{width:6px; height:6px; border-radius:99px; background:var(--line-strong); flex:none; margin-left:auto;}
+.step-dot.ready{background:var(--good);}
+
+main{padding:26px 30px 80px; max-width:1180px; width:100%; margin:0 auto;}
+section[data-step]{display:flex; flex-direction:column; gap:20px;}
+.head{display:flex; flex-direction:column; gap:6px; margin-bottom:4px;}
+.eyebrow{font-size:11px; letter-spacing:.07em; text-transform:uppercase; color:var(--brand); font-weight:700;}
+.head h1{font-size:23px;}
+.head .desc{color:var(--ink-2); font-size:14px; max-width:64ch;}
+
+.card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px 20px; box-shadow:var(--shadow);}
+.card h3{font-size:14px; margin-bottom:10px;}
+.card-row{display:flex; gap:16px; flex-wrap:wrap;}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+@media(max-width:760px){.grid-2{grid-template-columns:1fr;}}
+
+.formula{background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:12px 16px; font-family:var(--font-mono); font-size:13.5px; color:var(--ink); line-height:1.8;}
+.formula .k{color:var(--brand); font-weight:600;}
+.note{background:var(--brand-soft); border-radius:10px; padding:11px 14px; font-size:12.5px; color:var(--ink-2); border:1px solid transparent; display:flex; gap:9px;}
+.note b{color:var(--ink);}
+.note.warn{background:var(--accent-soft);}
+.note-icon{flex:none; font-size:14px;}
+
+label.field{display:flex; flex-direction:column; gap:5px; font-size:12.5px; color:var(--ink-2); font-weight:500;}
+input[type=text],input[type=number],select,textarea{background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:13px; color:var(--ink);}
+textarea{resize:vertical; font-family:var(--font-ui);}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--brand); outline-offset:1px;}
+
+.segmented{display:inline-flex; background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:3px; gap:2px;}
+.segmented button{border:none; background:transparent; padding:6px 12px; font-size:12.5px; border-radius:6px; color:var(--ink-2); font-weight:500;}
+.segmented button.on{background:var(--surface); color:var(--brand); box-shadow:0 1px 2px rgba(0,0,0,.1); font-weight:600;}
+
+.btn{display:inline-flex; align-items:center; gap:7px; padding:9px 15px; border-radius:9px; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink); font-size:13px; font-weight:600;}
+.btn:hover{background:var(--surface-2);}
+.btn.primary{background:var(--brand); border-color:var(--brand); color:var(--brand-ink);}
+.btn.primary:hover{background:var(--brand-strong); border-color:var(--brand-strong);}
+.btn.ghost{border-color:transparent; background:transparent;}
+.btn.small{padding:6px 11px; font-size:12px;}
+.filebtn{position:relative; overflow:hidden;}
+.filebtn input[type=file]{position:absolute; inset:0; opacity:0; cursor:pointer;}
+
+.statgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+.stat{background:var(--surface); padding:13px 15px; display:flex; flex-direction:column; gap:3px;}
+.stat .v{font-family:var(--font-mono); font-size:19px; font-weight:600;}
+.stat .l{font-size:11px; color:var(--ink-muted);}
+
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px;}
+table.data{width:100%; border-collapse:collapse; font-size:12.5px;}
+table.data th{background:var(--surface-2); text-align:right; padding:7px 10px; font-weight:600; color:var(--ink-2); position:sticky; top:0; white-space:nowrap; border-bottom:1px solid var(--line);}
+table.data th:first-child, table.data td:first-child{text-align:left;}
+table.data td{padding:6px 10px; text-align:right; font-family:var(--font-mono); border-bottom:1px solid var(--line); white-space:nowrap;}
+table.data tbody tr:nth-child(even){background:var(--surface-2);}
+table.matrix td.cell{position:relative; color:#0b0b0b; font-weight:500;}
+:root:not([data-theme="light"]) table.matrix td.cell, :root[data-theme="dark"] table.matrix td.cell{color:#fff;}
+table.matrix td.cell[data-empty="1"]{color:var(--ink-muted); font-weight:400;}
+table.matrix td.total{background:var(--surface-3); font-weight:700; color:var(--ink);}
+table.matrix th.rowh{text-align:left; background:var(--surface-2);}
+
+.tabs{display:inline-flex; gap:4px; background:var(--surface-2); border:1px solid var(--line); padding:3px; border-radius:9px;}
+.tabs button{border:none; background:transparent; padding:7px 13px; font-size:12.5px; border-radius:6px; color:var(--ink-2); font-weight:500;}
+.tabs button.on{background:var(--surface); color:var(--brand); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.08);}
+.viz-pane{display:none;}
+.viz-pane.on{display:block;}
+
+.legend{display:flex; gap:14px; flex-wrap:wrap; font-size:12px; color:var(--ink-2);}
+.legend .li{display:flex; align-items:center; gap:6px;}
+.legend .sw{width:11px; height:11px; border-radius:3px; flex:none;}
+.legend .sw.line{height:3px; border-radius:2px;}
+
+.tooltip{position:absolute; pointer-events:none; background:var(--ink); color:var(--bg); font-size:11.5px; padding:6px 9px; border-radius:7px; font-family:var(--font-mono); box-shadow:var(--shadow); z-index:30; white-space:nowrap; opacity:0; transition:opacity .08s;}
+:root:not([data-theme="light"]) .tooltip, :root[data-theme="dark"] .tooltip{background:#f1f5f5; color:#0c1112;}
+.tooltip.show{opacity:1;}
+
+.img-modal{position:fixed; inset:0; background:rgba(8,12,13,.82); z-index:100; display:flex; align-items:center; justify-content:center; padding:26px;}
+.img-modal[hidden]{display:none;}
+.img-modal-inner{background:#ffffff; border-radius:14px; padding:16px; max-width:min(1100px,92vw); max-height:90vh; display:flex; flex-direction:column; gap:12px; box-shadow:0 20px 60px rgba(0,0,0,.4);}
+.img-modal-inner img{max-width:100%; max-height:70vh; display:block; border:1px solid #e5e5e5; border-radius:4px;}
+.img-modal-bar{display:flex; justify-content:space-between; align-items:center; gap:14px;}
+.img-modal-bar p{font-size:12px; color:#444; max-width:70ch;}
+.img-modal-close{border:none; background:#eee; color:#111; width:30px; height:30px; border-radius:99px; font-size:15px; flex:none; cursor:pointer;}
+
+.rose-wrap{display:flex; gap:28px; flex-wrap:wrap; align-items:flex-start;}
+.rose-svg-holder{position:relative; flex:none;}
+.rose-side{flex:1; min-width:220px; display:flex; flex-direction:column; gap:14px;}
+.callout{background:var(--surface-2); border-radius:11px; padding:14px 16px; font-size:13px; line-height:1.6; color:var(--ink-2);}
+.callout b{color:var(--ink);}
+
+.copybox{position:relative;}
+.copybox textarea{width:100%; height:170px; font-family:var(--font-mono); font-size:11.5px; line-height:1.6; background:var(--surface-2);}
+.copybox .btn{position:absolute; top:9px; right:9px;}
+
+.report h2{font-size:16px; border-bottom:1px solid var(--line); padding-bottom:8px; margin-bottom:12px;}
+.report-section{padding:18px 0;}
+.report-section:not(:last-child){border-bottom:1px dashed var(--line);}
+.kv{display:grid; grid-template-columns:170px 1fr; gap:6px 14px; font-size:13px;}
+.kv dt{color:var(--ink-muted);}
+.kv dd{margin:0; font-family:var(--font-mono);}
+
+footer.foot{grid-column:1/-1; text-align:center; padding:22px; font-size:11.5px; color:var(--ink-muted);}
+
+@media(max-width:860px){
+  .app{grid-template-columns:1fr; grid-template-rows:auto auto 1fr;}
+  .stepper{display:flex; overflow-x:auto; border-right:none; border-bottom:1px solid var(--line); gap:4px; padding:8px 10px;}
+  .step{flex:none; margin-bottom:0;}
+  .step-group-label{display:none;}
+  main{padding:20px 16px 60px;}
+}
+@media print{
+  .stepper,.topbar,.no-print{display:none !important;}
+  section[data-step]{display:none !important;}
+  section[data-step="5"]{display:flex !important;}
+  main{max-width:100%; padding:0;}
+  body{background:#fff;}
+}
+[hidden]{display:none !important;}
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">〜</div>
+      <div class="brand-text"><b>Bengkel Arus</b><span>Modul 3 · Pengolahan Data Oseanografi, ITB</span></div>
+    </div>
+    <div class="topbar-status" id="statusPills"></div>
+  </header>
+
+  <nav class="stepper" id="stepper"></nav>
+
+  <main id="main"></main>
+
+  <footer class="foot">Bengkel Arus — mengikuti Modul 3: Pengolahan Data Arus (Konversi vektor · Averaging · Matriks Frekuensi · Visualisasi · Pelaporan). Semua perhitungan berjalan lokal di peramban Anda.</footer>
+</div>
+
+<div class="img-modal no-print" id="imgModal" hidden>
+  <div class="img-modal-inner">
+    <div class="img-modal-bar">
+      <p><b>Gambar resolusi cetak siap diunduh.</b> Klik kanan (atau tekan lama di perangkat sentuh) pada gambar → <i>"Simpan Gambar Sebagai..."</i> untuk menyimpannya sebagai file PNG.</p>
+      <button class="img-modal-close" id="imgModalClose">✕</button>
+    </div>
+    <img id="imgModalImg" alt="Grafik resolusi cetak">
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+/* ============================= UTILITIES ============================= */
+const SECTOR_NAMES = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+const SECTOR_NAMES_8 = ['N','NE','E','SE','S','SW','W','NW'];
+const deg2rad = d => d*Math.PI/180;
+const rad2deg = r => r*180/Math.PI;
+const wrap360 = d => ((d%360)+360)%360;
+
+function toUV(S, dirNav){
+  const t = deg2rad(dirNav);
+  return { u: S*Math.sin(t), v: S*Math.cos(t) };
+}
+function fromUV(u,v){
+  const S = Math.hypot(u,v);
+  const dir = wrap360(rad2deg(Math.atan2(u,v)));
+  return { S, dir };
+}
+function mean(arr){ return arr.reduce((a,b)=>a+b,0)/arr.length; }
+function std(arr){ const m=mean(arr); return Math.sqrt(mean(arr.map(x=>(x-m)*(x-m)))); }
+function fmt(n, d=2){ if(n===null||n===undefined||Number.isNaN(n)) return '—'; return n.toLocaleString('id-ID',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function fmtInt(n){ if(n===null||n===undefined||Number.isNaN(n)) return '—'; return n.toLocaleString('id-ID'); }
+function pad2(n){ return String(n).padStart(2,'0'); }
+function fmtDate(d){ if(!(d instanceof Date) || isNaN(d)) return '—'; return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
+function mulberry32(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+/* sector classification: index 0..N-1, N sectors wide 360/N deg, centered on multiples of width */
+function sectorIndex(dir, n){
+  const w = 360/n;
+  return Math.floor((wrap360(dir) + w/2)/w) % n;
+}
+/* speed class classification given ascending edges (first is 0 / min). Returns index into classes (edges.length classes: [e0,e1),[e1,e2)...,[eLast,+inf) ) */
+function classify(S, edges){
+  for(let i=edges.length-1;i>=0;i--){ if(S>=edges[i]) return i; }
+  return 0;
+}
+function classLabel(edges, i, unit){
+  if(i===edges.length-1) return `>${fmtEdge(edges[i])}`;
+  return `${fmtEdge(edges[i])}–${fmtEdge(edges[i+1])}`;
+}
+function fmtEdge(v){ return (Math.round(v*100)/100).toString(); }
+
+/* ============================= STATE ============================= */
+const State = {
+  unit: 'cm/s',
+  inputMode: 'magdir', // 'magdir' | 'uv'
+  fromConvention: false, // if true, incoming direction is FROM (wind-style) -> flip 180
+  raw: [], // {t:Date, S, dir, u, v, valid, reason}
+  meta: { source: 'demo' },
+  avgIntervalMin: 0, // 0 = no averaging
+  showNaive: false,
+  sectorCount: 16,
+  binEdges: [0,5,10,20,30],
+  reportMeta: { lokasi:'', koordinat:'', kedalaman:'', alat:'ADCP', alatLain:'', catatanQC:'' , interpretasi:''},
+  computed: null,
+};
+
+/* ============================= SAMPLE DATA ============================= */
+function generateSampleData(){
+  const rng = mulberry32(20260615);
+  const rows = [];
+  const start = new Date('2026-06-15T00:00:00');
+  const T = 745.2; // M2 semidiurnal period, minutes
+  const floodDir = 225, ebbDir = 45; // SW flood, NE ebb (per module case study)
+  const Smax = 19; // cm/s peak, tuned so 10-20 cm/s class dominates
+  for(let i=0;i<1440;i++){
+    const t = new Date(start.getTime() + i*60000);
+    const phase = 2*Math.PI*i/T;
+    const env = Math.sin(phase);
+    const noise = (rng()-0.5)*2.4;
+    let S = Math.abs(Smax*env) + Math.max(0, noise);
+    S = Math.max(0.1, S);
+    const dirNoise = (rng()-0.5)*14;
+    const dir = wrap360((env>=0 ? floodDir : ebbDir) + dirNoise);
+    rows.push({ tRaw:t, sRaw:S, dRaw:dir });
+  }
+  return rows;
+}
+
+/* ============================= CSV PARSING ============================= */
+const ALIASES = {
+  time: ['time','tanggal','waktu','datetime','date','tgl','jam'],
+  speed: ['s','speed','kecepatan','magnitude','mag','v_speed','spd'],
+  dir: ['dir','direction','arah','theta','sudut','arus'],
+  u: ['u','east','timur','komponenu'],
+  v: ['v','north','utara','komponenv'],
+};
+function normHead(h){ return h.trim().toLowerCase().replace(/[^a-z0-9]/g,''); }
+function guessColumn(headers, aliases){
+  const norm = headers.map(normHead);
+  for(const a of aliases){ const idx = norm.indexOf(a); if(idx>-1) return idx; }
+  for(let i=0;i<norm.length;i++){ if(aliases.some(a=>norm[i].includes(a))) return i; }
+  return -1;
+}
+function parseFlexDate(s){
+  s = String(s).trim();
+  let d = new Date(s.replace(' ','T'));
+  if(!isNaN(d)) return d;
+  d = new Date(s);
+  if(!isNaN(d)) return d;
+  let m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})[ T]?(\d{1,2})?:?(\d{2})?:?(\d{2})?/);
+  if(m){
+    let [_,a,b,y,hh,mm,ss] = m;
+    y = y.length===2 ? '20'+y : y;
+    d = new Date(+y, +b-1, +a, +(hh||0), +(mm||0), +(ss||0));
+    if(!isNaN(d)) return d;
+  }
+  return null;
+}
+function parseCSV(text){
+  const lines = text.split(/\r?\n/).filter(l=>l.trim().length);
+  if(!lines.length) return {rows:[], headers:[]};
+  const delim = (lines[0].match(/;/g)||[]).length > (lines[0].match(/,/g)||[]).length ? ';' : ',';
+  const headers = lines[0].split(delim).map(s=>s.trim());
+  const rows = lines.slice(1).map(l=>l.split(delim).map(s=>s.trim()));
+  return {rows, headers, delim};
+}
+
+/* ============================= PIPELINE ============================= */
+function buildRawFromColumns(rowsRaw, headers, cols){
+  const out = [];
+  let invalid = 0;
+  for(const r of rowsRaw){
+    const tStr = r[cols.time];
+    const t = parseFlexDate(tStr);
+    let S, dir, u, v;
+    if(State.inputMode==='magdir'){
+      S = parseFloat(r[cols.speed]);
+      dir = parseFloat(r[cols.dir]);
+      if(!t || isNaN(S) || isNaN(dir) || S<0){ invalid++; continue; }
+      if(State.fromConvention) dir = wrap360(dir+180);
+      const c = toUV(S,dir); u=c.u; v=c.v;
+    } else {
+      u = parseFloat(r[cols.u]);
+      v = parseFloat(r[cols.v]);
+      if(!t || isNaN(u) || isNaN(v)){ invalid++; continue; }
+      const c = fromUV(u,v); S=c.S; dir=c.dir;
+    }
+    out.push({t,S,dir,u,v});
+  }
+  out.sort((a,b)=>a.t-b.t);
+  return {data: out, invalid, totalRows: rowsRaw.length};
+}
+
+function loadSample(){
+  const rows = generateSampleData();
+  State.meta = {source:'demo', label:'Data Contoh (Sintetis) — 1 hari, interval 1 menit, pola pasut semidiurnal'};
+  State.inputMode = 'magdir';
+  State.fromConvention = false;
+  State.unit = 'cm/s';
+  const data = rows.map(r=>{
+    const c = toUV(r.sRaw, r.dRaw);
+    return {t:r.tRaw, S:r.sRaw, dir:r.dRaw, u:c.u, v:c.v};
+  });
+  State.raw = data;
+  State.qc = { totalRows: 1440, invalid: 0 };
+  State.binEdges = [0,5,10,20,30];
+  recompute();
+}
+
+function averageVectors(data, intervalMin){
+  if(!intervalMin || intervalMin<=0 || !data.length) return data.map(d=>({...d,n:1}));
+  const t0 = data[0].t.getTime();
+  const buckets = new Map();
+  for(const d of data){
+    const idx = Math.floor((d.t.getTime()-t0)/(intervalMin*60000));
+    if(!buckets.has(idx)) buckets.set(idx, []);
+    buckets.get(idx).push(d);
+  }
+  const out = [];
+  const keys = [...buckets.keys()].sort((a,b)=>a-b);
+  for(const k of keys){
+    const group = buckets.get(k);
+    const uBar = mean(group.map(g=>g.u));
+    const vBar = mean(group.map(g=>g.v));
+    const {S,dir} = fromUV(uBar,vBar);
+    const tAvg = new Date(mean(group.map(g=>g.t.getTime())));
+    // naive (wrong) average for comparison
+    const sNaive = mean(group.map(g=>g.S));
+    const dirNaive = wrap360(mean(group.map(g=>g.dir)));
+    out.push({t:tAvg, S, dir, u:uBar, v:vBar, n:group.length, sNaive, dirNaive});
+  }
+  return out;
+}
+
+function detectIntervalMinutes(data){
+  if(data.length<2) return null;
+  const diffs = [];
+  for(let i=1;i<data.length;i++) diffs.push((data[i].t-data[i-1].t)/60000);
+  diffs.sort((a,b)=>a-b);
+  return diffs[Math.floor(diffs.length/2)];
+}
+function detectGaps(data, modeInterval){
+  if(!modeInterval || data.length<2) return {count:0, totalMin:0};
+  let count=0, totalMin=0;
+  for(let i=1;i<data.length;i++){
+    const dt = (data[i].t-data[i-1].t)/60000;
+    if(dt > modeInterval*1.5){ count++; totalMin += (dt-modeInterval); }
+  }
+  return {count, totalMin};
+}
+
+function buildMatrix(data, sectorCount, edges){
+  const names = sectorCount===8 ? SECTOR_NAMES_8 : SECTOR_NAMES;
+  const nClasses = edges.length;
+  const matrix = Array.from({length:nClasses}, ()=>new Array(sectorCount).fill(0));
+  let total = 0;
+  for(const d of data){
+    const si = sectorIndex(d.dir, sectorCount);
+    const ci = classify(d.S, edges);
+    matrix[ci][si]++;
+    total++;
+  }
+  const pct = matrix.map(row=>row.map(c=> total? c/total*100 : 0));
+  const sectorTotals = new Array(sectorCount).fill(0);
+  const classTotals = new Array(nClasses).fill(0);
+  for(let ci=0; ci<nClasses; ci++) for(let si=0; si<sectorCount; si++){ sectorTotals[si]+=pct[ci][si]; classTotals[ci]+=pct[ci][si]; }
+  return {pct, sectorTotals, classTotals, total, names, edges};
+}
+
+function computeStats(data){
+  const us=data.map(d=>d.u), vs=data.map(d=>d.v), ss=data.map(d=>d.S);
+  return {
+    u:{mean:mean(us), std:std(us), max:Math.max(...us), min:Math.min(...us)},
+    v:{mean:mean(vs), std:std(vs), max:Math.max(...vs), min:Math.min(...vs)},
+    S:{mean:mean(ss), std:std(ss), max:Math.max(...ss), min:Math.min(...ss)},
+    diurnalRange: Math.max(...ss)-Math.min(...ss),
+    n: data.length,
+  };
+}
+
+function recompute(){
+  if(!State.raw.length){ State.computed=null; render(); return; }
+  const averaged = averageVectors(State.raw, State.avgIntervalMin);
+  const matrix = buildMatrix(averaged, State.sectorCount, State.binEdges);
+  const stats = computeStats(averaged);
+  const modeInterval = detectIntervalMinutes(State.raw);
+  const gaps = detectGaps(State.raw, modeInterval);
+  // dominant sector/class
+  let domSector=0, domVal=-1;
+  matrix.sectorTotals.forEach((v,i)=>{ if(v>domVal){domVal=v; domSector=i;} });
+  let domClass=0, domClassVal=-1;
+  matrix.classTotals.forEach((v,i)=>{ if(v>domClassVal){domClassVal=v; domClass=i;} });
+  State.computed = { averaged, matrix, stats, modeInterval, gaps, domSector, domVal, domClass, domClassVal };
+  render();
+}
+
+/* ============================= RENDER: SHELL ============================= */
+const STEPS = [
+  {id:0, group:'Mulai', num:'—', label:'Data & Setup'},
+  {id:1, group:'Pengolahan', num:'3.1', label:'Sensor & Konversi Vektor'},
+  {id:2, group:'Pengolahan', num:'3.2', label:'Averaging'},
+  {id:3, group:'Pengolahan', num:'3.3', label:'Matriks Frekuensi'},
+  {id:4, group:'Pengolahan', num:'3.4', label:'Visualisasi'},
+  {id:5, group:'Pengolahan', num:'3.5', label:'Interpretasi & Laporan'},
+];
+let activeStep = 0;
+let vizTab = 'timeseries';
+let charts = {};
+
+function setActiveStep(id){ activeStep = id; renderStepper(); renderMain(); }
+
+function renderStepper(){
+  const el = document.getElementById('stepper');
+  let html = '';
+  let lastGroup = null;
+  for(const s of STEPS){
+    if(s.group !== lastGroup){ html += `<div class="step-group-label">${s.group}</div>`; lastGroup = s.group; }
+    const ready = State.raw.length>0;
+    html += `<button class="step ${activeStep===s.id?'active':''}" data-step="${s.id}">
+      <span class="step-num">${s.num}</span><span>${s.label}</span>
+      <span class="step-dot ${ready?'ready':''}"></span>
+    </button>`;
+  }
+  el.innerHTML = html;
+  el.querySelectorAll('.step').forEach(b=> b.addEventListener('click', ()=> setActiveStep(+b.dataset.step)));
+}
+
+function renderStatusPills(){
+  const el = document.getElementById('statusPills');
+  if(!State.raw.length){ el.innerHTML = `<span class="pill">Belum ada data dimuat</span>`; return; }
+  const c = State.computed;
+  let html = '';
+  if(State.meta.source==='demo') html += `<span class="pill demo">Data Contoh</span>`;
+  html += `<span class="pill"><b>${fmtInt(State.raw.length)}</b>&nbsp;titik mentah</span>`;
+  if(c) html += `<span class="pill"><b>${fmtInt(c.averaged.length)}</b>&nbsp;setelah averaging</span>`;
+  html += `<span class="pill">Satuan: <b>${State.unit}</b></span>`;
+  el.innerHTML = html;
+}
+
+function render(){ renderStepper(); renderStatusPills(); renderMain(); }
+function renderMain(){
+  const el = document.getElementById('main');
+  el.innerHTML = ({0:renderStep0, 1:renderStep1, 2:renderStep2, 3:renderStep3, 4:renderStep4, 5:renderStep5})[activeStep]();
+  wireStep(activeStep);
+}
+
+/* ============================= STEP 0: DATA & SETUP ============================= */
+function renderStep0(){
+  return `
+  <section data-step="0">
+    <div class="head">
+      <span class="eyebrow">Mulai</span>
+      <h1>Data & Setup</h1>
+      <p class="desc">Muat data arus mentah (Magnitude/Direction atau u,v) dari sensor akustik (ADCP/ADV) atau current meter titik. Atau gunakan data contoh untuk mencoba alur pengolahan.</p>
+    </div>
+
+    <div class="card">
+      <h3>Sumber Data</h3>
+      <div class="card-row" style="align-items:center;">
+        <button class="btn primary" id="btnSample">↻ Muat Data Contoh</button>
+        <span class="filebtn btn"><input type="file" id="fileInput" accept=".csv,.txt"> ⇪ Unggah CSV</span>
+        ${State.raw.length ? `<span style="font-size:12.5px;color:var(--ink-muted)">${State.meta.label||State.meta.filename||''}</span>` : ''}
+      </div>
+      <div class="note" style="margin-top:12px;">
+        <span class="note-icon">ⓘ</span>
+        <span>Kolom CSV dikenali otomatis dari nama header (mis. <code>waktu, kecepatan, arah</code> atau <code>time, u, v</code>). Bila gagal terdeteksi, gunakan pemetaan manual di bawah setelah data diunggah.</span>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Mode Input</h3>
+        <div class="segmented" id="segMode">
+          <button data-v="magdir" class="${State.inputMode==='magdir'?'on':''}">Magnitude & Arah</button>
+          <button data-v="uv" class="${State.inputMode==='uv'?'on':''}">Komponen u, v</button>
+        </div>
+        <div style="height:12px"></div>
+        <h3>Satuan Kecepatan</h3>
+        <div class="segmented" id="segUnit">
+          <button data-v="cm/s" class="${State.unit==='cm/s'?'on':''}">cm/s</button>
+          <button data-v="m/s" class="${State.unit==='m/s'?'on':''}">m/s</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Konvensi Arah</h3>
+        <p style="font-size:12.5px; color:var(--ink-2); margin-bottom:10px;">Standar: arah arus menunjukkan arah <b>TUJUAN (TO)</b> aliran bergerak — berbeda dari konvensi angin/gelombang (FROM).</p>
+        <label class="field" style="flex-direction:row; align-items:center; gap:8px;">
+          <input type="checkbox" id="chkFrom" ${State.fromConvention?'checked':''}>
+          Data arah saya berkonvensi FROM (seperti angin) — balik otomatis 180°
+        </label>
+      </div>
+    </div>
+
+    ${renderFormatCard()}
+
+    <div class="card" id="mappingCard" ${!State._pendingHeaders? 'hidden':''}>
+      <h3>Pemetaan Kolom</h3>
+      <div class="card-row" id="mappingRow"></div>
+      <div style="margin-top:12px;"><button class="btn primary small" id="btnApplyMapping">Terapkan</button></div>
+    </div>
+
+    ${State.raw.length ? renderQCCard() : ''}
+  </section>`;
+}
+function renderFormatCard(){
+  const magdir = State.inputMode==='magdir';
+  const rows = magdir ? `
+    <tr><td>Waktu</td><td><code class="mono">waktu, tanggal, time, datetime, date, tgl, jam</code></td><td>Tanggal &amp; jam, mis. <code class="mono">2026-06-15 14:30</code> atau <code class="mono">15/06/2026 14:30</code></td></tr>
+    <tr><td>Kecepatan (S)</td><td><code class="mono">kecepatan, speed, magnitude, mag, s</code></td><td>Angka desimal (titik, bukan koma) dalam ${State.unit}, mis. <code class="mono">12.4</code></td></tr>
+    <tr><td>Arah (θ)</td><td><code class="mono">arah, direction, dir, theta, sudut</code></td><td>Derajat 0–360, konvensi <b>TO</b> (0°=Utara, searah jarum jam), mis. <code class="mono">225</code></td></tr>` : `
+    <tr><td>Waktu</td><td><code class="mono">waktu, tanggal, time, datetime, date, tgl, jam</code></td><td>Tanggal &amp; jam, mis. <code class="mono">2026-06-15 14:30</code> atau <code class="mono">15/06/2026 14:30</code></td></tr>
+    <tr><td>u</td><td><code class="mono">u, east, timur</code></td><td>Komponen Timur(+)/Barat(−), angka desimal dalam ${State.unit}, boleh negatif</td></tr>
+    <tr><td>v</td><td><code class="mono">v, north, utara</code></td><td>Komponen Utara(+)/Selatan(−), angka desimal dalam ${State.unit}, boleh negatif</td></tr>`;
+  const example = buildTemplateCSV(5);
+  return `
+  <div class="card">
+    <div class="card-row" style="justify-content:space-between; align-items:center;">
+      <h3 style="margin:0;">Format Kolom yang Dibutuhkan — Mode: ${magdir?'Magnitude & Arah':'Komponen u, v'}</h3>
+      <button class="btn small" id="btnCopyTemplate">⧉ Salin Contoh CSV</button>
+    </div>
+    <div class="tablewrap" style="margin-top:10px;">
+      <table class="data" style="font-size:12.5px;">
+        <thead><tr><th style="text-align:left;">Kolom</th><th style="text-align:left;">Alias nama header yang dikenali</th><th style="text-align:left;">Format nilai</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="note" style="margin-top:12px;">
+      <span class="note-icon">ⓘ</span>
+      <span>Baris pertama file harus berisi nama kolom (header). Pemisah kolom koma <code>,</code> atau titik-koma <code>;</code> dikenali otomatis. Baris dengan nilai kosong/tidak valid otomatis dibuang dan dihitung pada Ringkasan QC. Kolom tambahan di luar yang dibutuhkan akan diabaikan.</span>
+    </div>
+    <p style="font-size:12px; color:var(--ink-muted); margin-top:12px;">Contoh (${State.unit}):</p>
+    <div class="tablewrap"><pre class="mono" style="margin:0; padding:10px 14px; font-size:12px; white-space:pre; overflow-x:auto;">${example}</pre></div>
+    <div class="copybox" id="templateCopyBox" hidden style="margin-top:10px;"><textarea readonly id="templateCsvText"></textarea></div>
+  </div>`;
+}
+function buildTemplateCSV(n){
+  const magdir = State.inputMode==='magdir';
+  const scale = State.unit==='m/s' ? 0.01 : 1;
+  const header = magdir ? 'waktu,kecepatan,arah' : 'waktu,u,v';
+  const start = new Date('2026-06-15T00:00:00');
+  const sample = magdir
+    ? [[12.4,225],[15.1,231],[9.8,219],[6.2,208],[3.5,196],[8.9,214],[13.7,228],[16.0,233],[11.2,221],[7.4,210]]
+    : [[-8.7,-8.7],[-11.7,-9.5],[-6.9,-7.0],[-2.9,-5.5],[-1.0,-3.4],[-5.0,-7.4],[-10.2,-9.1],[-11.7,-10.9],[-7.4,-8.7],[-3.8,-6.4]];
+  const lines = [header];
+  for(let i=0;i<n;i++){
+    const t = new Date(start.getTime()+i*10*60000);
+    const [a,b] = sample[i%sample.length];
+    lines.push(`${fmtDate(t)},${(a*scale).toFixed(2)},${(b*scale).toFixed(2)}`);
+  }
+  return lines.join('\n');
+}
+function renderQCCard(){
+  const c = State.computed;
+  const q = State.qc || {totalRows:State.raw.length, invalid:0};
+  return `
+  <div class="card">
+    <h3>Ringkasan Kualitas Data (QC)</h3>
+    <div class="statgrid">
+      <div class="stat"><div class="v">${fmtInt(q.totalRows)}</div><div class="l">Baris terbaca</div></div>
+      <div class="stat"><div class="v">${fmtInt(State.raw.length)}</div><div class="l">Baris valid</div></div>
+      <div class="stat"><div class="v">${fmtInt(q.invalid||0)}</div><div class="l">Baris dibuang</div></div>
+      <div class="stat"><div class="v">${c && c.modeInterval? fmt(c.modeInterval,1)+' mnt':'—'}</div><div class="l">Interval sampling</div></div>
+      <div class="stat"><div class="v">${c? fmtInt(c.gaps.count):'—'}</div><div class="l">Gap terdeteksi</div></div>
+      <div class="stat"><div class="v">${State.raw.length? fmtDate(State.raw[0].t):'—'} → ${State.raw.length? fmtDate(State.raw[State.raw.length-1].t):'—'}</div><div class="l">Rentang waktu</div></div>
+    </div>
+  </div>`;
+}
+
+/* ============================= STEP 1: VEKTOR ============================= */
+function renderStep1(){
+  const has = State.raw.length>0;
+  return `
+  <section data-step="1">
+    <div class="head">
+      <span class="eyebrow">3.1 · Sensor & Konversi Vektor</span>
+      <h1>Dari Magnitude/Direction ke Komponen u, v</h1>
+      <p class="desc">Setiap analisis arus (averaging, matriks, current rose) bekerja pada komponen Cartesius <b>u</b> (Timur–Barat) dan <b>v</b> (Utara–Selatan), bukan pada magnitude &amp; arah secara langsung.</p>
+    </div>
+    <div class="formula">
+      θ<sub>rad</sub> = θ<sub>nav</sub> × π/180 &nbsp;&nbsp;(0° = Utara, searah jarum jam)<br>
+      <span class="k">u</span> = S · sin(θ<sub>rad</sub>) &nbsp;&nbsp;→ komponen Timur (+) / Barat (−)<br>
+      <span class="k">v</span> = S · cos(θ<sub>rad</sub>) &nbsp;&nbsp;→ komponen Utara (+) / Selatan (−)
+    </div>
+    <div class="note"><span class="note-icon">⚠</span><span><b>Arah arus = arah TUJUAN (TO).</b> Arus "menuju NE" berarti mengalir MENUJU Timur Laut, bukan datang darinya — kebalikan dari konvensi angin/gelombang. Ini adalah sumber kesalahan paling umum saat membandingkan data arus dengan data angin.</span></div>
+    ${has? `
+    <div class="card">
+      <div class="card-row" style="justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">Tabel Konversi (pratinjau 15 dari ${fmtInt(State.raw.length)} baris)</h3>
+        <button class="btn small" id="btnCopyConv">⧉ Salin Semua Data (CSV)</button>
+      </div>
+      <div class="tablewrap" style="margin-top:10px;"><table class="data" id="convTable"></table></div>
+      <div class="copybox" id="convCopyBox" hidden style="margin-top:10px;"><textarea readonly id="convCsvText"></textarea></div>
+    </div>` : `<div class="card"><p style="color:var(--ink-muted); font-size:13px;">Muat data pada langkah "Data & Setup" untuk melihat hasil konversi.</p></div>`}
+  </section>`;
+}
+
+/* ============================= STEP 2: AVERAGING ============================= */
+function renderStep2(){
+  const has = State.raw.length>0;
+  return `
+  <section data-step="2">
+    <div class="head">
+      <span class="eyebrow">3.2 · Teknik Averaging</span>
+      <h1>Perata-rataan Vektor yang Benar</h1>
+      <p class="desc">Rata-ratakan komponen <b>u, v</b> terlebih dahulu (perata-rataan temporal / burst), baru hitung magnitude &amp; arah dari hasil rata-rata. Merata-ratakan S dan θ secara langsung menyebabkan bias, terutama saat arah bervariasi.</p>
+    </div>
+    <div class="formula">
+      ū = (1/n) Σ u<sub>i</sub> &nbsp;&nbsp; v̄ = (1/n) Σ v<sub>i</sub><br>
+      <span class="k">S̄</span> = √(ū² + v̄²) &nbsp;&nbsp; <span class="k">θ̄</span> = atan2(ū, v̄) mod 360°
+    </div>
+    <div class="card">
+      <h3>Interval Perata-rataan (Burst)</h3>
+      <div class="segmented" id="segAvg">
+        <button data-v="0" class="${State.avgIntervalMin===0?'on':''}">Tanpa averaging</button>
+        <button data-v="10" class="${State.avgIntervalMin===10?'on':''}">10 menit</button>
+        <button data-v="30" class="${State.avgIntervalMin===30?'on':''}">30 menit</button>
+        <button data-v="60" class="${State.avgIntervalMin===60?'on':''}">1 jam</button>
+        <button data-v="180" class="${State.avgIntervalMin===180?'on':''}">3 jam</button>
+      </div>
+      ${has && State.computed ? `<p style="margin-top:12px; font-size:12.5px; color:var(--ink-2);">Hasil: <b class="num">${fmtInt(State.raw.length)}</b> titik mentah → <b class="num">${fmtInt(State.computed.averaged.length)}</b> titik setelah averaging.</p>` : ''}
+    </div>
+    ${has && State.computed ? `
+    <div class="card">
+      <div class="card-row" style="justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">Data Hasil Averaging (waktu, n, S, θ, u, v)</h3>
+        <button class="btn small" id="btnCopyAvg">⧉ Salin Semua Data (CSV)</button>
+      </div>
+      <p style="font-size:12px; color:var(--ink-muted); margin-top:6px;">${fmtInt(State.computed.averaged.length)} baris — ini adalah data yang dipakai pada matriks frekuensi, visualisasi, dan laporan.</p>
+      <div class="copybox" id="avgCopyBox" hidden style="margin-top:10px;"><textarea readonly id="avgCsvText"></textarea></div>
+    </div>` : ''}
+    ${has? `
+    <div class="card">
+      <div class="card-row" style="justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">Perbandingan: Rata-rata Vektor (Benar) vs Rata-rata Langsung (Bias)</h3>
+        <label style="font-size:12px; display:flex; gap:6px; align-items:center; color:var(--ink-2);">
+          <input type="checkbox" id="chkNaive" ${State.showNaive?'checked':''}> Tampilkan
+        </label>
+      </div>
+      ${State.showNaive ? `<div class="tablewrap" style="margin-top:10px;"><table class="data" id="naiveTable"></table></div>
+      <p style="font-size:11.5px; color:var(--ink-muted); margin-top:8px;">Baris yang disorot menunjukkan selisih arah &gt;15° antara metode vektor (benar) dan rata-rata langsung (bias) — biasanya terjadi saat arah berputar melewati batas 0°/360° dalam satu jendela averaging.</p>` : ''}
+    </div>` : ''}
+  </section>`;
+}
+
+/* ============================= STEP 3: MATRIKS ============================= */
+function renderStep3(){
+  const has = State.raw.length>0;
+  return `
+  <section data-step="3">
+    <div class="head">
+      <span class="eyebrow">3.3 · Matriks Distribusi Frekuensi</span>
+      <h1>Tabel Silang Kecepatan vs Arah Tujuan</h1>
+      <p class="desc">Menyusun persentase kemunculan kombinasi sektor arah &amp; kelas kecepatan — dasar untuk Current Rose pada langkah berikutnya.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Jumlah Sektor Arah</h3>
+        <div class="segmented" id="segSector">
+          <button data-v="16" class="${State.sectorCount===16?'on':''}">16 sektor (22.5°)</button>
+          <button data-v="8" class="${State.sectorCount===8?'on':''}">8 sektor (45°)</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Batas Kelas Kecepatan (${State.unit})</h3>
+        <input type="text" id="binEdgesInput" value="${State.binEdges.join(', ')}" placeholder="0, 5, 10, 20, 30">
+      </div>
+    </div>
+    ${has && State.computed ? `
+    <div class="card">
+      <div class="card-row" style="justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">Matriks (%) — total ${fmtInt(State.computed.matrix.total)} titik</h3>
+        <button class="btn small" id="btnCopyMatrix">⧉ Salin sebagai CSV</button>
+      </div>
+      <div class="tablewrap" style="margin-top:10px;"><table class="data matrix" id="matrixTable"></table></div>
+    </div>
+    <div class="copybox no-print" id="matrixCopyBox" hidden><textarea readonly id="matrixCsvText"></textarea></div>
+    ` : ''}
+  </section>`;
+}
+
+/* ============================= STEP 4: VISUALISASI ============================= */
+function renderStep4(){
+  const has = State.raw.length>0;
+  if(!has) return `<section data-step="4"><div class="head"><span class="eyebrow">3.4 · Visualisasi</span><h1>Visualisasi Data Arus</h1></div><div class="card"><p style="color:var(--ink-muted); font-size:13px;">Muat data terlebih dahulu.</p></div></section>`;
+  return `
+  <section data-step="4">
+    <div class="head">
+      <span class="eyebrow">3.4 · Visualisasi Data Arus</span>
+      <h1>Tiga Metode Membaca Pola Arus</h1>
+      <p class="desc">Time series untuk melihat tren, quiver/stick plot untuk pola flood/ebb, dan Current Rose sebagai ringkasan statistik arah dominan.</p>
+    </div>
+    <div class="tabs" id="vizTabs">
+      <button data-v="timeseries" class="${vizTab==='timeseries'?'on':''}">Time Series</button>
+      <button data-v="quiver" class="${vizTab==='quiver'?'on':''}">Quiver / Stick Plot</button>
+      <button data-v="rose" class="${vizTab==='rose'?'on':''}">Current Rose</button>
+    </div>
+
+    <div class="viz-pane ${vizTab==='timeseries'?'on':''}" id="paneTimeseries" style="display:${vizTab==='timeseries'?'flex':'none'}; flex-direction:column; gap:20px;">
+      <div class="card">
+        <div class="card-row" style="justify-content:space-between; align-items:flex-start;">
+          <div>
+            <h3 style="margin-bottom:4px;">Grafik 1 — Komponen Kecepatan u, v</h3>
+            <div class="legend">
+              <span class="li"><span class="sw line" style="background:var(--u-color)"></span>u (Timur–Barat)</span>
+              <span class="li"><span class="sw line" style="background:var(--v-color)"></span>v (Utara–Selatan)</span>
+            </div>
+          </div>
+          <button class="btn small no-print" id="btnPrintUV">🖶 Buka Versi Cetak (PNG)</button>
+        </div>
+        <div style="position:relative; height:320px; margin-top:12px;"><canvas id="tsUVCanvas"></canvas></div>
+        <p style="font-size:11px; color:var(--ink-muted); margin-top:8px;">u dan v digambar pada satu sumbu yang sama (satuan identik) agar perbandingan magnitudo antar komponen tidak menyesatkan.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-row" style="justify-content:space-between; align-items:flex-start;">
+          <div>
+            <h3 style="margin-bottom:4px;">Grafik 2 — Magnitude (S) & Arah Arus (θ)</h3>
+            <div class="legend">
+              <span class="li"><span class="sw line" style="background:var(--s-color)"></span>S — sumbu kiri</span>
+              <span class="li"><span class="sw" style="background:var(--dir-color); border-radius:50%;"></span>θ — sumbu kanan (titik)</span>
+            </div>
+          </div>
+          <button class="btn small no-print" id="btnPrintSDir">🖶 Buka Versi Cetak (PNG)</button>
+        </div>
+        <div style="position:relative; height:320px; margin-top:12px;"><canvas id="tsSDirCanvas"></canvas></div>
+        <p style="font-size:11px; color:var(--ink-muted); margin-top:8px;">θ digambar sebagai titik (bukan garis) karena bersifat sirkular (0°=360°) — garis penghubung akan menampilkan lompatan semu saat arah melewati batas 0°/360°.</p>
+      </div>
+    </div>
+
+    <div class="card viz-pane ${vizTab==='quiver'?'on':''}" id="paneQuiver">
+      <div class="card-row" style="justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+        <span style="font-size:12.5px; color:var(--ink-2);">Vektor arus sepanjang waktu (x = waktu) — panjang ∝ kecepatan (lihat skala vektor di kanan atas), arah panah = arah TO.</span>
+        <div class="card-row" style="align-items:center;">
+          <label style="font-size:12px; display:flex; gap:8px; align-items:center; color:var(--ink-2);">Kepadatan
+            <input type="range" id="quiverDensity" min="30" max="300" step="10" value="120">
+          </label>
+          <button class="btn small no-print" id="btnPrintQuiver">🖶 Buka Versi Cetak (PNG)</button>
+        </div>
+      </div>
+      <div style="position:relative; height:280px;"><canvas id="quiverCanvas"></canvas><div class="tooltip" id="quiverTip"></div></div>
+    </div>
+
+    <div class="card viz-pane ${vizTab==='rose'?'on':''}" id="paneRose">
+      <div class="card-row" style="justify-content:flex-end; margin-bottom:6px;">
+        <button class="btn small no-print" id="btnPrintRose">🖶 Buka Versi Cetak (PNG)</button>
+      </div>
+      <div class="rose-wrap">
+        <div class="rose-svg-holder"><div id="roseSvgHolder"></div><div class="tooltip" id="roseTip"></div></div>
+        <div class="rose-side">
+          <div class="legend" id="roseLegend"></div>
+          <div class="callout" id="roseCallout"></div>
+        </div>
+      </div>
+    </div>
+  </section>`;
+}
+
+/* ============================= STEP 5: LAPORAN ============================= */
+function renderStep5(){
+  const has = State.raw.length>0;
+  if(!has) return `<section data-step="5"><div class="head"><span class="eyebrow">3.5 · Interpretasi & Pelaporan</span><h1>Laporan Analisis Arus</h1></div><div class="card"><p style="color:var(--ink-muted); font-size:13px;">Muat data terlebih dahulu.</p></div></section>`;
+  const c = State.computed;
+  const m = State.reportMeta;
+  const autoInterp = buildAutoInterpretation();
+  return `
+  <section data-step="5">
+    <div class="head">
+      <span class="eyebrow">3.5 · Interpretasi & Pelaporan</span>
+      <h1>Laporan Analisis Arus</h1>
+      <p class="desc">Tiga komponen wajib: metadata &amp; skenario pengukuran, quality control &amp; log, serta hasil &amp; statistik.</p>
+    </div>
+
+    <div class="card no-print">
+      <h3>1. Metadata & Skenario Pengukuran</h3>
+      <div class="grid-2">
+        <label class="field">Lokasi<input type="text" id="mLokasi" value="${m.lokasi}" placeholder="mis. Muara Sungai, Cirebon"></label>
+        <label class="field">Koordinat<input type="text" id="mKoordinat" value="${m.koordinat}" placeholder="mis. -6.7000, 108.5500"></label>
+        <label class="field">Kedalaman alat (m)<input type="text" id="mKedalaman" value="${m.kedalaman}" placeholder="mis. 5"></label>
+        <label class="field">Tipe alat
+          <select id="mAlat">
+            <option value="ADCP" ${m.alat==='ADCP'?'selected':''}>ADCP</option>
+            <option value="ADV" ${m.alat==='ADV'?'selected':''}>ADV</option>
+            <option value="Current Meter" ${m.alat==='Current Meter'?'selected':''}>Current Meter (rotor)</option>
+            <option value="Lainnya" ${m.alat==='Lainnya'?'selected':''}>Lainnya</option>
+          </select>
+        </label>
+      </div>
+      <div style="height:10px"></div>
+      <label class="field">Catatan QC tambahan (mis. kapal melintas, gangguan alat)<textarea id="mCatatan" rows="2">${m.catatanQC}</textarea></label>
+    </div>
+
+    <div class="card report" id="reportView">
+      <div class="report-section">
+        <h2>1. Metadata & Skenario Pengukuran</h2>
+        <dl class="kv">
+          <dt>Lokasi</dt><dd>${m.lokasi||'—'}</dd>
+          <dt>Koordinat</dt><dd>${m.koordinat||'—'}</dd>
+          <dt>Kedalaman alat</dt><dd>${m.kedalaman? m.kedalaman+' m':'—'}</dd>
+          <dt>Tipe alat</dt><dd>${m.alat}</dd>
+          <dt>Periode perekaman</dt><dd>${fmtDate(State.raw[0].t)} → ${fmtDate(State.raw[State.raw.length-1].t)}</dd>
+          <dt>Interval sampling</dt><dd>${c.modeInterval? fmt(c.modeInterval,1)+' menit':'—'}</dd>
+          <dt>Interval averaging</dt><dd>${State.avgIntervalMin? State.avgIntervalMin+' menit':'Tanpa averaging'}</dd>
+        </dl>
+      </div>
+      <div class="report-section">
+        <h2>2. Quality Control & Log</h2>
+        <dl class="kv">
+          <dt>Baris terbaca</dt><dd>${fmtInt((State.qc&&State.qc.totalRows)||State.raw.length)}</dd>
+          <dt>Baris valid</dt><dd>${fmtInt(State.raw.length)}</dd>
+          <dt>Baris dibuang</dt><dd>${fmtInt((State.qc&&State.qc.invalid)||0)}</dd>
+          <dt>Gap terdeteksi</dt><dd>${fmtInt(c.gaps.count)} (± ${fmt(c.gaps.totalMin,0)} menit hilang)</dd>
+        </dl>
+        ${m.catatanQC? `<p style="margin-top:8px; font-size:13px; color:var(--ink-2);">${m.catatanQC}</p>`:''}
+      </div>
+      <div class="report-section">
+        <h2>3. Hasil & Statistik</h2>
+        <div class="statgrid" style="margin-bottom:14px;">
+          <div class="stat"><div class="v">${fmt(c.stats.S.mean,2)}</div><div class="l">S̄ rata-rata (${State.unit})</div></div>
+          <div class="stat"><div class="v">${fmt(c.stats.S.std,2)}</div><div class="l">Std. dev S</div></div>
+          <div class="stat"><div class="v">${fmt(c.stats.S.max,2)}</div><div class="l">S maksimum</div></div>
+          <div class="stat"><div class="v">${fmt(c.stats.S.min,2)}</div><div class="l">S minimum</div></div>
+          <div class="stat"><div class="v">${fmt(c.stats.diurnalRange,2)}</div><div class="l">Rentang diurnal S</div></div>
+          <div class="stat"><div class="v">${fmt(c.stats.u.mean,2)} / ${fmt(c.stats.v.mean,2)}</div><div class="l">ū / v̄</div></div>
+        </div>
+        <p style="font-size:12.5px; color:var(--ink-muted); margin-bottom:6px;">Sektor dominan: <b style="color:var(--ink)">${c.matrix.names[c.domSector]}</b> (${fmt(c.domVal,1)}%) · Kelas kecepatan dominan: <b style="color:var(--ink)">${classLabel(c.matrix.edges,c.domClass)} ${State.unit}</b> (${fmt(c.domClassVal,1)}%)</p>
+        <label class="field no-print" style="margin-top:10px;">Interpretasi (dapat diedit)
+          <textarea id="mInterp" rows="4">${m.interpretasi || autoInterp}</textarea>
+        </label>
+        <p id="interpDisplay" style="margin-top:6px; font-size:13.5px; line-height:1.6;">${(m.interpretasi||autoInterp).replace(/\n/g,'<br>')}</p>
+      </div>
+    </div>
+
+    <div class="card no-print">
+      <div class="card-row" style="justify-content:space-between; align-items:center;">
+        <h3 style="margin:0;">Ekspor</h3>
+        <div class="card-row">
+          <button class="btn small" id="btnCopyReport">⧉ Salin Laporan (Teks)</button>
+          <button class="btn small" id="btnPrint">🖶 Cetak / Simpan PDF</button>
+        </div>
+      </div>
+      <div class="copybox" id="reportCopyBox" hidden style="margin-top:10px;"><textarea readonly id="reportText"></textarea></div>
+    </div>
+  </section>`;
+}
+
+function buildAutoInterpretation(){
+  const c = State.computed;
+  if(!c) return '';
+  const domName = c.matrix.names[c.domSector];
+  const oppIdx = (c.domSector + Math.floor(State.sectorCount/2)) % State.sectorCount;
+  const oppName = c.matrix.names[oppIdx];
+  const oppVal = c.matrix.sectorTotals[oppIdx];
+  return `Data menunjukkan pola arus bimodal khas pasang surut. Arus dominan mengalir menuju sektor ${domName} (${fmt(c.domVal,1)}% dari seluruh data), dengan arus berlawanan menuju ${oppName} (${fmt(oppVal,1)}%) — konsisten dengan siklus flood/ebb. Kelas kecepatan yang paling sering muncul adalah ${classLabel(c.matrix.edges,c.domClass)} ${State.unit} (${fmt(c.domClassVal,1)}% dari data). Kecepatan rata-rata tercatat ${fmt(c.stats.S.mean,2)} ${State.unit} (std. dev ${fmt(c.stats.S.std,2)}, maksimum ${fmt(c.stats.S.max,2)} ${State.unit}).`;
+}
+
+/* ============================= WIRING ============================= */
+function wireStep(step){
+  if(step===0){
+    document.getElementById('btnSample').onclick = loadSample;
+    document.getElementById('fileInput').onchange = handleFile;
+    document.getElementById('segMode').querySelectorAll('button').forEach(b=> b.onclick = ()=>{ State.inputMode=b.dataset.v; renderMain(); });
+    document.getElementById('segUnit').querySelectorAll('button').forEach(b=> b.onclick = ()=>{ convertUnit(b.dataset.v); });
+    document.getElementById('chkFrom').onchange = e=>{ State.fromConvention = e.target.checked; if(State.raw.length) reflipConvention(); };
+    const btnTpl = document.getElementById('btnCopyTemplate');
+    if(btnTpl) btnTpl.onclick = ()=> showCopyBox('templateCopyBox','templateCsvText', buildTemplateCSV(20));
+    if(State._pendingHeaders) wireMapping();
+  }
+  if(step===1 && State.raw.length){ renderConvTable(); document.getElementById('btnCopyConv').onclick = copyConvertedCsv; }
+  if(step===2){
+    document.getElementById('segAvg').querySelectorAll('button').forEach(b=> b.onclick = ()=>{ State.avgIntervalMin=+b.dataset.v; recompute(); });
+    const chk = document.getElementById('chkNaive');
+    if(chk) chk.onchange = e=>{ State.showNaive = e.target.checked; renderMain(); };
+    if(State.showNaive) renderNaiveTable();
+    const btnAvg = document.getElementById('btnCopyAvg');
+    if(btnAvg) btnAvg.onclick = copyAveragedCsv;
+  }
+  if(step===3){
+    document.getElementById('segSector').querySelectorAll('button').forEach(b=> b.onclick = ()=>{ State.sectorCount=+b.dataset.v; recompute(); });
+    document.getElementById('binEdgesInput').onchange = e=>{
+      const vals = e.target.value.split(',').map(s=>parseFloat(s.trim())).filter(v=>!isNaN(v)).sort((a,b)=>a-b);
+      if(vals.length>=2){ State.binEdges = vals; recompute(); }
+    };
+    if(State.raw.length) renderMatrixTable();
+    const btn = document.getElementById('btnCopyMatrix');
+    if(btn) btn.onclick = copyMatrixCsv;
+  }
+  if(step===4 && State.raw.length){
+    document.getElementById('vizTabs').querySelectorAll('button').forEach(b=> b.onclick = ()=>{ vizTab=b.dataset.v; renderMain(); });
+    if(vizTab==='timeseries'){
+      drawUVSeries(); drawSDirSeries();
+      document.getElementById('btnPrintUV').onclick = ()=> openPrintImage('uv');
+      document.getElementById('btnPrintSDir').onclick = ()=> openPrintImage('sdir');
+    }
+    if(vizTab==='quiver'){
+      drawQuiver(); document.getElementById('quiverDensity').oninput = drawQuiver;
+      document.getElementById('btnPrintQuiver').onclick = ()=> openPrintImage('quiver');
+    }
+    if(vizTab==='rose'){
+      drawRose();
+      document.getElementById('btnPrintRose').onclick = ()=> openPrintImage('rose');
+    }
+  }
+  if(step===5 && State.raw.length){
+    ['mLokasi','mKoordinat','mKedalaman','mAlat','mCatatan','mInterp'].forEach(id=>{
+      const elx = document.getElementById(id);
+      if(!elx) return;
+      elx.oninput = ()=>{
+        const map = {mLokasi:'lokasi', mKoordinat:'koordinat', mKedalaman:'kedalaman', mAlat:'alat', mCatatan:'catatanQC', mInterp:'interpretasi'};
+        State.reportMeta[map[id]] = elx.value;
+        if(id!=='mInterp'){ renderMain(); } else { document.getElementById('interpDisplay').innerHTML = elx.value.replace(/\n/g,'<br>'); }
+      };
+    });
+    document.getElementById('btnCopyReport').onclick = copyReportText;
+    document.getElementById('btnPrint').onclick = ()=>{ try{ window.print(); }catch(e){ alert('Cetak tidak tersedia di pratinjau ini — gunakan "Salin Laporan" lalu tempel ke dokumen.'); } };
+  }
+}
+
+function handleFile(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = evt=>{
+    const {rows, headers} = parseCSV(evt.target.result);
+    if(!headers.length){ alert('File CSV tidak terbaca.'); return; }
+    const cols = {
+      time: guessColumn(headers, ALIASES.time),
+      speed: guessColumn(headers, ALIASES.speed),
+      dir: guessColumn(headers, ALIASES.dir),
+      u: guessColumn(headers, ALIASES.u),
+      v: guessColumn(headers, ALIASES.v),
+    };
+    // Auto-deteksi mode input dari header CSV, supaya kartu pemetaan langsung
+    // menampilkan field yang benar (u/v vs S/arah) — mencegah kolom termapping
+    // salah secara diam-diam jika mode sebelumnya (misalnya sisa dari Data Contoh) tidak cocok dengan file yang diunggah.
+    const hasUV = cols.u>-1 && cols.v>-1;
+    const hasMagDir = cols.speed>-1 && cols.dir>-1;
+    if(hasUV && !hasMagDir) State.inputMode = 'uv';
+    else if(hasMagDir && !hasUV) State.inputMode = 'magdir';
+    State._pendingHeaders = headers;
+    State._pendingRows = rows;
+    State._pendingCols = cols;
+    State.meta = {source:'upload', filename: file.name};
+    renderMain();
+  };
+  reader.readAsText(file);
+}
+
+function wireMapping(){
+  const headers = State._pendingHeaders;
+  const cols = State._pendingCols;
+  const need = State.inputMode==='magdir' ? [['time','Waktu'],['speed','Kecepatan (S)'],['dir','Arah (θ)']] : [['time','Waktu'],['u','Komponen u'],['v','Komponen v']];
+  const row = document.getElementById('mappingRow');
+  row.innerHTML = need.map(([key,label])=>`
+    <label class="field">${label}
+      <select data-key="${key}">
+        ${cols[key]===-1 ? `<option value="-1" selected>— pilih kolom —</option>` : ''}
+        ${headers.map((h,i)=>`<option value="${i}" ${cols[key]===i?'selected':''}>${h}</option>`).join('')}
+      </select>
+    </label>`).join('');
+  document.getElementById('btnApplyMapping').onclick = ()=>{
+    const sel = {};
+    row.querySelectorAll('select').forEach(s=> sel[s.dataset.key] = +s.value);
+    if(Object.values(sel).some(v=>v===-1)){ alert('Lengkapi dulu pemetaan kolom yang masih kosong ("— pilih kolom —") sebelum menerapkan.'); return; }
+    const {data, invalid, totalRows} = buildRawFromColumns(State._pendingRows, headers, sel);
+    if(!data.length){ alert('Tidak ada baris valid ditemukan. Periksa pemetaan kolom.'); return; }
+    State.raw = data;
+    State.qc = {totalRows, invalid};
+    State._pendingHeaders = null;
+    recompute();
+  };
+}
+
+function convertUnit(newUnit){
+  if(newUnit===State.unit) return;
+  const factor = newUnit==='m/s' ? 0.01 : 100;
+  State.raw = State.raw.map(d=>({...d, S:d.S*factor, u:d.u*factor, v:d.v*factor}));
+  State.binEdges = State.binEdges.map(e=> Math.round(e*factor*1000)/1000);
+  State.unit = newUnit;
+  recompute();
+}
+function reflipConvention(){
+  State.raw = State.raw.map(d=>{ const dir = wrap360(d.dir+180); const c = toUV(d.S,dir); return {...d, dir, u:c.u, v:c.v}; });
+  recompute();
+}
+
+/* ============================= TABLE RENDERERS ============================= */
+function renderConvTable(){
+  const t = document.getElementById('convTable');
+  const rows = State.raw.slice(0,15);
+  t.innerHTML = `<thead><tr><th>Waktu</th><th>S (${State.unit})</th><th>θ (°TO)</th><th>u</th><th>v</th></tr></thead>
+  <tbody>${rows.map(r=>`<tr><td>${fmtDate(r.t)}</td><td>${fmt(r.S,2)}</td><td>${fmt(r.dir,1)}</td><td>${fmt(r.u,2)}</td><td>${fmt(r.v,2)}</td></tr>`).join('')}</tbody>`;
+}
+function copyConvertedCsv(){
+  const header = `waktu,S_${State.unit.replace('/','')},theta_deg,u,v`;
+  const lines = [header, ...State.raw.map(r=>`${fmtDate(r.t)},${r.S.toFixed(3)},${r.dir.toFixed(2)},${r.u.toFixed(3)},${r.v.toFixed(3)}`)];
+  showCopyBox('convCopyBox','convCsvText', lines.join('\n'));
+}
+function copyAveragedCsv(){
+  const c = State.computed;
+  const header = `waktu,n,S_${State.unit.replace('/','')},theta_deg,u,v`;
+  const lines = [header, ...c.averaged.map(r=>`${fmtDate(r.t)},${r.n||1},${r.S.toFixed(3)},${r.dir.toFixed(2)},${r.u.toFixed(3)},${r.v.toFixed(3)}`)];
+  showCopyBox('avgCopyBox','avgCsvText', lines.join('\n'));
+}
+function renderNaiveTable(){
+  const t = document.getElementById('naiveTable');
+  if(!t) return;
+  const rows = State.computed.averaged.slice(0,10);
+  t.innerHTML = `<thead><tr><th>Waktu</th><th>n</th><th>S̄ vektor</th><th>θ̄ vektor</th><th>S̄ naif</th><th>θ̄ naif</th><th>Δθ</th></tr></thead>
+  <tbody>${rows.map(r=>{
+    if(r.sNaive===undefined) return `<tr><td>${fmtDate(r.t)}</td><td>${r.n||1}</td><td>${fmt(r.S,2)}</td><td>${fmt(r.dir,1)}</td><td colspan="3" style="text-align:center;color:var(--ink-muted)">tanpa averaging</td></tr>`;
+    let dθ = Math.abs(r.dir-r.dirNaive); if(dθ>180) dθ=360-dθ;
+    const warn = dθ>15;
+    return `<tr style="${warn?'background:var(--accent-soft)':''}"><td>${fmtDate(r.t)}</td><td>${r.n}</td><td>${fmt(r.S,2)}</td><td>${fmt(r.dir,1)}</td><td>${fmt(r.sNaive,2)}</td><td>${fmt(r.dirNaive,1)}</td><td>${fmt(dθ,1)}°</td></tr>`;
+  }).join('')}</tbody>`;
+}
+function renderMatrixTable(){
+  const t = document.getElementById('matrixTable');
+  if(!t || !State.computed) return;
+  const {pct, sectorTotals, classTotals, names, edges, total} = State.computed.matrix;
+  const maxCell = Math.max(...pct.flat(), 0.001);
+  const seqSteps = ['var(--seq-1)','var(--seq-2)','var(--seq-3)','var(--seq-4)','var(--seq-5)'];
+  function shade(v){
+    const t2 = Math.min(1, v/maxCell);
+    const alpha = 0.08 + t2*0.85;
+    return `background:color-mix(in srgb, var(--brand) ${Math.round(alpha*100)}%, var(--surface));`;
+  }
+  let head = `<thead><tr><th class="rowh">Kelas (${State.unit})</th>${names.map(n=>`<th>${n}</th>`).join('')}<th>Total</th></tr></thead>`;
+  let body = '<tbody>' + edges.map((e,ci)=>{
+    const cells = pct[ci].map((v,si)=>`<td class="cell" data-empty="${v===0?1:0}" style="${v>0?shade(v):''}">${v>0?fmt(v,2):'–'}</td>`).join('');
+    return `<tr><th class="rowh">${classLabel(edges,ci)}</th>${cells}<td class="total">${fmt(classTotals[ci],2)}</td></tr>`;
+  }).join('') + `<tr><th class="rowh">Total</th>${sectorTotals.map(v=>`<td class="total">${fmt(v,2)}</td>`).join('')}<td class="total">100.00</td></tr></tbody>`;
+  t.innerHTML = head+body;
+}
+function copyMatrixCsv(){
+  const {pct, classTotals, names, edges} = State.computed.matrix;
+  let csv = 'Kelas,' + names.join(',') + ',Total\n';
+  edges.forEach((e,ci)=>{ csv += classLabel(edges,ci) + ',' + pct[ci].map(v=>v.toFixed(2)).join(',') + ',' + classTotals[ci].toFixed(2) + '\n'; });
+  showCopyBox('matrixCopyBox','matrixCsvText', csv);
+}
+function copyReportText(){
+  const c = State.computed, m = State.reportMeta;
+  const text = `LAPORAN ANALISIS ARUS — Bengkel Arus\n`+
+`====================================\n\n`+
+`1. METADATA & SKENARIO PENGUKURAN\n`+
+`Lokasi: ${m.lokasi||'-'}\nKoordinat: ${m.koordinat||'-'}\nKedalaman alat: ${m.kedalaman||'-'} m\nTipe alat: ${m.alat}\n`+
+`Periode perekaman: ${fmtDate(State.raw[0].t)} s/d ${fmtDate(State.raw[State.raw.length-1].t)}\n`+
+`Interval sampling: ${c.modeInterval?fmt(c.modeInterval,1)+' menit':'-'}\nInterval averaging: ${State.avgIntervalMin? State.avgIntervalMin+' menit':'Tanpa averaging'}\n\n`+
+`2. QUALITY CONTROL & LOG\n`+
+`Baris terbaca: ${(State.qc&&State.qc.totalRows)||State.raw.length}\nBaris valid: ${State.raw.length}\nBaris dibuang: ${(State.qc&&State.qc.invalid)||0}\nGap terdeteksi: ${c.gaps.count} (±${fmt(c.gaps.totalMin,0)} menit)\n`+
+(m.catatanQC?`Catatan: ${m.catatanQC}\n`:'')+`\n`+
+`3. HASIL & STATISTIK\n`+
+`S rata-rata: ${fmt(c.stats.S.mean,2)} ${State.unit} (std ${fmt(c.stats.S.std,2)}, maks ${fmt(c.stats.S.max,2)}, min ${fmt(c.stats.S.min,2)})\n`+
+`u rata-rata: ${fmt(c.stats.u.mean,2)} ${State.unit} | v rata-rata: ${fmt(c.stats.v.mean,2)} ${State.unit}\n`+
+`Rentang diurnal S: ${fmt(c.stats.diurnalRange,2)} ${State.unit}\n`+
+`Sektor dominan: ${c.matrix.names[c.domSector]} (${fmt(c.domVal,1)}%)\nKelas kecepatan dominan: ${classLabel(c.matrix.edges,c.domClass)} ${State.unit} (${fmt(c.domClassVal,1)}%)\n\n`+
+`Interpretasi:\n${m.interpretasi || buildAutoInterpretation()}\n`;
+  showCopyBox('reportCopyBox','reportText', text);
+}
+function showCopyBox(boxId, taId, text){
+  const box = document.getElementById(boxId);
+  const ta = document.getElementById(taId);
+  ta.value = text;
+  box.hidden = false;
+  ta.focus(); ta.select();
+  try{ navigator.clipboard.writeText(text); }catch(e){}
+  try{ document.execCommand('copy'); }catch(e){}
+}
+
+/* ============================= CHARTS ============================= */
+function cssVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+function fmtTickTime(ms, spanMs){
+  const d = new Date(ms);
+  if(spanMs > 1000*60*60*36) return `${pad2(d.getMonth()+1)}-${pad2(d.getDate())} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+const DAY_MS = 86400000;
+/* Shared tick generator so every time-axis chart (kedua time series & quiver) lines up on
+   the same tick positions. Multi-day data: at least one tick per tanggal (thinned only if
+   there would be more than ~40). Sub-day data: nice hour steps. */
+function computeTimeTicks(t0, t1){
+  const spanMs = Math.max(1, t1-t0);
+  if(spanMs >= 1.5*DAY_MS){
+    const start = new Date(t0); start.setHours(0,0,0,0);
+    let dayCount = Math.ceil(spanMs/DAY_MS)+1;
+    let step = dayCount > 40 ? Math.ceil(dayCount/40) : 1;
+    const ticks = [];
+    for(let t=start.getTime(), i=0; t<=t1+DAY_MS && i<400; t+=step*DAY_MS, i++){
+      if(t>=t0-DAY_MS*0.02 && t<=t1) ticks.push(Math.max(t,t0));
+    }
+    if(!ticks.length || ticks[0]-t0>3600000) ticks.unshift(t0);
+    if(t1-ticks[ticks.length-1]>3600000) ticks.push(t1);
+    return { ticks:[...new Set(ticks)].sort((a,b)=>a-b), daily:true };
+  }
+  const hours = spanMs/3600000;
+  const stepH = hours<=6?1 : hours<=12?2 : hours<=18?3 : 4;
+  const start = new Date(t0); start.setMinutes(0,0,0);
+  let startH = Math.ceil(start.getHours()/stepH)*stepH;
+  start.setHours(startH);
+  let cur = start.getTime();
+  if(cur < t0) cur += stepH*3600000;
+  const ticks = [];
+  for(let t=cur; t<=t1; t+=stepH*3600000) ticks.push(t);
+  if(!ticks.length || ticks[0]-t0 > stepH*3600000*0.4) ticks.unshift(t0);
+  if(t1-ticks[ticks.length-1] > stepH*3600000*0.4) ticks.push(t1);
+  return { ticks:[...new Set(ticks)].sort((a,b)=>a-b), daily:false };
+}
+function tickLabel(ms, daily){
+  const d = new Date(ms);
+  return daily ? `${pad2(d.getMonth()+1)}-${pad2(d.getDate())}` : `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+function niceRefValue(maxV){
+  if(!(maxV>0)) return 1;
+  const exp = Math.floor(Math.log10(maxV));
+  const base = Math.pow(10, exp);
+  const candidates = [1,2,5,10].map(m=>m*base);
+  return candidates.filter(c=>c<=maxV*1.02).pop() || candidates[0];
+}
+function screenColors(){
+  return { u:cssVar('--u-color'), v:cssVar('--v-color'), s:cssVar('--s-color'), dir:cssVar('--dir-color'),
+    grid:cssVar('--chart-grid'), axis:cssVar('--chart-axis'), ink:cssVar('--chart-ink'), ink2:cssVar('--chart-ink-2'), muted:cssVar('--chart-muted'), bg:'transparent',
+    surface:cssVar('--chart-surface'),
+    seq1:cssVar('--seq-1'), seq2:cssVar('--seq-2'), seq3:cssVar('--seq-3'), seq4:cssVar('--seq-4'), seq5:cssVar('--seq-5') };
+}
+function printColors(){
+  return { u:'#1f5fa8', v:'#a8501f', s:'#0e7a52', dir:'#5d3fae',
+    grid:'#dcdcdc', axis:'#9a9a9a', ink:'#111111', ink2:'#333333', muted:'#5a5a5a', bg:'#ffffff',
+    surface:'#fcfcfb',
+    seq1:'#86b6ef', seq2:'#5598e7', seq3:'#2a78d6', seq4:'#1c5cab', seq5:'#104281' };
+}
+function sampleForChart(data, cap){
+  const step = Math.max(1, Math.floor(data.length/cap));
+  return data.filter((_,i)=>i%step===0);
+}
+function buildUVConfig(sampled, t0, t1, span, colors, fs){
+  const {ticks:tickVals, daily} = computeTimeTicks(t0,t1);
+  return { type:'line',
+    data:{ datasets:[
+      {label:'u (Timur–Barat)', data:sampled.map(d=>({x:d.t.getTime(), y:d.u})), borderColor:colors.u, backgroundColor:'transparent', borderWidth:fs.line, pointRadius:0, tension:0.15},
+      {label:'v (Utara–Selatan)', data:sampled.map(d=>({x:d.t.getTime(), y:d.v})), borderColor:colors.v, backgroundColor:'transparent', borderWidth:fs.line, pointRadius:0, tension:0.15},
+    ]},
+    options:{ responsive:!fs.print, maintainAspectRatio:false, animation:false, devicePixelRatio: fs.print?1:(window.devicePixelRatio||1),
+      layout:{padding:fs.print?16:4},
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        title: fs.print? {display:true, text:fs.title, color:colors.ink, font:{size:fs.title2, weight:'600'}, padding:{bottom:14}} : {display:false},
+        legend:{display:!!fs.legend, position:'top', align:'start', labels:{color:colors.ink2, boxWidth:14, boxHeight:3, font:{size:fs.tick}}},
+        tooltip:{mode:'index', intersect:false, callbacks:{ title: items=> fmtDate(new Date(items[0].parsed.x)) } }
+      },
+      scales:{
+        x:{ type:'linear', min:t0, max:t1, grid:{color:colors.grid}, border:{color:colors.axis},
+          afterBuildTicks: axis=>{ axis.ticks = tickVals.map(v=>({value:v})); },
+          ticks:{color:colors.muted, autoSkip:false, maxRotation:daily?45:0, minRotation:0, font:{size:fs.tick}, callback:v=>tickLabel(v,daily)} },
+        y:{ title:{display:true, text:`kecepatan (${State.unit})`, color:colors.ink2, font:{size:fs.axisTitle}},
+          grid:{color:colors.grid}, border:{color:colors.axis}, ticks:{color:colors.muted, font:{size:fs.tick}} }
+      }
+    }
+  };
+}
+function buildSDirConfig(sampled, t0, t1, span, colors, fs){
+  const {ticks:tickVals, daily} = computeTimeTicks(t0,t1);
+  return { type:'line',
+    data:{ datasets:[
+      {label:`S (${State.unit})`, data:sampled.map(d=>({x:d.t.getTime(), y:d.S})), borderColor:colors.s, backgroundColor:'transparent', borderWidth:fs.line+0.4, pointRadius:0, tension:0.15, yAxisID:'y'},
+      {label:'θ (derajat, TO)', data:sampled.map(d=>({x:d.t.getTime(), y:d.dir})), borderColor:colors.dir, backgroundColor:colors.dir, showLine:false, pointRadius:fs.point, pointHoverRadius:fs.point+1.5, yAxisID:'y1'},
+    ]},
+    options:{ responsive:!fs.print, maintainAspectRatio:false, animation:false, devicePixelRatio: fs.print?1:(window.devicePixelRatio||1),
+      layout:{padding:fs.print?16:4},
+      interaction:{mode:'nearest', intersect:false},
+      plugins:{
+        title: fs.print? {display:true, text:fs.title, color:colors.ink, font:{size:fs.title2, weight:'600'}, padding:{bottom:14}} : {display:false},
+        legend:{display:!!fs.legend, position:'top', align:'start', labels:{color:colors.ink2, boxWidth:14, boxHeight:3, font:{size:fs.tick}}},
+        tooltip:{callbacks:{ title: items=> fmtDate(new Date(items[0].parsed.x)) } }
+      },
+      scales:{
+        x:{ type:'linear', min:t0, max:t1, grid:{color:colors.grid}, border:{color:colors.axis},
+          afterBuildTicks: axis=>{ axis.ticks = tickVals.map(v=>({value:v})); },
+          ticks:{color:colors.muted, autoSkip:false, maxRotation:daily?45:0, minRotation:0, font:{size:fs.tick}, callback:v=>tickLabel(v,daily)} },
+        y:{ position:'left', title:{display:true, text:`S (${State.unit})`, color:colors.s, font:{size:fs.axisTitle}},
+          grid:{color:colors.grid}, border:{color:colors.axis}, ticks:{color:colors.s, font:{size:fs.tick}}, min:0 },
+        y1:{ position:'right', title:{display:true, text:'θ (°, arah TO)', color:colors.dir, font:{size:fs.axisTitle}},
+          grid:{display:false}, border:{color:colors.axis}, ticks:{color:colors.dir, font:{size:fs.tick}, stepSize:90}, min:0, max:360 }
+      }
+    }
+  };
+}
+function drawUVSeries(){
+  const ctx = document.getElementById('tsUVCanvas');
+  if(!ctx || !State.computed) return;
+  if(typeof Chart === 'undefined'){ ctx.parentElement.innerHTML = chartFailMsg(); return; }
+  const data = State.computed.averaged;
+  const sampled = sampleForChart(data, 1500);
+  const t0 = data[0].t.getTime(), t1 = data[data.length-1].t.getTime();
+  if(charts.uv) charts.uv.destroy();
+  charts.uv = new Chart(ctx, buildUVConfig(sampled, t0, t1, t1-t0, screenColors(), {line:1.6, tick:10.5, axisTitle:11, legend:true, print:false}));
+}
+function drawSDirSeries(){
+  const ctx = document.getElementById('tsSDirCanvas');
+  if(!ctx || !State.computed) return;
+  if(typeof Chart === 'undefined'){ ctx.parentElement.innerHTML = chartFailMsg(); return; }
+  const data = State.computed.averaged;
+  const sampled = sampleForChart(data, 1500);
+  const t0 = data[0].t.getTime(), t1 = data[data.length-1].t.getTime();
+  if(charts.sdir) charts.sdir.destroy();
+  charts.sdir = new Chart(ctx, buildSDirConfig(sampled, t0, t1, t1-t0, screenColors(), {line:1.6, point:2.2, tick:10.5, axisTitle:11, legend:true, print:false}));
+}
+function chartFailMsg(){
+  return '<p style="color:var(--ink-muted); font-size:12.5px; padding:20px 0;">Pustaka grafik (Chart.js) gagal dimuat dari CDN — periksa koneksi internet Anda lalu muat ulang halaman. Data tetap dapat dilihat pada tabel/ekspor CSV.</p>';
+}
+
+/* ---- Versi cetak (PNG resolusi tinggi) ---- */
+function showPrintImage(url){
+  document.getElementById('imgModalImg').src = url;
+  document.getElementById('imgModal').hidden = false;
+}
+function openPrintImage(kind){
+  if(!State.computed) return;
+  if(kind==='uv' || kind==='sdir'){
+    if(typeof Chart === 'undefined') return;
+    const data = State.computed.averaged;
+    const sampled = sampleForChart(data, 4000);
+    const t0 = data[0].t.getTime(), t1 = data[data.length-1].t.getTime();
+    const W = 2000, H = 1000;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const cctx = canvas.getContext('2d');
+    const colors = printColors();
+    cctx.fillStyle = colors.bg; cctx.fillRect(0,0,W,H);
+    const fs = {line:2.6, point:4, tick:19, axisTitle:22, title2:26, legend:true, print:true,
+      title: kind==='uv' ? 'Time Series Komponen Kecepatan Arus (u, v)' : 'Time Series Magnitude (S) & Arah Arus (θ)'};
+    const cfg = kind==='uv' ? buildUVConfig(sampled, t0, t1, t1-t0, colors, fs) : buildSDirConfig(sampled, t0, t1, t1-t0, colors, fs);
+    const tmp = new Chart(cctx, cfg);
+    const url = tmp.toBase64Image('image/png', 1);
+    tmp.destroy();
+    showPrintImage(url);
+  } else if(kind==='quiver'){
+    const data = State.computed.averaged;
+    const sampled = sampleForChart(data, 500);
+    const W = 2000, H = 900;
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const cctx = canvas.getContext('2d');
+    const colors = printColors();
+    cctx.fillStyle = colors.bg; cctx.fillRect(0,0,W,H);
+    renderQuiverPlot(cctx, W, H, colors, {
+      data, sampled, marginX:110, marginTop:110, marginBottom:90, maxArrow:150,
+      lineWidth:2.4, pointR:3, tickFont:'17px "IBM Plex Mono"', tickFontPx:17, tickLen:8,
+      axisTitleFont:'19px "IBM Plex Sans"', legendH:64, print:true,
+      title:'Vektor Arus Sepanjang Waktu (Stick Plot)', titleFont:'600 26px "IBM Plex Sans"'
+    });
+    showPrintImage(canvas.toDataURL('image/png'));
+  } else if(kind==='rose'){
+    const {pct, sectorTotals, names, edges} = State.computed.matrix;
+    const c = State.computed;
+    const W=1500, H=1000, dia=740, R=dia/2-64, cx=90+dia/2, cy=140+dia/2;
+    const svgStr = buildRoseSVG(printColors(), {
+      pct, sectorTotals, names, edges, cx, cy, R, width:W, height:H,
+      framePad:30, dirLabelPad:22, tickSize:15, dirLabelSize:18,
+      title:'Current Rose — Distribusi Arah & Kelas Kecepatan Arus', titleSize:24, titleY:55,
+      legend:true, legendX:cx+R+80, legendY:150, legendLineH:32, legendTitleSize:18, legendItemSize:15, legendSwSize:16,
+      unit:State.unit, domSector:c.domSector, domVal:c.domVal, domClass:c.domClass, domClassVal:c.domClassVal,
+      print:true
+    });
+    const img = new Image();
+    img.onload = ()=>{
+      const canvas = document.createElement('canvas');
+      canvas.width = W; canvas.height = H;
+      const cctx = canvas.getContext('2d');
+      cctx.drawImage(img, 0, 0, W, H);
+      showPrintImage(canvas.toDataURL('image/png'));
+    };
+    img.onerror = ()=>{ alert('Gagal membuat gambar current rose versi cetak. Silakan coba lagi.'); };
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+  }
+}
+function closePrintImage(){ document.getElementById('imgModal').hidden = true; }
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('imgModalClose').onclick = closePrintImage;
+  document.getElementById('imgModal').addEventListener('click', e=>{ if(e.target.id==='imgModal') closePrintImage(); });
+});
+
+/* Shared quiver/stick-plot renderer — used for both the on-screen canvas and the
+   high-res print export, so the two stay visually identical (baseline, N/S labels,
+   x = time axis with shared tick generator, and a reference-vector legend for S). */
+function renderQuiverPlot(ctx, w, h, colors, o){
+  const data = o.data;
+  const t0 = data[0].t.getTime(), t1 = data[data.length-1].t.getTime();
+  const maxS = Math.max(...data.map(d=>d.S), 0.001);
+  const mX = o.marginX, mTop = o.marginTop, mBottom = o.marginBottom;
+  const plotW = w - mX*2, plotH = h - mTop - mBottom;
+  const xScale = t => mX + ((t-t0)/((t1-t0)||1))*plotW;
+  const baseY = mTop + plotH/2;
+  const maxLen = Math.min(plotH/2*0.82, o.maxArrow);
+  const axisY = mTop + plotH;
+  const {ticks:tickVals, daily} = computeTimeTicks(t0, t1);
+  const ref = niceRefValue(maxS);
+  const refLen = (ref/maxS)*maxLen;
+
+  if(o.title){ ctx.fillStyle=colors.ink; ctx.font=o.titleFont; ctx.textAlign='left'; ctx.textBaseline='alphabetic'; ctx.fillText(o.title, mX, mTop*0.42); }
+
+  // grid — vertical at each time tick, horizontal at multiples of the reference-vector
+  // magnitude (so the background grid is calibrated to the same scale as the legend)
+  ctx.strokeStyle = colors.grid; ctx.lineWidth = 1;
+  tickVals.forEach(tv=>{
+    const x = xScale(tv);
+    ctx.beginPath(); ctx.moveTo(x, mTop); ctx.lineTo(x, axisY); ctx.stroke();
+  });
+  if(refLen>0){
+    for(let gy = baseY - refLen; gy > mTop+2; gy -= refLen){ ctx.beginPath(); ctx.moveTo(mX, gy); ctx.lineTo(w-mX, gy); ctx.stroke(); }
+    for(let gy = baseY + refLen; gy < axisY-2; gy += refLen){ ctx.beginPath(); ctx.moveTo(mX, gy); ctx.lineTo(w-mX, gy); ctx.stroke(); }
+  }
+
+  ctx.strokeStyle = colors.axis; ctx.lineWidth = 1; ctx.beginPath();
+  ctx.moveTo(mX, baseY); ctx.lineTo(w-mX, baseY); ctx.stroke();
+  ctx.fillStyle = colors.muted; ctx.font = o.tickFont; ctx.textAlign='right'; ctx.textBaseline='middle';
+  ctx.fillText('N', mX-6, baseY-maxLen+4);
+  ctx.fillText('S', mX-6, baseY+maxLen-4);
+
+  const points = [];
+  for(const d of o.sampled){
+    const x = xScale(d.t.getTime());
+    const len = (d.S/maxS)*maxLen;
+    const rad = deg2rad(d.dir);
+    const dx = Math.sin(rad)*len, dy = -Math.cos(rad)*len;
+    ctx.strokeStyle = colors.s; ctx.lineWidth = o.lineWidth;
+    ctx.beginPath(); ctx.moveTo(x,baseY); ctx.lineTo(x+dx, baseY+dy); ctx.stroke();
+    ctx.beginPath(); ctx.arc(x+dx, baseY+dy, o.pointR, 0, Math.PI*2); ctx.fillStyle = colors.s; ctx.fill();
+    points.push({x, y:baseY+dy, d});
+  }
+
+  // x = time axis
+  ctx.strokeStyle = colors.axis; ctx.lineWidth = 1; ctx.beginPath();
+  ctx.moveTo(mX, axisY); ctx.lineTo(w-mX, axisY); ctx.stroke();
+  ctx.font = o.tickFont; ctx.fillStyle = colors.muted; ctx.textAlign='center'; ctx.textBaseline='top';
+  tickVals.forEach(tv=>{
+    const x = xScale(tv);
+    ctx.strokeStyle = colors.axis; ctx.beginPath(); ctx.moveTo(x,axisY); ctx.lineTo(x,axisY+o.tickLen); ctx.stroke();
+    ctx.fillText(tickLabel(tv,daily), x, axisY+o.tickLen+2);
+  });
+  ctx.font = o.axisTitleFont; ctx.fillStyle = colors.ink2; ctx.textAlign='center';
+  ctx.fillText(daily?'waktu (tanggal)':'waktu', mX+plotW/2, h-o.axisTitleFont*0.4);
+
+  // reference-vector legend (magnitude scale)
+  const legW = Math.max(refLen+70, 110), legH = o.legendH;
+  const legPad = Math.max(4, o.tickFontPx*0.4);
+  const bx = w-mX-legW-legPad, by = mTop+legPad;
+  ctx.fillStyle = colors.bg==='transparent' ? colors.surface : colors.bg; ctx.fillRect(bx, by, legW, legH);
+  ctx.strokeStyle = colors.grid; ctx.lineWidth=1; ctx.strokeRect(bx, by, legW, legH);
+  const ay = by+legH*0.62, ax0 = bx+12;
+  ctx.strokeStyle = colors.ink2; ctx.fillStyle = colors.ink2; ctx.lineWidth = o.lineWidth;
+  ctx.beginPath(); ctx.moveTo(ax0, ay); ctx.lineTo(ax0+refLen, ay); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ax0+refLen, ay); ctx.lineTo(ax0+refLen-o.tickFontPx*0.6, ay-o.tickFontPx*0.32); ctx.lineTo(ax0+refLen-o.tickFontPx*0.6, ay+o.tickFontPx*0.32); ctx.closePath(); ctx.fill();
+  ctx.font = o.tickFont; ctx.textAlign='left'; ctx.textBaseline='bottom';
+  ctx.fillText('skala vektor', ax0, by+legH*0.32);
+  ctx.textBaseline='top';
+  ctx.fillText(`= ${fmtEdge(ref)} ${State.unit}`, ax0, ay+4);
+  ctx.textAlign='left'; ctx.textBaseline='alphabetic';
+
+  // frame around the whole plot area (drawn last so it sits crisply on top)
+  ctx.strokeStyle = colors.axis; ctx.lineWidth = 1.5;
+  ctx.strokeRect(mX, mTop, plotW, plotH);
+
+  return points;
+}
+
+function drawQuiver(){
+  const canvas = document.getElementById('quiverCanvas');
+  if(!canvas || !State.computed) return;
+  const wrap = canvas.parentElement;
+  const dpr = window.devicePixelRatio||1;
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  canvas.width = w*dpr; canvas.height = h*dpr;
+  canvas.style.width=w+'px'; canvas.style.height=h+'px';
+  const ctx = canvas.getContext('2d'); ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,w,h);
+  const data = State.computed.averaged;
+  const density = +(document.getElementById('quiverDensity')?.value || 120);
+  const step = Math.max(1, Math.floor(data.length/density));
+  const sampled = data.filter((_,i)=>i%step===0);
+  const points = renderQuiverPlot(ctx, w, h, screenColors(), {
+    data, sampled, marginX:34, marginTop:12, marginBottom:32, maxArrow:26,
+    lineWidth:1.5, pointR:1.6, tickFont:'10.5px "IBM Plex Mono"', tickFontPx:10.5, tickLen:4,
+    axisTitleFont:'11px "IBM Plex Sans"', legendH:34, print:false
+  });
+  canvas.onmousemove = e=>{
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX-rect.left, my = e.clientY-rect.top;
+    let nearest=null, best=999;
+    points.forEach(p=>{ const dd=Math.hypot(p.x-mx,p.y-my); if(dd<best){best=dd; nearest=p;} });
+    const tip = document.getElementById('quiverTip');
+    if(nearest && best<20){
+      tip.style.left=(nearest.x+8)+'px'; tip.style.top=(nearest.y-24)+'px';
+      tip.innerHTML = `${fmtDate(nearest.d.t)}<br>S=${fmt(nearest.d.S,2)} ${State.unit} · θ=${fmt(nearest.d.dir,0)}°`;
+      tip.classList.add('show');
+    } else tip.classList.remove('show');
+  };
+  canvas.onmouseleave = ()=> document.getElementById('quiverTip').classList.remove('show');
+}
+
+/* Shared current-rose SVG builder — used for both the on-screen render and the
+   high-res print export, so the two match exactly (sequential color ramp, an
+   enclosing frame, and — for print — an embedded title/legend/callout so the
+   exported PNG is self-contained). Colors are passed in explicitly (resolved
+   hex, not CSS var() strings) so it also works when rasterized outside the
+   live DOM (print export loads the SVG through a standalone <img>). */
+function escXml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function buildRoseSVG(colors, o){
+  const { pct, sectorTotals, names, edges, cx, cy, R, width, height } = o;
+  const n = names.length;
+  const maxTotal = Math.max(...sectorTotals, 1);
+  const rings = 4;
+  const ringVal = Math.ceil(maxTotal/rings/2)*2 || 2;
+  const seqColors = [colors.seq1, colors.seq2, colors.seq3, colors.seq4, colors.seq5];
+  const colorFor = ci => seqColors[Math.min(ci, seqColors.length-1)];
+  const w2 = (2*Math.PI)/n;
+  let body = '';
+  if(o.title){
+    body += `<text x="${width/2}" y="${o.titleY}" font-size="${o.titleSize}" font-weight="600" fill="${colors.ink}" text-anchor="middle" font-family="IBM Plex Sans, sans-serif">${escXml(o.title)}</text>`;
+  }
+  for(let ri=1; ri<=rings; ri++){
+    const r = R*ri/rings;
+    body += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colors.grid}" stroke-width="1"/>`;
+    body += `<text x="${cx+4}" y="${cy-r-2}" font-size="${o.tickSize}" fill="${colors.muted}">${fmt(ringVal*ri,0)}%</text>`;
+  }
+  ['N','E','S','W'].forEach((lab,i)=>{
+    const a = i*Math.PI/2 - Math.PI/2;
+    const x = cx + Math.cos(a)*(R+o.dirLabelPad), y = cy + Math.sin(a)*(R+o.dirLabelPad);
+    body += `<text x="${x}" y="${y}" font-size="${o.dirLabelSize}" font-weight="600" fill="${colors.ink2}" text-anchor="middle" dominant-baseline="middle">${lab}</text>`;
+  });
+  for(let si=0; si<n; si++){
+    let rAcc = 0;
+    const a0 = si*w2 - Math.PI/2 - w2/2 + w2*0.06;
+    const a1 = si*w2 - Math.PI/2 + w2/2 - w2*0.06;
+    for(let ci=0; ci<edges.length; ci++){
+      const v = pct[ci][si];
+      if(v<=0) continue;
+      const r0 = (rAcc/ringVal/rings)*R;
+      rAcc += v;
+      const r1 = (rAcc/ringVal/rings)*R;
+      const r1c = Math.min(r1, R*1.3);
+      const p0 = [cx+Math.cos(a0)*r0, cy+Math.sin(a0)*r0];
+      const p1 = [cx+Math.cos(a0)*r1c, cy+Math.sin(a0)*r1c];
+      const p2 = [cx+Math.cos(a1)*r1c, cy+Math.sin(a1)*r1c];
+      const p3 = [cx+Math.cos(a1)*r0, cy+Math.sin(a1)*r0];
+      body += `<path d="M${p0[0]},${p0[1]} L${p1[0]},${p1[1]} L${p2[0]},${p2[1]} L${p3[0]},${p3[1]} Z" fill="${colorFor(ci)}" stroke="${colors.surface}" stroke-width="1.2" data-sector="${si}" data-class="${ci}" class="rose-seg"/>`;
+    }
+  }
+  body += `<circle cx="${cx}" cy="${cy}" r="2" fill="${colors.ink}"/>`;
+  const fp = o.framePad;
+  body += `<rect x="${cx-R-fp}" y="${cy-R-fp}" width="${(R+fp)*2}" height="${(R+fp)*2}" rx="10" fill="none" stroke="${colors.axis}" stroke-width="1.5"/>`;
+  if(o.legend){
+    let ly = o.legendY;
+    body += `<text x="${o.legendX}" y="${ly}" font-size="${o.legendTitleSize}" font-weight="600" fill="${colors.ink}" font-family="IBM Plex Sans, sans-serif">Kelas Kecepatan</text>`;
+    ly += o.legendLineH;
+    edges.forEach((e,ci)=>{
+      body += `<rect x="${o.legendX}" y="${ly-o.legendSwSize}" width="${o.legendSwSize}" height="${o.legendSwSize}" fill="${colorFor(ci)}"/>`;
+      body += `<text x="${o.legendX+o.legendSwSize+8}" y="${ly}" font-size="${o.legendItemSize}" fill="${colors.ink2}">${escXml(classLabel(edges,ci)+' '+o.unit)}</text>`;
+      ly += o.legendLineH;
+    });
+    ly += o.legendLineH*0.6;
+    body += `<text x="${o.legendX}" y="${ly}" font-size="${o.legendItemSize}" font-weight="600" fill="${colors.ink}" font-family="IBM Plex Sans, sans-serif">${escXml(`Sektor dominan: ${names[o.domSector]} (${fmt(o.domVal,1)}%)`)}</text>`;
+    ly += o.legendLineH;
+    body += `<text x="${o.legendX}" y="${ly}" font-size="${o.legendItemSize}" font-weight="600" fill="${colors.ink}" font-family="IBM Plex Sans, sans-serif">${escXml(`Kelas dominan: ${classLabel(edges,o.domClass)} ${o.unit} (${fmt(o.domClassVal,1)}%)`)}</text>`;
+  }
+  const bgRect = o.print ? `<rect width="${width}" height="${height}" fill="${colors.bg}"/>` : '';
+  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Mono, monospace">${bgRect}${body}</svg>`;
+}
+
+function drawRose(){
+  const holder = document.getElementById('roseSvgHolder');
+  if(!holder || !State.computed) return;
+  const {pct, sectorTotals, names, edges} = State.computed.matrix;
+  const c = State.computed;
+  const size = 380, cx = size/2, cy = size/2, R = size/2-52;
+  const colors = screenColors();
+  const svg = buildRoseSVG(colors, {
+    pct, sectorTotals, names, edges, cx, cy, R, width:size, height:size,
+    framePad:24, dirLabelPad:16, tickSize:9, dirLabelSize:11.5,
+    title:null, legend:false, unit:State.unit,
+    domSector:c.domSector, domVal:c.domVal, domClass:c.domClass, domClassVal:c.domClassVal,
+    print:false
+  });
+  holder.innerHTML = svg;
+  const tip = document.getElementById('roseTip');
+  holder.querySelectorAll('.rose-seg').forEach(seg=>{
+    seg.addEventListener('mousemove', e=>{
+      const si = +seg.dataset.sector, ci = +seg.dataset.class;
+      const rect = holder.getBoundingClientRect();
+      tip.style.left = (e.clientX-rect.left+10)+'px'; tip.style.top=(e.clientY-rect.top-10)+'px';
+      tip.innerHTML = `${names[si]} · ${classLabel(edges,ci)} ${State.unit}<br>${fmt(pct[ci][si],2)}%`;
+      tip.classList.add('show');
+    });
+    seg.addEventListener('mouseleave', ()=> tip.classList.remove('show'));
+  });
+  const seqColors = [colors.seq1, colors.seq2, colors.seq3, colors.seq4, colors.seq5];
+  const colorFor = ci => seqColors[Math.min(ci, seqColors.length-1)];
+  document.getElementById('roseLegend').innerHTML = edges.map((e,ci)=>`<span class="li"><span class="sw" style="background:${colorFor(ci)}"></span>${classLabel(edges,ci)} ${State.unit}</span>`).join('');
+  document.getElementById('roseCallout').innerHTML = `<b>Sektor dominan: ${names[c.domSector]}</b> (${fmt(c.domVal,1)}%)<br>Kelas kecepatan dominan: <b>${classLabel(edges,c.domClass)} ${State.unit}</b> (${fmt(c.domClassVal,1)}%)`;
+}
+
+/* ============================= INIT ============================= */
+document.addEventListener('DOMContentLoaded', ()=>{
+  loadSample();
+});
+</script>
+
+</body></html>

@@ -1,0 +1,7 @@
+# Urutan tautan di menu atas website.
+main:
+  - title: "CV"
+    url: /cv/
+
+  - title: "Tools"
+    url: /tools/
