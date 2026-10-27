@@ -67,6 +67,9 @@
       {% if author.scopus %}
         <li><a href="{{ author.scopus }}"><i class="ai ai-scopus ai-fw icon-pad-right"></i>Scopus</a></li>
       {% endif %}
+      {% if author.sinta %}
+        <li><a href="{{ author.sinta }}"><i class="fas fa-fw fa-chart-bar icon-pad-right" aria-hidden="true"></i>SINTA</a></li>
+      {% endif %}
       {% if author.semantic %}
         <li><a href="{{ author.semantic }}"><i class="ai ai-semantic-scholar ai-fw icon-pad-right"></i>Semantic Scholar</a></li>
       {% endif %}
