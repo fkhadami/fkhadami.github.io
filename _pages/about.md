@@ -9,7 +9,26 @@ redirect_from:
 
 Ini adalah website pribadi **Faruq Khadami**, dosen Oseanografi di Fakultas Ilmu dan Teknologi Kebumian (FITB), Institut Teknologi Bandung. Website ini berisi **curriculum vitae** saya dan kumpulan **tools pengolahan data oseanografi** yang saya kembangkan untuk perkuliahan, praktikum, dan riset. Isinya akan terus bertambah seiring waktu.
 
-Minat riset saya berada di bidang oseanografi fisis pesisir dan estuari: dinamika pasang surut, hidrodinamika estuari, transpor sedimen dan kekeruhan, iklim gelombang, *storm surge*, serta pemodelan numerik laut dan pesisir.
+Research Interests
+------
+
+<div class="cv-section">
+{% include cv/interests.html %}
+</div>
+
+Education
+------
+
+<div class="cv-section">
+{% include cv/education.html %}
+</div>
+
+Academic Appointment
+------
+
+<div class="cv-section">
+{% include cv/appointments.html %}
+</div>
 
 Apa yang ada di sini
 ======
@@ -17,7 +36,7 @@ Apa yang ada di sini
 <div class="home-cards">
   <a class="home-card" href="{{ '/cv/' | relative_url }}">
     <strong>Curriculum Vitae</strong>
-    <span>Pendidikan, riwayat akademik, ringkasan bibliometrik, dan daftar publikasi.</span>
+    <span>CV lengkap yang siap dicetak atau disimpan sebagai PDF.</span>
   </a>
   <a class="home-card" href="{{ '/tools/' | relative_url }}">
     <strong>Tools Oseanografi</strong>

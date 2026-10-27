@@ -3,29 +3,17 @@ main:
   - title: "CV"
     url: /cv/
 
-  - title: "Research Interests"
-    url: /cv/research-interests/
-
-  - title: "Education"
-    url: /cv/education/
-
-  - title: "Appointments"
-    url: /cv/appointments/
-
-  - title: "Bibliometrics"
-    url: /cv/bibliometrics/
+  - title: "Tools"
+    url: /tools/
 
   - title: "Publications"
     url: /cv/publications/
 
-  - title: "Research Projects"
-    url: /cv/research-projects/
+  - title: "Projects & Grants"
+    url: /cv/projects-grants/
 
   - title: "Community Service"
     url: /cv/community-service/
 
-  - title: "Consultancy"
+  - title: "Consultancy Experience"
     url: /cv/consultancy/
-
-  - title: "Tools"
-    url: /tools/
