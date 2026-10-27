@@ -52,3 +52,32 @@ a.home-card:hover { border-color: var(--global-link-color); }
 .tool-card p:last-child { margin-bottom: 0; }
 .tool-tag { text-transform: uppercase; letter-spacing: .06em; font-size: .7em !important; color: var(--global-text-color-light); margin: 0; }
 .cv-frame { width: 100%; min-height: 900px; border: 1px solid var(--global-border-color); border-radius: 6px; background: #fff; }
+
+/* ---- Tab bagian CV ---- */
+.cv-tabs ul { display: flex; flex-wrap: wrap; gap: .4em; list-style: none; margin: 0 0 1em; padding: 0 0 .8em; border-bottom: 1px solid var(--global-border-color); }
+.cv-tabs li { margin: 0; }
+.cv-tabs a { display: inline-block; padding: .35em .8em; font-size: .75em; border: 1px solid var(--global-border-color); border-radius: 999px; color: var(--global-text-color); text-decoration: none; white-space: nowrap; }
+.cv-tabs a:hover { border-color: var(--global-link-color); color: var(--global-link-color); }
+.cv-tabs a.active { background: var(--global-link-color); border-color: var(--global-link-color); color: #fff; }
+.cv-download { margin: 0 0 1.4em; }
+
+/* ---- Isi bagian CV di dalam situs ---- */
+.cv-section { font-size: .9em; }
+.cv-section .row, .cv-section .grant { display: grid; grid-template-columns: 7.5em 1fr; gap: .9em; padding: .6em 0; border-bottom: 1px solid var(--global-border-color); }
+.cv-section .grant { grid-template-columns: 3.5em 1fr; }
+.cv-section .yr { font-weight: 700; }
+.cv-section .sub, .cv-section .grant .role { color: var(--global-text-color-light); }
+.cv-section .grant .role { font-style: italic; }
+.cv-section ol.pubs { padding-left: 1.6em; margin: 0; }
+.cv-section ol.pubs li { margin-bottom: .7em; }
+.cv-section ol.pubs a { color: inherit !important; }
+.cv-section .exp { padding: .7em 0; border-bottom: 1px solid var(--global-border-color); }
+.cv-section .exp .top { display: flex; justify-content: space-between; gap: 1em; font-weight: 700; }
+.cv-section .exp .top span:last-child { white-space: nowrap; color: var(--global-text-color-light); }
+.cv-section .exp .role { font-style: italic; }
+.cv-section .exp .scope { color: var(--global-text-color-light); }
+.cv-section .kw b { display: block; margin-top: .5em; }
+@media (max-width: 600px) {
+  .cv-section .row, .cv-section .grant { grid-template-columns: 1fr; gap: .2em; }
+  .cv-section .exp .top { flex-direction: column; gap: .1em; }
+}

@@ -5,9 +5,10 @@ permalink: /cv/
 author_profile: true
 redirect_from:
   - /resume
+cv_tab: cv
 ---
 
-<p><a class="btn btn--primary" href="{{ '/files/cv-faruq-khadami.html' | relative_url }}" target="_blank" rel="noopener">Buka CV di tab baru (cetak / simpan PDF)</a></p>
+{% include cv-tabs.html %}
 
 <iframe id="cv-frame" class="cv-frame" src="{{ '/files/cv-faruq-khadami.html' | relative_url }}" title="Curriculum Vitae Faruq Khadami" loading="lazy"></iframe>
 
