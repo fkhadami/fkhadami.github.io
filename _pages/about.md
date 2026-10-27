@@ -30,7 +30,7 @@ Tools yang tersedia saat ini
 
 * [**Pemandu Datum Pasut**]({{ '/tools/datum-pasut.html' | relative_url }}) — memilih standar datum (IHO, NOAA, SNI) yang sesuai dengan tujuan dan panjang data, lengkap dengan rumus, langkah perhitungan, dan kalkulator datum (LAT, HAT, MSL, dll.) dari konstanta harmonik.
 * [**Bengkel Arus**]({{ '/tools/bengkel-arus.html' | relative_url }}) — pengolahan data arus: konversi vektor, *averaging*, matriks frekuensi, visualisasi, dan pelaporan. Semua perhitungan berjalan lokal di peramban.
-* [**Tide Agent**](https://github.com/fkhadami/tide_report) — aplikasi Streamlit untuk analisis data pasut (pembersihan *spike*, spektrum FFT, analisis harmonik UTide) dan pembuatan laporan PDF.
+* [**Tide Agent**](https://tidereport.streamlit.app/) — aplikasi web (Streamlit) untuk analisis data pasut (pembersihan *spike*, spektrum FFT, analisis harmonik UTide) dan pembuatan laporan PDF.
 
 Daftar lengkapnya ada di halaman [Tools]({{ '/tools/' | relative_url }}).
 

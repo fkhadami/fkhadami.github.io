@@ -26,8 +26,8 @@ Kumpulan aplikasi web yang saya kembangkan untuk membantu pengolahan data oseano
   <div class="tool-card">
     <p class="tool-tag">Pasang surut · Aplikasi Python</p>
     <h2>Tide Agent</h2>
-    <p>Aplikasi Streamlit untuk analisis data pasut: unggah CSV, statistik ringkas, pembersihan <em>spike</em> (filter Hampel), spektrum FFT, analisis harmonik UTide, peta stasiun, interpretasi opsional berbasis LLM, dan ekspor laporan PDF. Dijalankan di komputer sendiri atau di Streamlit Community Cloud.</p>
-    <p><a class="btn btn--inverse" href="https://github.com/fkhadami/tide_report">Lihat kode di GitHub</a></p>
+    <p>Aplikasi Streamlit untuk analisis data pasut: unggah CSV, statistik ringkas, pembersihan <em>spike</em> (filter Hampel), spektrum FFT, analisis harmonik UTide, peta stasiun, interpretasi opsional berbasis LLM, dan ekspor laporan PDF. Berjalan daring di Streamlit Community Cloud.</p>
+    <p><a class="btn btn--primary" href="https://tidereport.streamlit.app/" target="_blank" rel="noopener">Buka Tide Agent</a></p>
   </div>
 
 </div>

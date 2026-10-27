@@ -23,7 +23,7 @@ repository               : "fkhadami/fkhadami.github.io"
 #               Additional customization can be done by editing /_includes/author-profile.html
 author:
   # Biographic information
-  avatar           : "profile.png"
+  avatar           : # kosong = tanpa foto; isi mis. "profile.png" (file di /images/)
   name             : "Faruq Khadami"
   pronouns         : # example: "she/her"  
   bio              : "Oseanografi Fisis · Dosen di Institut Teknologi Bandung"

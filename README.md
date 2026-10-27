@@ -13,7 +13,7 @@ Dibangun dengan template [Academic Pages](https://github.com/academicpages/acade
 | `_pages/cv.md` | Halaman CV (menampilkan `files/cv-faruq-khadami.html`) |
 | `_pages/tools.md` | Daftar tools |
 | `tools/*.html` | Tools HTML mandiri (disalin apa adanya) |
-| `images/profile.png` | Foto profil sidebar (ganti dengan foto Anda) |
+| `author.avatar` di `_config.yml` | Foto profil sidebar (kosong = tanpa foto; taruh file di `images/` lalu isi namanya) |
 
 ## Menambah tool baru
 
