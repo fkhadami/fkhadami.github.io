@@ -8,6 +8,9 @@ redirect_from:
   - /about.html
 ---
 
+
+<style>.page__title{display:none}</style>
+
 <p class="home-lead">Saya meneliti bagaimana pasang surut, aliran sungai, dan sedimen membentuk estuari dan pesisir Indonesia, lalu mengubah data lapangan menjadi model dan alat yang bisa dipakai.</p>
 
 <p class="home-intro">Dosen Oseanografi di Fakultas Ilmu dan Teknologi Kebumian (FITB), Institut Teknologi Bandung. Website ini berisi profil akademik saya dan kumpulan <strong>tools analisis data oseanografi</strong> untuk perkuliahan, praktikum, dan riset. Isinya akan terus bertambah.</p>
