@@ -74,3 +74,8 @@ a.home-card:hover { border-color: var(--global-link-color); }
   .cv-section .row, .cv-section .grant { grid-template-columns: 1fr; gap: .2em; }
   .cv-section .exp .top { flex-direction: column; gap: .1em; }
 }
+
+/* ---- Menu atas: ringkas dan satu baris di semua halaman ---- */
+.greedy-nav .visible-links li:first-child { text-wrap: nowrap; white-space: nowrap; }
+.greedy-nav .visible-links li:not(:first-child) a { font-size: .8em; margin: 0 .6rem; }
+.greedy-nav .hidden-links a { font-size: .85em; }

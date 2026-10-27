@@ -3,4 +3,13 @@
 <!-- Support for MathJax -->
 <script id="MathJax-script" defer src="https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.js"></script>
 
+<!-- Hitung ulang menu atas setelah font dan halaman selesai dimuat, agar tampilannya sama di semua halaman -->
+<script>
+  (function () {
+    function relayout() { window.dispatchEvent(new Event('resize')); }
+    window.addEventListener('load', relayout);
+    if (document.fonts && document.fonts.ready) { document.fonts.ready.then(relayout); }
+  })();
+</script>
+
 <!-- end custom footer snippets -->
