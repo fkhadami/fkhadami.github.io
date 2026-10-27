@@ -1,6 +1,6 @@
 ---
 permalink: /
-title: "Faruq Khadami"
+title: "Beranda"
 excerpt: "Oseanografi fisis pesisir dan estuari — Institut Teknologi Bandung"
 author_profile: true
 redirect_from:
@@ -114,9 +114,9 @@ Untuk kolaborasi riset, pertanyaan tentang tools, atau masukan, hubungi saya di 
     var el = document.getElementById('home-map');
     if (!el || !window.L) return;
     var map = L.map(el, { scrollWheelZoom: false, zoomSnap: 0.25 }).setView([-3.2, 115.5], 4.5);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 12,
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
     var warna = { riset: '#1f6fb2', abdi: '#2a9d6a', konsul: '#d9822b' };
     var lokasi = [
