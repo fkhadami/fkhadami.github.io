@@ -68,6 +68,12 @@ redirect_from:
     <span>Memilih standar datum (IHO, NOAA, SNI) dan menghitung LAT, HAT, MSL dari konstanta harmonik.</span>
     <em>Buka tool →</em>
   </a>
+  <a class="home-tool" href="{{ '/tools/bengkel-gelombang.html' | relative_url }}">
+    <span class="home-tool__icon" aria-hidden="true"><i class="fas fa-wave-square"></i></span>
+    <strong>Bengkel Gelombang</strong>
+    <span>Materi dan pengolahan data gelombang: <em>zero-crossing</em>, Hs/Ts, matriks frekuensi, <em>wave rose</em>, dan laporan.</span>
+    <em>Buka tool →</em>
+  </a>
   <a class="home-tool" href="{{ '/tools/bengkel-arus.html' | relative_url }}">
     <span class="home-tool__icon" aria-hidden="true"><i class="fas fa-water"></i></span>
     <strong>Bengkel Arus</strong>

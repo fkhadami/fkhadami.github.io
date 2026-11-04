@@ -1,0 +1,1453 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Bengkel Gelombang: materi dan tool pengolahan data gelombang (zero up/down-crossing, Hs/Ts, matriks frekuensi, wave rose, laporan) untuk data elevasi muka air maupun keluaran ADCP Hs/Tp/Dir. Semua perhitungan berjalan di peramban.">
+<style>:root{color-scheme:light}body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Bengkel Gelombang</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* Layout: slim header band; left sidebar with three groups (Materi · Olah data elevasi · Olah data Hs/Tp/Dir); one page shown at a time */
+:root{
+  --bg:#f3f7f7; --surface:#ffffff; --surface2:#e9f1f1; --fg:#12302f; --muted:#56706f; --line:#d2dfde;
+  --accent:#0f6b73; --accent-ink:#ffffff; --coral:#d9652f; --dir:#7a4fb5; --red:#c8393b; --hi:#fdecc8; --hi-ink:#5a3b00;
+  --ok:#2f7d4a; --warn:#a86400; --g-m:#7a4fb5; --g-e:#0f6b73; --g-h:#d9652f;
+  --font-sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1617; --surface:#132324; --surface2:#1a2f30; --fg:#e1eeed; --muted:#93acab; --line:#2a4344;
+  --accent:#4fb3b9; --accent-ink:#04211f; --coral:#f08a5d; --dir:#b597e8; --red:#f07474; --hi:#4a3a17; --hi-ink:#ffe2a6;
+  --ok:#6cc58b; --warn:#f0b35a; --g-m:#b597e8; --g-e:#4fb3b9; --g-h:#f08a5d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1617; --surface:#132324; --surface2:#1a2f30; --fg:#e1eeed; --muted:#93acab; --line:#2a4344;
+  --accent:#4fb3b9; --accent-ink:#04211f; --coral:#f08a5d; --dir:#b597e8; --red:#f07474; --hi:#4a3a17; --hi-ink:#ffe2a6;
+  --ok:#6cc58b; --warn:#f0b35a; --g-m:#b597e8; --g-e:#4fb3b9; --g-h:#f08a5d; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-sans);font-size:15px;line-height:1.5}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--accent)}
+header.top{background:var(--accent);color:var(--accent-ink);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px}
+header.top .in{display:flex;flex-wrap:wrap;gap:6px 20px;align-items:center;justify-content:space-between;max-width:1440px;margin:0 auto}
+.eyebrow{font-family:var(--font-mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+h1{font-size:24px;line-height:1.15;margin:2px 0 0;font-weight:700}
+#menuBtn{display:none;background:transparent;border:1px solid currentColor;color:inherit;font:inherit;font-size:14px;border-radius:7px;padding:6px 12px;cursor:pointer}
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);max-width:1440px;margin:0 auto}
+aside.side{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;max-height:100vh;overflow-y:auto;border-right:1px solid var(--line);padding:18px 12px 30px max(12px,env(safe-area-inset-left,0px));display:grid;gap:18px}
+.grp{display:grid;gap:2px}
+.grp .gh{display:flex;gap:8px;align-items:center;font-size:13px;font-weight:700;letter-spacing:.01em;color:var(--fg);padding:0 8px 6px}
+.grp .gh i{width:10px;height:10px;border-radius:3px;display:inline-block;flex:0 0 auto}
+.grp .gs{font-size:12px;color:var(--muted);padding:0 8px 6px;line-height:1.35;overflow-wrap:anywhere}
+.side button.it{display:flex;gap:8px;align-items:baseline;text-align:left;width:100%;border:0;background:none;color:var(--muted);font:inherit;font-size:14px;padding:6px 8px;border-radius:7px;cursor:pointer;border-left:3px solid transparent}
+.side button.it b{font-family:var(--font-mono);font-size:11.5px;font-weight:600;min-width:24px}
+.side button.it:hover{background:var(--surface2);color:var(--fg)}
+.side button.it[aria-current="page"]{background:var(--surface);color:var(--fg);font-weight:600;border-left-color:var(--gc)}
+main{min-width:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:22px 60px}
+@media (min-width:901px){main{padding-left:28px;padding-right:max(28px,env(safe-area-inset-right,0px))}}
+@media (max-width:900px){
+  .layout{grid-template-columns:1fr}
+  #menuBtn{display:inline-block}
+  aside.side{position:static;max-height:none;border-right:0;border-bottom:1px solid var(--line);background:var(--surface);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  aside.side:not(.open){display:none}
+}
+section.page{display:grid;gap:18px;max-width:1120px}
+.crumb{display:flex;gap:8px;align-items:center;font-size:13px;font-weight:600;color:var(--gc)}
+.crumb i{width:9px;height:9px;border-radius:2px;background:var(--gc);display:inline-block}
+.sechead{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline}
+.sechead .num{font-family:var(--font-mono);color:var(--gc);font-weight:600;font-size:14px}
+h2{font-size:24px;margin:0;line-height:1.2;text-wrap:balance}
+.lead{color:var(--muted);margin:0;max-width:75ch}
+h3{font-size:16px;margin:0 0 8px;font-weight:600}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.prose{max-width:75ch} .prose p{margin:0 0 10px} .prose ol,.prose ul{margin:0 0 10px;padding-left:22px} .prose li{margin-bottom:4px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:18px}
+.row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted);font-weight:500}
+select,input[type=number],input[type=text],textarea{font:inherit;font-size:14px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:6px 8px;max-width:100%}
+input[type=range]{accent-color:var(--accent)}
+textarea{width:100%;font-family:var(--font-mono);font-size:12.5px;min-height:120px}
+.btn{font:inherit;font-size:14px;border-radius:7px;padding:7px 13px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);font-weight:500}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.sm{font-size:13px;padding:5px 10px}
+.btn.danger{background:transparent;border-color:var(--red);color:var(--red)}
+.btn.danger[data-armed]{background:var(--red);color:var(--surface)}
+:focus-visible{outline:2px solid var(--coral);outline-offset:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:13px;border:0;background:var(--surface);color:var(--muted);padding:6px 11px;cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.muted{color:var(--muted)} .small{font-size:13px} .mono{font-family:var(--font-mono)}
+.note{font-size:13px;color:var(--muted);background:var(--surface2);border-radius:8px;padding:10px 12px;margin:0}
+.status{font-size:13px;padding:8px 12px;border-radius:8px;background:var(--surface2);margin:0}
+.status.ok{color:var(--ok)} .status.err{color:var(--red)}
+.dchip{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:13px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gc);border-radius:8px;padding:8px 12px;margin:0}
+.chartbox{position:relative;width:100%;height:300px}
+.chartbox.tall{height:360px} .chartbox.short{height:200px}
+.tbl{overflow-x:auto;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{font-weight:600;color:var(--muted);font-size:12px;background:var(--surface2);position:sticky;top:0}
+td:first-child,th:first-child{text-align:left}
+td.l,th.l{text-align:left;white-space:normal}
+tbody tr.sel td{outline:2px solid var(--coral);outline-offset:-2px}
+tbody tr.top3 td{background:var(--hi);color:var(--hi-ink);font-weight:600}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--surface2)}
+tr.tot td,td.tot{font-weight:700}
+.scroll{max-height:420px;overflow:auto}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.tile{background:var(--surface2);border-radius:8px;padding:10px 12px;min-width:0}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font-family:var(--font-mono);font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tile .u{font-size:12px;color:var(--muted);margin-left:2px}
+.tile.key{background:var(--accent);color:var(--accent-ink)} .tile.key .k,.tile.key .u{color:inherit;opacity:.85}
+.formula{font-family:var(--font-mono);font-size:14px;background:var(--surface2);padding:10px 12px;border-radius:8px;overflow-x:auto}
+.defs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px}
+.def{border-top:3px solid var(--g-m);padding-top:8px}
+.def .sym{font-family:var(--font-mono);font-size:22px;font-weight:600;color:var(--g-m)}
+.def p{margin:2px 0 0;font-size:13.5px}
+.flowd{display:grid;gap:10px}
+.flowrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fbox{border:1px solid var(--line);background:var(--surface2);border-radius:8px;padding:7px 11px;font-size:13.5px}
+.fbox.e{border-color:var(--g-e)} .fbox.h{border-color:var(--g-h)}
+.farr{color:var(--muted);font-family:var(--font-mono)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+.rosewrap{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:760px){.rosewrap{grid-template-columns:1fr}}
+.rose svg{width:100%;height:auto;max-width:560px;display:block;margin:auto}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:16px;text-align:center;color:var(--muted);font-size:13px}
+.drop.over{border-color:var(--accent);color:var(--accent)}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--hi);color:var(--hi-ink)}
+.modal{position:fixed;inset:0;background:rgba(5,20,20,.72);z-index:50;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.modal .box{background:var(--surface);border-radius:12px;max-width:min(1100px,100%);max-height:100%;overflow:auto;padding:14px;display:grid;gap:10px}
+.modal img{width:100%;height:auto;background:#fff;border:1px solid var(--line)}
+.pager{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;max-width:1120px;margin-top:22px}
+details summary{cursor:pointer;color:var(--accent);font-weight:500;font-size:14px}
+.mapgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<header class="top"><div class="in">
+  <div><div class="eyebrow">Modul 2 · Pengolahan Data Oseanografi</div><h1>Bengkel Gelombang</h1></div>
+  <button id="menuBtn" aria-expanded="false" aria-controls="side">Menu</button>
+</div></header>
+
+<div class="layout">
+<aside class="side" id="side" aria-label="Navigasi"></aside>
+<main>
+
+<!-- ======================= MATERI ======================= -->
+<section class="page" data-page="m-parameter" style="--gc:var(--g-m)">
+  <div class="crumb"><i></i>Materi</div>
+  <div class="sechead"><span class="num">2.1</span><h2>Parameter Gelombang &amp; Alur Pengolahan</h2></div>
+  <p class="lead">Besaran dasar yang diukur sensor gelombang dan yang diturunkan untuk ringkasan per jam.</p>
+  <div class="card">
+    <div class="defs">
+      <div class="def"><div class="sym">η</div><b>Water Level</b><p>Fluktuasi muka air instan yang terekam sensor. Ini sinyal mentah sebelum diolah.</p></div>
+      <div class="def"><div class="sym">Hs</div><b>Significant Wave Height</b><p>Rata-rata 1/3 gelombang tertinggi dalam satu perekaman.</p></div>
+      <div class="def"><div class="sym">Ts / Tp</div><b>Significant / Peak Period</b><p>Ts: rata-rata periode 1/3 gelombang tertinggi. Tp: periode puncak energi spektrum.</p></div>
+      <div class="def"><div class="sym">Dir</div><b>Wave Direction</b><p>Arah datang gelombang (coming from), 0°–360° searah jarum jam dari Utara.</p></div>
+    </div>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <h3 style="margin:0">Definisi satu gelombang individu</h3>
+    <div class="chartbox"><canvas id="cMOne"></canvas></div>
+    <p class="note small">Satu gelombang dibatasi dua titik up-crossing berurutan. <b>Tinggi H</b> = jarak vertikal lembah ke puncak; <b>periode T</b> = selang waktu antar-up-crossing. Garis putus-putus = SWL (muka air rata-rata). Contoh: gelombang no. 3 dari data slide.</p>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <h3 style="margin:0">Alat observasi dan data yang dihasilkan</h3>
+    <div class="tbl"><table>
+      <thead><tr><th class="l">Alat</th><th class="l">Prinsip</th><th class="l">Data keluaran</th><th class="l">Diolah di</th></tr></thead>
+      <tbody>
+        <tr><td class="l"><b>Wave logger / pressure sensor</b></td><td class="l">Di dasar perairan; tekanan hidrostatik dikonversi ke η</td><td class="l">Deret waktu elevasi muka air η(t)</td><td class="l">Olah data elevasi η(t)</td></tr>
+        <tr><td class="l"><b>Wave rider buoy</b></td><td class="l">Mengapung mengikuti muka air; merekam percepatan vertikal</td><td class="l">η(t) mentah, atau Hs/Tp/Dir jika sudah diolah alat</td><td class="l">Keduanya</td></tr>
+        <tr><td class="l"><b>ADCP / AWAC (wave track)</b></td><td class="l">Akustik dari dasar; sekaligus merekam arus</td><td class="l">Umumnya sudah berupa Hs, H1/10, Hmax, Tp, Dir per burst</td><td class="l">Olah data Hs, Tp, Dir</td></tr>
+      </tbody></table></div>
+  </div>
+  <div class="card" style="display:grid;gap:12px">
+    <h3 style="margin:0">Alur pengolahan gelombang</h3>
+    <div class="flowd">
+      <div class="flowrow"><span class="fbox">Data hasil observasi</span><span class="farr">→</span><span class="fbox e">Water level η(t)</span><span class="farr">→</span><span class="fbox e">Zero up/down-crossing</span><span class="farr">→</span><span class="fbox e">Deret H × T</span><span class="farr">→</span><span class="fbox e">Hs, Ts per burst</span><button class="btn sm ghost" data-go="e-data">Olah data elevasi →</button></div>
+      <div class="flowrow"><span class="fbox">Data hasil observasi</span><span class="farr">→</span><span class="fbox h">Hs, Tp, Dir (sudah diolah alat)</span><button class="btn sm ghost" data-go="h-data" style="border-color:var(--g-h);color:var(--g-h)">Olah data Hs, Tp, Dir →</button></div>
+      <div class="flowrow"><span class="farr">kedua jalur →</span><span class="fbox">Matriks frekuensi</span><span class="farr">→</span><span class="fbox">Wave rose</span><span class="farr">→</span><span class="fbox">Laporan</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="page" data-page="m-zerocrossing" style="--gc:var(--g-m)" hidden>
+  <div class="crumb"><i></i>Materi</div>
+  <div class="sechead"><span class="num">2.2</span><h2>Metode Zero Up-Crossing &amp; Zero Down-Crossing</h2></div>
+  <p class="lead">Memisahkan gelombang individu dari deret waktu η(t). Contoh di halaman ini memakai rekaman 120 detik dari slide (18 gelombang).</p>
+  <div class="grid2">
+    <div class="card prose">
+      <h3>Zero up-crossing</h3>
+      <ol>
+        <li><b>Deteksi up-crossing:</b> cari titik di mana η(t) memotong garis nol dari negatif ke positif. Waktu potong diinterpolasi linear di antara dua sampel.</li>
+        <li><b>Ukur H:</b> selisih elevasi puncak (crest) dan lembah (trough) di antara dua up-crossing berurutan.</li>
+        <li><b>Ukur T:</b> selang waktu antara up-crossing awal dan up-crossing berikutnya.</li>
+      </ol>
+    </div>
+    <div class="card prose">
+      <h3>Zero down-crossing</h3>
+      <p>Sama, tetapi gelombang dibatasi titik potong garis nol dari <b>positif ke negatif</b>. Satu gelombang berisi lembah lalu puncak berikutnya.</p>
+      <p>Untuk rekaman panjang, kedua metode memberi Hs dan Ts yang hampir sama. Pada rekaman pendek perbedaannya bisa terlihat, seperti contoh di bawah. Down-crossing dianjurkan IAHR karena puncak gelombang curam terbentuk setelah lembah.</p>
+      <p class="small muted">Syarat: garis nol harus muka air rata-rata (MSL) burst itu. Data dari sensor dasar atau yang mengandung pasut harus dikoreksi lebih dulu.</p>
+    </div>
+  </div>
+  <div class="card" style="display:grid;gap:12px">
+    <div class="row" style="justify-content:space-between">
+      <div class="seg" id="mCrossSeg"><button data-v="up" class="on">Zero up-crossing</button><button data-v="down">Zero down-crossing</button></div>
+      <span class="small muted">Klik grafik atau baris tabel untuk melihat H dan T satu gelombang.</span>
+    </div>
+    <div class="chartbox tall"><canvas id="cMEta"></canvas></div>
+    <div class="legend"><span><i style="background:var(--accent)"></i>η(t)</span><span><i style="background:var(--red);border-radius:50%"></i>titik crossing</span><span><i style="background:var(--coral)"></i>puncak ▲ / lembah ▼</span><span><i style="background:var(--hi)"></i>gelombang terpilih</span></div>
+    <div class="tiles" id="mCompare"></div>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <h3 style="margin:0" id="mWaveTitle">Tabel gelombang individu</h3>
+    <div class="tbl scroll"><table id="mWaveTbl"></table></div>
+  </div>
+</section>
+
+<section class="page" data-page="m-statistik" style="--gc:var(--g-m)" hidden>
+  <div class="crumb"><i></i>Materi</div>
+  <div class="sechead"><span class="num">2.3</span><h2>Statistik Deskriptif: Hs, Ts, Hmean, Hmax</h2></div>
+  <p class="lead">Dari deret H individu satu perekaman menuju parameter ringkasan. Contoh memakai 18 gelombang dari slide (zero up-crossing).</p>
+  <div class="grid2">
+    <div class="card prose">
+      <h3>Definisi</h3>
+      <ul>
+        <li><b>Hs = H1/3</b>: urutkan H dari tertinggi, ambil N/3 gelombang teratas, lalu rata-ratakan.</li>
+        <li><b>Ts = T1/3</b>: rata-rata periode dari gelombang-gelombang yang sama.</li>
+        <li><b>H1/10</b>: rata-rata 1/10 gelombang tertinggi.</li>
+        <li><b>Hmean</b>: rata-rata seluruh H; nilai "khas", lebih rendah dari Hs.</li>
+        <li><b>Hmax</b>: H terbesar dalam perekaman; penting untuk desain dan keselamatan.</li>
+        <li><b>Hrms</b>: akar rata-rata kuadrat H. Untuk distribusi Rayleigh, Hs ≈ 1,416·Hrms dan Hmean ≈ 0,886·Hrms.</li>
+        <li><b>Tmean (Tz)</b>: rata-rata seluruh periode zero-crossing.</li>
+      </ul>
+      <p class="small muted">Catatan: Hs dari spektrum (Hm0 = 4√m0) umumnya sedikit lebih besar dari H1/3 zero-crossing (H1/3 ≈ 0,95·Hm0).</p>
+    </div>
+    <div class="card" style="display:grid;gap:12px">
+      <h3 style="margin:0">Hasil untuk contoh slide</h3>
+      <div class="tiles" id="mStatTiles"></div>
+      <div class="formula" id="mFormula"></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card" style="display:grid;gap:10px">
+      <h3 style="margin:0">H terurut <span class="badge">1/3 tertinggi</span></h3>
+      <div class="tbl scroll" style="max-height:380px"><table id="mSortTbl"></table></div>
+    </div>
+    <div class="card" style="display:grid;gap:10px">
+      <h3 style="margin:0">Distribusi tinggi gelombang</h3>
+      <div class="chartbox"><canvas id="cMHist"></canvas></div>
+      <p class="note small">Batang = jumlah gelombang per kelas H; garis = distribusi Rayleigh dengan Hrms dari data, p(H) = (2H/Hrms²)·exp(−H²/Hrms²).</p>
+    </div>
+  </div>
+</section>
+
+<section class="page" data-page="m-matriks" style="--gc:var(--g-m)" hidden>
+  <div class="crumb"><i></i>Materi</div>
+  <div class="sechead"><span class="num">2.4</span><h2>Matriks Distribusi Frekuensi</h2></div>
+  <p class="lead">Tabel silang Hs terhadap arah datang, sebagai persiapan wave rose.</p>
+  <div class="card prose">
+    <ol>
+      <li><b>Tentukan 8 sektor arah</b> (masing-masing 45°): N (337,5°–22,5°), NE (22,5°–67,5°), E (67,5°–112,5°), SE (112,5°–157,5°), S (157,5°–202,5°), SW (202,5°–247,5°), W (247,5°–292,5°), NW (292,5°–337,5°).</li>
+      <li><b>Kelompokkan Hs</b> ke kelas: 0,0–0,5 m, 0,5–1,0 m, 1,0–1,5 m, 1,5–2,0 m, dan &gt;2,0 m.</li>
+      <li><b>Hitung persentase tiap sel</b>: jumlah perekaman pada sel dibagi total perekaman (N<sub>total</sub>), dikali 100%.</li>
+    </ol>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <h3 style="margin:0">Contoh: 720 perekaman (30 hari × 24 jam), dominan dari NE</h3>
+    <div class="tbl"><table id="mMatTbl"></table></div>
+    <p class="status" id="mMatInterp"></p>
+  </div>
+</section>
+
+<section class="page" data-page="m-waverose" style="--gc:var(--g-m)" hidden>
+  <div class="crumb"><i></i>Materi</div>
+  <div class="sechead"><span class="num">2.5</span><h2>Diagram Mawar Gelombang (Wave Rose)</h2></div>
+  <p class="lead">Visualisasi polar dari matriks distribusi frekuensi.</p>
+  <div class="card rosewrap">
+    <div class="rose" id="mRose"></div>
+    <div class="prose" style="display:grid;gap:10px">
+      <div><h3>Aturan orientasi &amp; arah</h3>
+      <ul>
+        <li>Sumbu polar: Utara di atas (0°), Timur di kanan (90°), Selatan di bawah (180°), Barat di kiri (270°).</li>
+        <li>Konvensi <b>arah datang</b> (coming from): batang menunjuk ke arah asal gelombang, bukan arah tujuannya.</li>
+        <li>Contoh: Dir = 210° digambar pada sektor Barat Daya (SW).</li>
+      </ul></div>
+      <div><h3>Membaca wave rose</h3>
+      <ul>
+        <li>Panjang batang = total persentase kejadian dari sektor itu.</li>
+        <li>Segmen warna = proporsi tiap kelas Hs pada sektor itu.</li>
+      </ul></div>
+      <div class="legend" id="mRoseLegend" style="flex-direction:column;gap:6px"></div>
+    </div>
+  </div>
+</section>
+
+<section class="page" data-page="m-laporan" style="--gc:var(--g-m)" hidden>
+  <div class="crumb"><i></i>Materi</div>
+  <div class="sechead"><span class="num">2.6</span><h2>Sistematika Pelaporan Gelombang</h2></div>
+  <p class="lead">Lima komponen wajib dalam laporan hasil pengolahan data gelombang. Halaman "Laporan" di kedua alur pengolahan menyusun kelimanya secara otomatis.</p>
+  <div class="card prose">
+    <ol>
+      <li><b>Ringkasan eksekutif</b>: rata-rata Hs, Ts/Tp, Hmax, dan arah dominan selama periode observasi.</li>
+      <li><b>Grafik deret waktu tiga panel</b>: Hs, Ts/Tp, dan Dir terhadap waktu (Dir digambar sebagai titik karena besaran sirkular).</li>
+      <li><b>Matriks distribusi frekuensi</b>: tabel silang Hs vs sektor arah datang, lengkap dengan total baris dan kolom.</li>
+      <li><b>Wave rose</b>: visualisasi polar dari matriks pada komponen 3.</li>
+      <li><b>Tabel statistik</b>: mean, max, min, standar deviasi, skewness, dan kurtosis dari Hs (dan parameter lain).</li>
+    </ol>
+  </div>
+  <div class="row"><button class="btn" data-go="e-laporan">Laporan data elevasi →</button><button class="btn" data-go="h-laporan" style="background:var(--g-h);border-color:var(--g-h)">Laporan data Hs, Tp, Dir →</button></div>
+</section>
+
+<!-- ======================= OLAH DATA ELEVASI ======================= -->
+<section class="page" data-page="e-data" style="--gc:var(--g-e)" hidden>
+  <div class="crumb"><i></i>Olah data elevasi η(t)</div>
+  <div class="sechead"><span class="num">1</span><h2>Unggah Data Elevasi Muka Air</h2></div>
+  <p class="lead">Untuk data mentah wave logger, pressure sensor, atau buoy: deret waktu η(t) atau tekanan. Hasil zero-crossing per burst otomatis menjadi data matriks, wave rose, dan laporan di alur ini.</p>
+  <div class="card" style="display:grid;gap:12px">
+    <div class="row">
+      <button class="btn sm ghost" id="exEta24">Contoh 24 jam (2 Hz, ada pasut &amp; arah)</button>
+      <button class="btn sm ghost" id="exEta120">Contoh slide (120 detik)</button>
+      <button class="btn sm danger" id="clrEta" style="margin-left:auto">Hapus data</button>
+    </div>
+    <div class="drop" id="dropEta">Tarik file CSV ke sini atau <label style="color:var(--accent);cursor:pointer;text-decoration:underline">pilih file<input type="file" id="fileEta" accept=".csv,.txt,.dat" hidden></label></div>
+    <div id="mapEta"></div>
+    <p class="status" id="stEta">Belum ada data.</p>
+  </div>
+  <div class="card small">
+    <details>
+      <summary>Format kolom yang dibutuhkan</summary>
+      <ul>
+        <li><b>Waktu</b>: detik (angka) atau tanggal-jam <span class="mono">YYYY-MM-DD HH:MM:SS</span>. Jika tidak ada, isi frekuensi sampling (Hz).</li>
+        <li><b>η</b>: elevasi (m, cm, mm) atau <b>tekanan</b> (dbar). Tekanan dikonversi hidrostatik η = P·10⁴/(ρg), ρ = 1025 kg/m³, tanpa koreksi atenuasi kedalaman (Kp).</li>
+        <li><b>Arah</b> (opsional): arah datang (°). Dirata-ratakan secara sirkular per burst; tanpa kolom ini matriks dan wave rose tidak bisa dibuat.</li>
+        <li>Logger mode burst (mis. 1024 s per jam) dikenali otomatis dari celah waktu.</li>
+      </ul>
+      <button class="btn sm ghost" data-copytpl="eta">Salin contoh CSV η</button>
+      <textarea hidden readonly style="margin-top:10px"></textarea>
+    </details>
+  </div>
+</section>
+
+<section class="page" data-page="e-cek" style="--gc:var(--g-e)" hidden>
+  <div class="crumb"><i></i>Olah data elevasi η(t)</div>
+  <div class="sechead"><span class="num">2</span><h2>Cek Deret Waktu η(t)</h2></div>
+  <p class="lead">Periksa rekaman mentah sebelum zero-crossing: durasi, laju sampling, jumlah burst, dan apakah muka air rata-rata perlu dikoreksi.</p>
+  <div class="card" style="display:grid;gap:12px">
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0" id="rawTitle">Deret waktu η(t) mentah</h3><button class="btn sm ghost" data-png="raw">Buka Versi Cetak (PNG)</button></div>
+    <div class="tiles" id="etaTiles"></div>
+    <div class="chartbox"><canvas id="cRaw"></canvas></div>
+    <p class="note" id="rawNote"></p>
+  </div>
+</section>
+
+<section class="page" data-page="e-zc" style="--gc:var(--g-e)" hidden>
+  <div class="crumb"><i></i>Olah data elevasi η(t)</div>
+  <div class="sechead"><span class="num">3</span><h2>Zero-Crossing per Burst</h2></div>
+  <p class="lead">Atur panjang burst dan koreksi muka air, pilih metode, lalu periksa gelombang individu yang terdeteksi.</p>
+  <div class="card" style="display:grid;gap:12px">
+    <div class="row">
+      <label class="f">Burst<select id="selBurst"></select></label>
+      <label class="f">Panjang burst
+        <select id="burstMin"><option value="10">10 menit</option><option value="20">20 menit</option><option value="30">30 menit</option><option value="60" selected>60 menit</option><option value="180">3 jam</option></select></label>
+      <label class="f">Koreksi muka air rata-rata
+        <select id="detrend"><option value="none">Tanpa (data sudah relatif MSL)</option><option value="mean" selected>Kurangi rata-rata burst</option><option value="linear">Hapus tren linear (pasut)</option></select></label>
+      <div class="f"><span style="font-size:12px;font-weight:500" class="muted">Metode</span>
+        <div class="seg" id="crossSeg"><button data-v="up" class="on">Zero up-crossing</button><button data-v="down">Zero down-crossing</button></div></div>
+    </div>
+    <div class="row">
+      <label class="f">Jendela tampilan
+        <select id="winLen"><option value="30">30 s</option><option value="60">60 s</option><option value="120" selected>120 s</option><option value="300">300 s</option><option value="600">600 s</option><option value="0">Seluruh burst</option></select></label>
+      <label class="f" style="flex:1;min-width:200px">Geser jendela <input type="range" id="winPos" min="0" max="1000" value="0"></label>
+      <button class="btn sm ghost" data-png="eta">Buka Versi Cetak (PNG)</button>
+    </div>
+    <div class="chartbox tall"><canvas id="cEta"></canvas></div>
+    <div class="legend"><span><i style="background:var(--accent)"></i>η(t)</span><span><i style="background:var(--red);border-radius:50%"></i>titik crossing</span><span><i style="background:var(--coral)"></i>puncak ▲ / lembah ▼</span><span><i style="background:var(--hi)"></i>gelombang terpilih (klik grafik atau baris tabel)</span></div>
+    <p class="note" id="zcNote"></p>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0" id="waveTitle">Tabel gelombang individu</h3>
+      <div class="row"><button class="btn sm ghost" id="cpWaves">Salin gelombang burst ini (CSV)</button><button class="btn sm ghost" id="cpWavesAll">Salin semua burst (CSV)</button></div></div>
+    <div class="tbl scroll"><table id="waveTbl"></table></div>
+    <textarea id="outWaves" hidden readonly></textarea>
+  </div>
+</section>
+
+<section class="page" data-page="e-stat" style="--gc:var(--g-e)" hidden>
+  <div class="crumb"><i></i>Olah data elevasi η(t)</div>
+  <div class="sechead"><span class="num">4</span><h2>Statistik &amp; Rekap per Burst</h2></div>
+  <p class="lead">Statistik gelombang untuk burst terpilih, lalu ringkasan seluruh burst. Ringkasan ini menjadi data untuk matriks, wave rose, dan laporan.</p>
+  <div class="grid2">
+    <div class="card" style="display:grid;gap:12px">
+      <h3 style="margin:0" id="statTitle">Statistik burst</h3>
+      <div class="tiles" id="statTiles"></div>
+      <div class="formula" id="formula"></div>
+    </div>
+    <div class="card" style="display:grid;gap:10px">
+      <div class="row" style="justify-content:space-between"><h3 style="margin:0">Distribusi tinggi gelombang</h3><button class="btn sm ghost" data-png="hist">Buka Versi Cetak (PNG)</button></div>
+      <div class="chartbox"><canvas id="cHist"></canvas></div>
+      <p class="note small">Batang = jumlah gelombang per kelas H. Garis = distribusi Rayleigh dengan Hrms dari data.</p>
+    </div>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <h3 style="margin:0">H terurut (tertinggi → terendah) <span class="badge">1/3 tertinggi</span></h3>
+    <div class="tbl scroll" style="max-height:340px"><table id="sortTbl"></table></div>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0">Rekap per burst (klik baris untuk memilih burst)</h3><button class="btn sm ghost" id="cpBurst">Salin rekap (CSV)</button></div>
+    <div class="tbl scroll" style="max-height:320px"><table id="burstTbl"></table></div>
+    <textarea id="outBurst" hidden readonly></textarea>
+  </div>
+</section>
+
+<!-- ======================= OLAH DATA Hs, Tp, Dir ======================= -->
+<section class="page" data-page="h-data" style="--gc:var(--g-h)" hidden>
+  <div class="crumb"><i></i>Olah data Hs, Tp, Dir</div>
+  <div class="sechead"><span class="num">1</span><h2>Unggah Data Hs, Tp, Dir</h2></div>
+  <p class="lead">Untuk keluaran instrumen yang sudah diolah per burst (ADCP/AWAC wave track, buoy direksional): time series Hs, periode, dan arah. Zero-crossing tidak diperlukan.</p>
+  <div class="card" style="display:grid;gap:12px">
+    <div class="row">
+      <button class="btn sm ghost" id="exAdcp">Contoh keluaran ADCP (14 hari)</button>
+      <button class="btn sm ghost" id="exRekap">Contoh 30 hari (slide 17)</button>
+      <button class="btn sm danger" id="clrRek" style="margin-left:auto">Hapus data</button>
+    </div>
+    <div class="drop" id="dropRek">Tarik file CSV ke sini atau <label style="color:var(--accent);cursor:pointer;text-decoration:underline">pilih file<input type="file" id="fileRek" accept=".csv,.txt,.dat" hidden></label></div>
+    <div id="mapRek"></div>
+    <p class="status" id="stRek">Belum ada data.</p>
+  </div>
+  <div class="card small">
+    <details>
+      <summary>Format kolom yang dibutuhkan</summary>
+      <ul>
+        <li><b>Waktu</b>: <span class="mono">YYYY-MM-DD HH:MM</span> atau <span class="mono">DD/MM/YYYY HH:MM</span>; tanggal dan jam boleh di dua kolom terpisah.</li>
+        <li><b>Hs</b> (m), <b>Tp</b>/Ts/Tz (s), <b>Dir</b> (°). Header berunit seperti "Hs (m)" dikenali otomatis.</li>
+        <li>Opsional: <b>H1/10</b>, <b>Hmax</b> (m), <b>kedalaman sensor</b> (m).</li>
+        <li>Arah dianggap coming from. Untuk data going to, pilih konvensi itu saat mencocokkan kolom (+180°).</li>
+        <li>Pemisah koma, titik koma, atau tab; desimal koma diterima. Baris flag (mis. −9999) dibuang saat QC.</li>
+      </ul>
+      <button class="btn sm ghost" data-copytpl="rek">Salin contoh CSV</button>
+      <textarea hidden readonly style="margin-top:10px"></textarea>
+    </details>
+  </div>
+</section>
+
+<section class="page" data-page="h-ts" style="--gc:var(--g-h)" hidden>
+  <div class="crumb"><i></i>Olah data Hs, Tp, Dir</div>
+  <div class="sechead"><span class="num">2</span><h2>Time Series &amp; QC</h2></div>
+  <p class="lead">Periksa kontinuitas dan kewajaran data instrumen sebelum dianalisis.</p>
+  <div class="card" style="display:grid;gap:12px">
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0">Time series parameter gelombang</h3><button class="btn sm ghost" data-png="ts4">Buka Versi Cetak (PNG)</button></div>
+    <div class="tiles" id="rekTiles"></div>
+    <p class="small muted" style="margin:0" id="rekPanelCap"></p>
+    <div class="chartbox short"><canvas id="cRH"></canvas></div>
+    <div class="chartbox short"><canvas id="cRT"></canvas></div>
+    <div class="chartbox short"><canvas id="cRD"></canvas></div>
+    <div class="chartbox short" id="boxRZ"><canvas id="cRZ"></canvas></div>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <h3 style="margin:0">Tabel data &amp; hasil QC</h3>
+    <p class="status" id="qcNote"></p>
+    <div class="tbl scroll" style="max-height:300px"><table id="rekPreview"></table></div>
+  </div>
+</section>
+
+<section class="page" data-page="h-stat" style="--gc:var(--g-h)" hidden>
+  <div class="crumb"><i></i>Olah data Hs, Tp, Dir</div>
+  <div class="sechead"><span class="num">3</span><h2>Statistik Deret Waktu</h2></div>
+  <p class="lead">Statistik Hs per perekaman: nilai khas, sebaran, dan hubungan tinggi–periode.</p>
+  <div class="card" style="display:grid;gap:12px">
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0" id="rekStatTitle">Statistik</h3><button class="btn sm ghost" data-png="hshist">Buka Versi Cetak (PNG)</button></div>
+    <div class="tiles" id="rekStatTiles"></div>
+    <div class="grid2">
+      <div class="chartbox"><canvas id="cHsHist"></canvas></div>
+      <div class="chartbox"><canvas id="cHsT"></canvas></div>
+    </div>
+    <p class="note small">Kiri: distribusi frekuensi Hs (% dari total perekaman). Kanan: sebaran Hs terhadap periode; gelombang tinggi umumnya berperiode lebih panjang.</p>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <h3 style="margin:0">Tabel statistik</h3>
+    <div class="tbl"><table id="hStatTbl"></table></div>
+  </div>
+</section>
+
+<!-- ======================= SHARED: MATRIKS / ROSE / LAPORAN ======================= -->
+<section class="page" data-page="matriks" hidden>
+  <div class="crumb"><i></i><span class="gname"></span></div>
+  <div class="sechead"><span class="num pnum"></span><h2>Matriks Distribusi Frekuensi</h2></div>
+  <p class="dchip"></p>
+  <div class="card" style="display:grid;gap:12px">
+    <div class="row">
+      <label class="f">Jumlah sektor<select id="nSect"><option value="8" selected>8 sektor (45°)</option><option value="16">16 sektor (22,5°)</option></select></label>
+      <label class="f">Batas kelas Hs (m)<input type="text" id="binsIn" value="0.5, 1.0, 1.5, 2.0" style="width:170px"></label>
+      <div class="f"><span style="font-size:12px;font-weight:500" class="muted">Isi sel</span><div class="seg" id="cellSeg"><button data-v="pct" class="on">Persen (%)</button><button data-v="cnt">Jumlah</button></div></div>
+      <button class="btn sm ghost" id="cpMat">Salin matriks (CSV)</button>
+    </div>
+    <p class="note small" id="sectNote"></p>
+    <div class="tbl"><table id="matTbl"></table></div>
+    <textarea id="outMat" hidden readonly></textarea>
+    <p class="status" id="matInterp"></p>
+  </div>
+</section>
+
+<section class="page" data-page="rose" hidden>
+  <div class="crumb"><i></i><span class="gname"></span></div>
+  <div class="sechead"><span class="num pnum"></span><h2>Wave Rose</h2></div>
+  <p class="dchip"></p>
+  <div class="card rosewrap">
+    <div class="rose" id="rose"></div>
+    <div style="display:grid;gap:12px">
+      <div class="legend" id="roseLegend" style="flex-direction:column;gap:6px"></div>
+      <p class="status" id="roseInterp"></p>
+      <div><button class="btn sm ghost" data-png="rose">Buka Versi Cetak (PNG)</button></div>
+    </div>
+  </div>
+</section>
+
+<section class="page" data-page="laporan" hidden>
+  <div class="crumb"><i></i><span class="gname"></span></div>
+  <div class="sechead"><span class="num pnum"></span><h2>Laporan Gelombang</h2></div>
+  <p class="dchip"></p>
+  <div class="card" style="display:grid;gap:12px">
+    <div class="row">
+      <label class="f">Nama lokasi / stasiun<input type="text" id="repLoc" value="Stasiun contoh" style="width:220px"></label>
+      <label class="f">Instrumen<input type="text" id="repInst" value="" style="width:220px"></label>
+      <label class="f">Kedalaman sensor (m)<input type="text" id="repDepth" value="" placeholder="mis. 12" style="width:120px"></label>
+    </div>
+  </div>
+  <div class="card" style="display:grid;gap:12px">
+    <h3 style="margin:0">1 · Ringkasan Eksekutif</h3>
+    <div class="tiles" id="exTiles"></div>
+    <textarea id="exText" rows="5"></textarea>
+    <div><button class="btn sm ghost" id="regen">Buat ulang teks otomatis</button></div>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0">2 · Grafik Deret Waktu Tiga Panel</h3><button class="btn sm ghost" data-png="ts3">Buka Versi Cetak (PNG)</button></div>
+    <div class="chartbox short"><canvas id="cTsH"></canvas></div>
+    <div class="chartbox short"><canvas id="cTsT"></canvas></div>
+    <div class="chartbox short"><canvas id="cTsD"></canvas></div>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <h3 style="margin:0">3 · Matriks Distribusi Frekuensi</h3>
+    <div class="tbl"><table id="matTbl2"></table></div>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <h3 style="margin:0">4 · Wave Rose</h3>
+    <div class="rose" id="rose2" style="max-width:520px;width:100%;margin:auto"></div>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <h3 style="margin:0">5 · Tabel Statistik</h3>
+    <div class="tbl"><table id="statTbl"></table></div>
+    <p class="note small">Standar deviasi sampel (n−1). Skewness dan kurtosis memakai rumus sampel yang sama dengan fungsi Excel SKEW() dan KURT(); kurtosis = <i>excess kurtosis</i> (normal = 0).</p>
+  </div>
+  <div class="card" style="display:grid;gap:10px">
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0">Ekspor laporan</h3><button class="btn sm" id="cpReport">Salin laporan (teks)</button></div>
+    <textarea id="outReport" hidden readonly rows="16"></textarea>
+  </div>
+</section>
+
+<nav class="pager" id="pager" aria-label="Halaman sebelumnya dan berikutnya"></nav>
+</main>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="box">
+    <div class="row" style="justify-content:space-between"><b id="modalTitle">Versi cetak</b><button class="btn sm ghost" id="modalClose">Tutup</button></div>
+    <p class="small muted" style="margin:0">Klik kanan pada gambar → <b>Simpan Gambar Sebagai…</b> (di ponsel: tekan lama gambar).</p>
+    <img id="modalImg" alt="Versi cetak grafik">
+  </div>
+</div>
+<div id="offscreen" style="position:absolute;left:-99999px;top:0;width:1600px" aria-hidden="true"></div>
+
+<script>
+"use strict";
+/* ================= utilities ================= */
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const escXml=esc;
+const f=(v,d=2)=>(v==null||!isFinite(v))?"–":Number(v).toFixed(d);
+const fid=(v,d=2)=>(v==null||!isFinite(v))?"–":Number(v).toFixed(d).replace(".",",");
+const FF="'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif";
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){let u=0,v=0;while(!u)u=r();while(!v)v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+const MON=["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+const pad2=n=>String(n).padStart(2,"0");
+function fmtDT(ms,rel){ if(rel) return "jam ke-"+f(ms/3600000,1); const d=new Date(ms); return d.getUTCFullYear()+"-"+pad2(d.getUTCMonth()+1)+"-"+pad2(d.getUTCDate())+" "+pad2(d.getUTCHours())+":"+pad2(d.getUTCMinutes()); }
+function fmtDate(ms){const d=new Date(ms);return pad2(d.getUTCDate())+" "+MON[d.getUTCMonth()]+" "+d.getUTCFullYear()}
+
+function copyText(text,ta){
+  ta.hidden=false; ta.value=text;
+  try{ navigator.clipboard.writeText(text).then(()=>toast(ta,"Tersalin ke clipboard."),()=>{ta.select();toast(ta,"Teks dipilih — tekan Ctrl/Cmd+C.")}); }
+  catch(e){ ta.select(); toast(ta,"Teks dipilih — tekan Ctrl/Cmd+C."); }
+}
+function toast(el,msg){ let n=el.nextElementSibling; if(!n||!n.classList.contains("toastmsg")){n=document.createElement("p");n.className="status ok toastmsg";el.after(n)} n.textContent=msg; clearTimeout(n._t); n._t=setTimeout(()=>n.remove(),2500); }
+
+/* ================= CSV parsing ================= */
+function parseCSV(text){
+  text=text.replace(/^﻿/,"");
+  const lines=text.split(/\r?\n/).filter(l=>l.trim().length&&!/^\s*#/.test(l));
+  if(!lines.length) return null;
+  const first=lines[0];
+  const cnt=c=>first.split(c).length-1;
+  let delim=",";
+  if(cnt("\t")>0&&cnt("\t")>=cnt(",")) delim="\t"; else if(cnt(";")>cnt(",")) delim=";";
+  else if(cnt(",")===0&&/\s{1,}/.test(first.trim())) delim=/\s+/;
+  const dc=(delim===";"||delim==="\t");
+  const split=l=>l.trim().split(delim).map(s=>s.trim().replace(/^"|"$/g,""));
+  let header=split(first), body=lines.slice(1);
+  const numeric=s=>s!==""&&!isNaN(Number(dc?s.replace(",","."):s));
+  if(header.every(h=>numeric(h)||parseTime(h)!=null&&/\d{4}/.test(h))){ body=lines; header=header.map((_,i)=>"kolom "+(i+1)); }
+  const rows=body.map(split);
+  return {header,rows,dc};
+}
+function num(s,dc){ if(s==null||s==="") return NaN; if(dc) s=s.replace(",","."); const v=Number(s); return isFinite(v)?v:NaN; }
+function parseTime(s){
+  if(s==null) return null; s=String(s).trim();
+  let m=s.match(/^(\d{4})[-\/.](\d{1,2})[-\/.](\d{1,2})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}(?:\.\d+)?))?)?/);
+  if(m) return Date.UTC(+m[1],+m[2]-1,+m[3],+(m[4]||0),+(m[5]||0))+Math.round(+(m[6]||0)*1000);
+  m=s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{4})(?:[ T]+(\d{1,2}):(\d{2})(?::(\d{2}(?:\.\d+)?))?)?/);
+  if(m) return Date.UTC(+m[3],+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0))+Math.round(+(m[6]||0)*1000);
+  return null;
+}
+const ALIAS={
+  time:["waktu","time","datetime","date","tanggal","timestamp","jam","t","detik","seconds","sec","s","t(s)","time(s)"],
+  eta:["eta","η","elevasi","elevation","waterlevel","water level","wl","muka air","level","z","pressure","tekanan","p","depth","kedalaman"],
+  dir:["dir","arah","direction","mwd","dirp","dp","mdir","wdir","wave dir","wavedir","theta","dir(deg)","dirtp","arah gelombang"],
+  hs:["hs","hm0","h1/3","h13","swh","hsig","tinggi signifikan"],
+  per:["tp","ts","t1/3","tz","tm","tm02","tm01","tpeak","period","periode"],
+  hmax:["hmax","h max","hmaks"],
+  h10:["h1/10","h110","h10","h 1/10"],
+  depth:["depth","kedalaman","pressure","tekanan","level","wl","water level","mean depth"],
+  clock:["jam","time","waktu","hour"]
+};
+function norm(h){return h.toLowerCase().replace(/[\[\]()_]/g," ").replace(/\s+/g," ").trim()}
+function guess(header,key){
+  const H=header.map(norm);
+  for(const a of ALIAS[key]){ const i=H.indexOf(a); if(i>=0) return i; }
+  for(const a of ALIAS[key]){ const i=H.findIndex(h=>h.split(" ")[0]===a||(a.length>=3&&h.startsWith(a))); if(i>=0) return i; }
+  return -1;
+}
+function selectHTML(id,header,sel,allowNone,noneLabel){
+  let o=allowNone?`<option value="-1"${sel<0?" selected":""}>${noneLabel||"— tidak ada —"}</option>`:`<option value="-2"${sel<0?" selected":""}>— pilih kolom —</option>`;
+  header.forEach((h,i)=>o+=`<option value="${i}"${i===sel?" selected":""}>${esc(h)}</option>`);
+  return `<select id="${id}">${o}</select>`;
+}
+
+/* ================= state ================= */
+const S={
+  eta:null, bursts:[], selBurst:0, selWave:null, cross:"up", detrend:"mean", burstMin:60, winLen:120, winPos:0,
+  store:{e:null,h:null}, g:"m", lastG:null, rekap:null, rekapRel:false, perLabel:"Ts", rekapSrc:"", qc:"", rekapKind:"",
+  nSect:8, bins:[0.5,1,1.5,2], cell:"pct", charts:{}, route:"m-parameter", exTextDirty:false,
+  demo:{cross:"up",sel:2,cache:{}}, inst:{e:"Wave logger (pressure sensor)",h:"ADCP wave track"}
+};
+
+/* ================= samples ================= */
+const SLIDE_WAVES=[ // t awal, t akhir, puncak, H  (slide 11)
+ [4.00,4.75,0.043,0.143],[4.75,9.50,0.018,0.554],[9.50,17.25,0.897,1.852],[17.25,27.50,0.590,1.153],[27.50,35.50,0.780,1.766],
+ [35.50,46.25,0.682,1.126],[46.25,54.25,0.957,1.739],[54.25,59.50,0.748,1.007],[59.50,60.00,0.062,0.142],[60.00,64.00,0.064,0.779],
+ [64.00,72.00,0.715,1.717],[72.00,83.00,0.484,1.005],[83.00,90.75,0.963,1.671],[90.75,95.50,0.672,0.806],[95.50,101.00,0.226,0.931],
+ [101.00,108.75,0.912,1.869],[108.75,114.75,0.454,0.660],[114.75,119.25,0.002,0.783]];
+function halfLobe(z,t,a,b,amp,dt){ // fill z on (a,b) with half-sine scaled so max |sample| = |amp|
+  const idx=[]; for(let i=0;i<t.length;i++){ if(t[i]>a+1e-9&&t[i]<b-1e-9) idx.push(i); }
+  let m=0; idx.forEach(i=>{const s=Math.sin(Math.PI*(t[i]-a)/(b-a)); if(s>m)m=s}); if(!m) return;
+  idx.forEach(i=>z[i]=amp*Math.sin(Math.PI*(t[i]-a)/(b-a))/m);
+}
+function makeSlideEta(){
+  const dt=0.05,n=Math.round(120/dt)+1,t=new Float64Array(n),z=new Float64Array(n);
+  for(let i=0;i<n;i++) t[i]=Math.round(i*dt*1000)/1000;
+  // pre-record: falling limb of a crest then a trough before first up-crossing at 4.00 s
+  for(let i=0;i<n;i++) if(t[i]<1.5) z[i]=0.7*Math.cos(Math.PI/2*t[i]/1.5);
+  halfLobe(z,t,1.5,4.0,-0.55,dt);
+  for(const [a,b,c,H] of SLIDE_WAVES){ const m=(a+b)/2; halfLobe(z,t,a,m,c,dt); halfLobe(z,t,m,b,c-H,dt); }
+  for(let i=0;i<n;i++) if(t[i]>119.25) z[i]=0.35*Math.sin(Math.PI/2*(t[i]-119.25)/0.75);
+  return {t,z,dir:null,t0ms:null,dt,src:"Contoh slide 2.2 (120 detik, dt = 0,05 s)",unit:"m"};
+}
+function makeEta24(){
+  const fs=2,dt=1/fs,n=24*3600*fs,t=new Float64Array(n),z=new Float64Array(n),dir=new Float64Array(n);
+  const r=mulberry32(7); const K=48, comps=[];
+  // JONSWAP-like spectrum, Tp ~ 6 s
+  const fp=1/6, g=9.81; let tot=0;
+  for(let k=0;k<K;k++){ const fr=0.07+k*(0.40-0.07)/(K-1); const sig=fr<=fp?0.07:0.09;
+    const S=Math.pow(fr,-5)*Math.exp(-1.25*Math.pow(fp/fr,4))*Math.pow(3.3,Math.exp(-Math.pow(fr-fp,2)/(2*sig*sig*fp*fp)));
+    comps.push({w:2*Math.PI*(fr+(r()-0.5)*0.004),S,ph:2*Math.PI*r()}); tot+=S; }
+  comps.forEach(c=>c.a=Math.sqrt(2*c.S/tot)); // unit variance
+  const t0=Date.UTC(2026,6,14,0,0,0);
+  const hourDir=[]; for(let h=0;h<24;h++) hourDir.push((95+30*Math.sin(2*Math.PI*(h-4)/24)+8*gauss(r)+360)%360);
+  for(let i=0;i<n;i++){
+    const ti=i*dt; t[i]=ti; const h=ti/3600;
+    const hs=0.75+0.45*Math.sin(2*Math.PI*(h-9)/24)+0.12*Math.sin(2*Math.PI*h/5.3);
+    let s=0; for(const c of comps) s+=c.a*Math.cos(c.w*ti+c.ph);
+    const tide=0.55*Math.cos(2*Math.PI*h/12.42)+0.28*Math.cos(2*Math.PI*h/23.93+1);
+    z[i]=1.2+tide+(hs/4)*s; dir[i]=hourDir[Math.floor(h)];
+  }
+  return {t,z,dir,t0ms:t0,dt,src:"Contoh 24 jam (2 Hz, η relatif dasar sensor + pasut, arah per jam)",unit:"m"};
+}
+const SLIDE_MAT=[[36,9,6,16,1,2,4,8],[44,83,72,21,8,0,7,13],[22,86,77,16,1,2,5,5],[13,44,34,13,0,0,2,5],[12,31,16,3,0,0,2,1]];
+function makeRekap30(){
+  const r=mulberry32(2026), recs=[], lo=[0,0.5,1,1.5,2], hi=[0.5,1,1.5,2,2.8];
+  SLIDE_MAT.forEach((row,ci)=>row.forEach((c,si)=>{ for(let k=0;k<c;k++){
+    const Hs=lo[ci]+0.02+r()*(hi[ci]-lo[ci]-0.04); const Dir=(si*45+(r()-0.5)*36+360)%360;
+    recs.push({Hs,Dir}); } }));
+  // smooth latent to give the series some persistence (synthetic)
+  const n=recs.length, lat=new Array(n); let x=0;
+  for(let i=0;i<n;i++){ x=0.93*x+0.35*gauss(r); lat[i]={i,v:x+0.6*Math.sin(2*Math.PI*i/24-1)+0.5*Math.sin(2*Math.PI*i/(24*9))}; }
+  lat.sort((a,b)=>a.v-b.v); recs.sort((a,b)=>a.Hs-b.Hs);
+  const out=new Array(n), t0=Date.UTC(2026,6,1,0,0);
+  lat.forEach((l,k)=>{ const R=recs[k]; const T=2.4+3.1*Math.sqrt(R.Hs)+0.35*gauss(r);
+    out[l.i]={t:t0+l.i*3600000,Hs:+R.Hs.toFixed(3),T:+T.toFixed(2),Dir:+R.Dir.toFixed(1),Hmax:+(R.Hs*(1.5+0.35*r())).toFixed(3)}; });
+  return out;
+}
+
+function makeAdcp14(){
+  const r=mulberry32(314), out=[], t0=Date.UTC(2026,7,1,0,0); let x=0;
+  for(let i=0;i<14*24;i++){ const h=i;
+    x=0.9*x+0.06*gauss(r);
+    let Hs=0.66+0.14*Math.sin(2*Math.PI*(h-14)/24)+0.08*Math.sin(2*Math.PI*h/(24*6.5))+x; Hs=Math.min(1.0,Math.max(0.38,Hs));
+    const H10=Hs*(1.25+0.05*r()), Hmax=Hs*(1.45+0.22*r()), Tp=3.6+3.3*Math.sqrt(Hs)+0.45*gauss(r);
+    const Dir=(92+9*Math.sin(2*Math.PI*h/24)+7*gauss(r)+360)%360;
+    const depth=12.4+0.55*Math.cos(2*Math.PI*h/12.42)+0.3*Math.cos(2*Math.PI*h/23.93+1);
+    out.push({t:t0+i*3600000,Hs:+Hs.toFixed(3),H10:+H10.toFixed(3),Hmax:+Hmax.toFixed(3),T:+Tp.toFixed(2),Dir:+Dir.toFixed(1),depth:+depth.toFixed(2)}); }
+  return out;
+}
+
+/* ================= wave analysis ================= */
+function detrendArr(z,t,mode){
+  const n=z.length,o=new Float64Array(n);
+  if(mode==="none"){o.set(z);return o}
+  let mz=0,mt=0; for(let i=0;i<n;i++){mz+=z[i];mt+=t[i]} mz/=n;mt/=n;
+  if(mode==="mean"){ for(let i=0;i<n;i++) o[i]=z[i]-mz; return o; }
+  let sxy=0,sxx=0; for(let i=0;i<n;i++){const dx=t[i]-mt;sxy+=dx*(z[i]-mz);sxx+=dx*dx}
+  const b=sxx?sxy/sxx:0; for(let i=0;i<n;i++) o[i]=z[i]-(mz+b*(t[i]-mt)); return o;
+}
+function zeroCross(t,z,type){
+  const cr=[];
+  for(let i=0;i<z.length-1;i++){ const a=z[i],b=z[i+1];
+    if(type==="up"?(a<0&&b>=0):(a>0&&b<=0)){ cr.push({i:i+1,tc:t[i]+(0-a)*(t[i+1]-t[i])/(b-a)}); } }
+  const waves=[];
+  for(let k=0;k<cr.length-1;k++){
+    let cx=-Infinity,cn=Infinity,ix=-1,im=-1;
+    for(let j=cr[k].i;j<cr[k+1].i;j++){ if(z[j]>cx){cx=z[j];ix=j} if(z[j]<cn){cn=z[j];im=j} }
+    waves.push({no:k+1,t0:cr[k].tc,t1:cr[k+1].tc,crest:cx,trough:cn,H:cx-cn,T:cr[k+1].tc-cr[k].tc,ic:ix,it:im,i0:cr[k].i,i1:cr[k+1].i});
+  }
+  return {cr,waves};
+}
+function waveStats(waves){
+  const N=waves.length; if(!N) return null;
+  const s=[...waves].sort((a,b)=>b.H-a.H);
+  const n3=Math.max(1,Math.floor(N/3)), n10=Math.max(1,Math.floor(N/10));
+  const mean=(arr,k)=>arr.reduce((a,w)=>a+w[k],0)/arr.length;
+  const top3=s.slice(0,n3), top10=s.slice(0,n10);
+  return {N,n3,n10,Hs:mean(top3,"H"),Ts:mean(top3,"T"),H10:mean(top10,"H"),T10:mean(top10,"T"),Hmax:s[0].H,THmax:s[0].T,
+    Hmean:mean(waves,"H"),Tmean:mean(waves,"T"),Hrms:Math.sqrt(waves.reduce((a,w)=>a+w.H*w.H,0)/N),sorted:s,top3set:new Set(top3.map(w=>w.no))};
+}
+function circMean(arr){ let sx=0,sy=0,n=0; for(const d of arr){ if(!isFinite(d)) continue; sx+=Math.sin(d*Math.PI/180); sy+=Math.cos(d*Math.PI/180); n++; } if(!n) return NaN; return (Math.atan2(sx,sy)*180/Math.PI+360)%360; }
+
+/* ================= theme palette for charts ================= */
+function pal(print){
+  if(print) return {fg:"#1b2b2b",muted:"#4a5e5e",grid:"#d9e2e2",bg:"#ffffff",accent:"#0f6b73",coral:"#d9652f",red:"#c8393b",dir:"#6b3fae",hi:"rgba(240,170,60,.22)",font:22,lw:2.4,title:28};
+  return {fg:css("--fg"),muted:css("--muted"),grid:css("--line"),bg:css("--surface"),accent:css("--accent"),coral:css("--coral"),red:css("--red"),dir:css("--dir"),hi:css("--hi"),font:12,lw:1.4,title:0};
+}
+function roseRamp(n,print){
+  const dark=!print&&(document.documentElement.dataset.theme==="dark"||(document.documentElement.dataset.theme!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches));
+  const base=dark?["#cfe2fa","#9ec5f4","#6aa1e6","#3f7ccc","#235aa5","#184f95"]:["#bcd7f6","#86b6ef","#5591dc","#2f6fc0","#1b559f","#104281"];
+  if(n<=1) return [base[3]];
+  const out=[]; for(let i=0;i<n;i++){ const x=i/(n-1)*(base.length-1); out.push(base[Math.round(x)]); } return out;
+}
+function baseOpts(P,extra){
+  return Object.assign({animation:false,responsive:!P.title,maintainAspectRatio:false,parsing:false,normalized:true,
+    devicePixelRatio:P.title?1:undefined,
+    plugins:{legend:{display:false},tooltip:{enabled:!P.title}},layout:{padding:P.title?{top:10,right:30,left:10,bottom:6}:4}},extra||{});
+}
+function axis(P,o){ return Object.assign({grid:{color:P.grid,lineWidth:P.title?1.5:1},border:{color:P.muted},ticks:{color:P.muted,font:{size:P.font,family:FF}},title:{display:!!o.text,text:o.text,color:P.fg,font:{size:P.font+1,family:FF,weight:"500"}}},o.extra||{}); }
+const bgPlugin={id:"bg",beforeDraw(c,_,o){ if(!o||!o.color) return; const x=c.ctx; x.save(); x.fillStyle=o.color; x.fillRect(0,0,c.width,c.height); x.restore(); }};
+
+/* time ticks shared by all time-axis charts */
+function timeTicks(t0,t1,rel){
+  const span=t1-t0, H=3600000, D=24*H; const ticks=[];
+  if(rel){ const hs=span/H; const steps=[1,2,3,6,12,24,48,96,168,336,720]; let st=steps.find(s=>hs/s<=10)||720;
+    for(let v=Math.ceil(t0/(st*H))*st*H;v<=t1;v+=st*H) ticks.push(v); return {ticks,fmt:v=>f(v/H,0)+" j"}; }
+  if(span>=1.5*D){ const days=span/D; const st=[1,2,3,5,7,10,14,30].find(s=>days/s<=12)||30;
+    for(let v=Math.ceil(t0/D)*D;v<=t1;v+=st*D) ticks.push(v); return {ticks,fmt:v=>{const d=new Date(v);return pad2(d.getUTCDate())+" "+MON[d.getUTCMonth()]}}; }
+  const hs=span/H; const st=[1,2,3,4,6,12].find(s=>hs/s<=12)||12;
+  for(let v=Math.ceil(t0/(st*H))*st*H;v<=t1;v+=st*H) ticks.push(v);
+  return {ticks,fmt:v=>{const d=new Date(v);return (d.getUTCHours()===0?pad2(d.getUTCDate())+" "+MON[d.getUTCMonth()]+" ":"")+pad2(d.getUTCHours())+":00"}};
+}
+function downsample(t,z,i0,i1,maxPts){
+  const n=i1-i0; const out=[];
+  if(n<=maxPts){ for(let i=i0;i<i1;i++) out.push({x:t[i],y:z[i]}); return out; }
+  const b=Math.ceil(n/(maxPts/2));
+  for(let s=i0;s<i1;s+=b){ let mn=s,mx=s; const e=Math.min(i1,s+b); for(let i=s;i<e;i++){ if(z[i]<z[mn])mn=i; if(z[i]>z[mx])mx=i; }
+    if(mn<mx){out.push({x:t[mn],y:z[mn]});out.push({x:t[mx],y:z[mx]})} else {out.push({x:t[mx],y:z[mx]});out.push({x:t[mn],y:z[mn]})} }
+  return out;
+}
+function mkChart(key,canvas,cfg){ if(S.charts[key]) S.charts[key].destroy(); if(typeof Chart==="undefined"){ canvas.parentElement.innerHTML='<p class="status err">Pustaka grafik (Chart.js) gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.</p>'; return null;} S.charts[key]=new Chart(canvas,cfg); return S.charts[key]; }
+
+function wireDrop(dropId,inputId,handler){
+  const d=$(dropId),inp=$(inputId);
+  inp.onchange=()=>{ if(inp.files[0]) readFile(inp.files[0],handler); inp.value=""; };
+  d.addEventListener("dragover",e=>{e.preventDefault();d.classList.add("over")});
+  d.addEventListener("dragleave",()=>d.classList.remove("over"));
+  d.addEventListener("drop",e=>{e.preventDefault();d.classList.remove("over"); if(e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0],handler)});
+}
+function readFile(file,handler){ const r=new FileReader(); r.onload=()=>handler(r.result,file.name); r.readAsText(file); }
+function handleRekFile(txt,name){
+  const P=parseCSV(txt); if(!P||!P.rows.length){ $("#stRek").className="status err"; $("#stRek").textContent="File kosong atau tidak terbaca."; return; }
+  const H=P.header.map(norm);
+  const gp=guess(P.header,"per");
+  const perGuess=gp>=0?(/^tp|peak/i.test(H[gp])?"Tp":/^tz|^tm/i.test(H[gp])?"Tz":"Ts"):"Ts";
+  let gt=guess(P.header,"time");
+  // separate date + time columns (e.g. "Date","Time")
+  const gDate=H.findIndex(h=>/^(date|tanggal|tgl)/.test(h)), gClock=H.findIndex(h=>/^(time|jam|clock)/.test(h)&&!/^time ?s|stamp/.test(h));
+  let sepClock=-1; if(gDate>=0&&gClock>=0&&gDate!==gClock&&P.rows[0]&&!/:/.test(P.rows[0][gDate]||"")&&/:/.test(P.rows[0][gClock]||"")){ gt=gDate; sepClock=gClock; }
+  $("#mapRek").innerHTML=`<div class="card" style="background:var(--surface2);display:grid;gap:10px"><b class="small">${esc(name)} · ${P.rows.length.toLocaleString("id-ID")} baris · cocokkan kolom (keluaran instrumen: Hs, periode, arah)</b>
+   <div class="mapgrid">
+    <label class="f">Waktu / tanggal ${selectHTML("rT",P.header,gt,false)}</label>
+    <label class="f">Jam (jika kolom terpisah) ${selectHTML("rC",P.header,sepClock,true)}</label>
+    <label class="f">Hs (m) ${selectHTML("rH",P.header,guess(P.header,"hs"),false)}</label>
+    <label class="f">Periode ${selectHTML("rP",P.header,gp,false)}</label>
+    <label class="f">Jenis periode<select id="rPL"><option${perGuess==="Ts"?" selected":""}>Ts</option><option${perGuess==="Tp"?" selected":""}>Tp</option><option${perGuess==="Tz"?" selected":""}>Tz</option></select></label>
+    <label class="f">Arah (°) ${selectHTML("rD",P.header,guess(P.header,"dir"),false)}</label>
+    <label class="f">Konvensi arah<select id="rDC"><option value="from" selected>Datang dari (coming from)</option><option value="to">Menuju (going to) → +180°</option></select></label>
+    <label class="f">H1/10 (opsional) ${selectHTML("rX10",P.header,guess(P.header,"h10"),true)}</label>
+    <label class="f">Hmax (opsional) ${selectHTML("rX",P.header,guess(P.header,"hmax"),true)}</label>
+    <label class="f">Kedalaman sensor (opsional) ${selectHTML("rZ",P.header,guess(P.header,"depth"),true)}</label>
+   </div><div><button class="btn sm" id="rGo">Terapkan</button></div><p class="status err" id="rErr" hidden></p></div>`;
+  $("#stRek").className="status"; $("#stRek").textContent="Periksa pencocokan kolom di atas, lalu klik Terapkan.";
+  $("#rGo").onclick=()=>{
+    const c={t:+$("#rT").value,c:+$("#rC").value,h:+$("#rH").value,p:+$("#rP").value,d:+$("#rD").value,x:+$("#rX").value,x10:+$("#rX10").value,z:+$("#rZ").value};
+    const to=$("#rDC").value==="to";
+    if([c.t,c.h,c.p,c.d].some(v=>v<0)){ $("#rErr").hidden=false; $("#rErr").textContent="Pilih kolom Waktu, Hs, Periode, dan Arah terlebih dahulu."; return; }
+    const recs=[]; let bad=0, rel=null, neg=0;
+    P.rows.forEach(r=>{ let s=r[c.t]; if(c.c>=0) s=(s||"")+" "+(r[c.c]||""); let t=parseTime(s); let isRel=false;
+      if(t==null){ const v=num(r[c.t],P.dc); if(isFinite(v)){ t=v*3600000; isRel=true; } }
+      if(rel==null&&t!=null) rel=isRel;
+      const Hs=num(r[c.h],P.dc),T=num(r[c.p],P.dc); let Dir=num(r[c.d],P.dc);
+      const Hmax=c.x>=0?num(r[c.x],P.dc):NaN, H10=c.x10>=0?num(r[c.x10],P.dc):NaN, depth=c.z>=0?num(r[c.z],P.dc):NaN;
+      if(t==null||!isFinite(Hs)||Hs<0||Hs>30||!isFinite(Dir)||Dir<-360||Dir>720||!isFinite(T)||T<=0||T>40){bad++;return}
+      if(Dir<0) neg++; Dir=((Dir+(to?180:0))%360+360)%360;
+      recs.push({t,Hs,T,Dir,Hmax,H10,depth}); });
+    if(!recs.length){ $("#rErr").hidden=false; $("#rErr").textContent="Tidak ada baris valid. Periksa format waktu (YYYY-MM-DD HH:MM atau DD/MM/YYYY HH:MM) dan kolom Hs/Periode/Arah."; return; }
+    recs.sort((a,b)=>a.t-b.t);
+    let dup=0; const uniq=recs.filter((r,i)=>{ if(i&&r.t===recs[i-1].t){dup++;return false} return true; });
+    const qc=[]; if(bad) qc.push(`${bad} baris dibuang (kosong/flag, Hs di luar 0–30 m, periode di luar 0–40 s, atau arah tak valid)`); if(dup) qc.push(`${dup} waktu duplikat dibuang`); if(neg) qc.push(`${neg} arah negatif dinormalkan ke 0–360°`); if(to) qc.push("arah dikonversi dari going-to ke coming-from (+180°)");
+    setRekap(uniq,name,$("#rPL").value,rel,"QC: "+(qc.length?qc.join("; "):"semua baris lolos")+".","instrumen");
+  };
+}
+const TPL={
+ eta:"waktu,eta_m,arah_deg\n2026-07-14 00:00:00.0,0.112,95\n2026-07-14 00:00:00.5,0.254,95\n2026-07-14 00:00:01.0,0.318,95\n2026-07-14 00:00:01.5,0.205,95\n2026-07-14 00:00:02.0,-0.041,95\n2026-07-14 00:00:02.5,-0.287,95\n2026-07-14 00:00:03.0,-0.402,95\n2026-07-14 00:00:03.5,-0.330,95\n2026-07-14 00:00:04.0,-0.118,95\n2026-07-14 00:00:04.5,0.097,95\n",
+ rek:"waktu,Hs,H1/10,Hmax,Tp,Dir,Depth\n2026-08-01 00:00,0.62,0.79,0.98,5.8,92.4,12.31\n2026-08-01 01:00,0.66,0.84,1.05,6.1,95.0,12.62\n2026-08-01 02:00,0.71,0.90,1.12,6.0,88.7,12.85\n2026-08-01 03:00,0.69,0.87,1.10,5.7,90.3,12.94\n2026-08-01 04:00,0.64,0.81,1.02,5.5,97.8,12.86\n"
+};
+function rawConfig(P){
+  const E=S.eta, n=E.t.length, dur=E.t[n-1]-E.t[0];
+  const data=downsample(E.t,E.z,0,n,P.title?6000:3000);
+  const xs=E.t0ms!=null&&dur>=3600; const tk=xs?timeTicks(E.t0ms,E.t0ms+dur*1000,false):null;
+  return {type:"line",data:{datasets:[{data:xs?data.map(p=>({x:E.t0ms+p.x*1000,y:p.y})):data,borderColor:P.accent,borderWidth:P.title?1.6:1,pointRadius:0}]},plugins:[bgPlugin],
+    options:baseOpts(P,{plugins:{legend:{display:false},tooltip:{enabled:!P.title},bg:{color:P.title?P.bg:null}},scales:{x:axis(P,{text:xs?"Waktu":"Waktu (s)",extra:{type:"linear",min:xs?E.t0ms:0,max:xs?E.t0ms+dur*1000:dur,
+      afterBuildTicks:xs?(ax=>{ax.ticks=tk.ticks.map(v=>({value:v}))}):undefined,ticks:{color:P.muted,font:{size:P.font},callback:xs?(v=>tk.fmt(v)):undefined,maxRotation:0,autoSkip:!xs}}}),
+      y:axis(P,{text:"η ("+(E.unit==="dbar"?"m, dari tekanan":"m")+")"})}})};
+}
+const tile=(k,v,u,key)=>`<div class="tile${key?" key":""}"><div class="k">${k}</div><div class="v">${v}<span class="u">${u}</span></div></div>`;
+const mean=a=>{const b=a.filter(isFinite);return b.reduce((x,y)=>x+y,0)/b.length};
+function hsHistConfig(P,R){
+  const hs=R.map(r=>r.Hs), mx=Math.max(...hs); const bw=niceStep(mx/12)||0.1; const nb=Math.ceil(mx/bw+1e-9)||1;
+  const cnt=new Array(nb).fill(0); hs.forEach(v=>cnt[Math.min(nb-1,Math.floor(v/bw))]++);
+  return {type:"bar",data:{labels:cnt.map((_,i)=>f(i*bw,2)+"–"+f((i+1)*bw,2)),datasets:[{data:cnt.map(c=>c/R.length*100),backgroundColor:P.accent,borderRadius:2}]},plugins:[bgPlugin],
+    options:baseOpts(P,{parsing:true,plugins:{legend:{display:false},tooltip:{enabled:!P.title,callbacks:{label:it=>f(it.parsed.y,2)+"% ("+cnt[it.dataIndex]+" perekaman)"}},bg:{color:P.title?P.bg:null}},
+      scales:{x:axis(P,{text:"Kelas Hs (m)",extra:{ticks:{color:P.muted,font:{size:P.font-1},maxRotation:45}}}),y:axis(P,{text:"Frekuensi (%)",extra:{beginAtZero:true}})}})};
+}
+function hsTConfig(P,R){
+  return {type:"scatter",data:{datasets:[{data:R.map(r=>({x:r.T,y:r.Hs})),pointBackgroundColor:P.coral,pointBorderColor:P.coral,pointRadius:P.title?4:2.2}]},plugins:[bgPlugin],
+    options:baseOpts(P,{plugins:{legend:{display:false},tooltip:{enabled:!P.title,callbacks:{label:it=>`${S.perLabel} = ${f(it.parsed.x,2)} s, Hs = ${f(it.parsed.y,2)} m`}},bg:{color:P.title?P.bg:null}},
+      scales:{x:axis(P,{text:S.perLabel+" (s)",extra:{type:"linear"}}),y:axis(P,{text:"Hs (m)",extra:{beginAtZero:true}})}})};
+}
+
+function curBurst(){ return S.bursts[S.selBurst]; }
+function fillBurstSel(){
+  const sel=$("#selBurst"); sel.innerHTML=S.bursts.map((B,k)=>`<option value="${k}">${k+1}. ${esc(B.label)} (${B.waves.length} gel.)</option>`).join("");
+  sel.value=S.selBurst; sel.disabled=S.bursts.length<=1;
+}
+const etaPlugin={id:"etaAnn",afterDatasetsDraw(c,_,o){
+  const B=o.B; if(!B) return; const x=c.scales.x,y=c.scales.y,ctx=c.ctx,P=o.P; const ca=c.chartArea;
+  ctx.save(); ctx.beginPath(); ctx.rect(ca.left,ca.top,ca.right-ca.left,ca.bottom-ca.top); ctx.clip();
+  ctx.setLineDash([5,4]); ctx.strokeStyle=P.muted; ctx.lineWidth=P.lw*0.8; ctx.beginPath(); ctx.moveTo(ca.left,y.getPixelForValue(0)); ctx.lineTo(ca.right,y.getPixelForValue(0)); ctx.stroke(); ctx.setLineDash([]);
+  const w=o.W; if(w){
+    const xa=x.getPixelForValue(w.t0),xb=x.getPixelForValue(w.t1);
+    ctx.fillStyle=P.hi; ctx.globalAlpha=P.title?1:0.55; ctx.fillRect(xa,ca.top,xb-xa,ca.bottom-ca.top); ctx.globalAlpha=1;
+    const xc=x.getPixelForValue(B.t[w.ic]), yc=y.getPixelForValue(w.crest), yt=y.getPixelForValue(w.trough);
+    arrow(ctx,xc,yt,xc,yc,P.fg,P.lw); arrow(ctx,xc,yc,xc,yt,P.fg,P.lw);
+    ctx.fillStyle=P.fg; ctx.font=`600 ${P.font+1}px ${FF}`; ctx.textBaseline="middle"; ctx.textAlign="left";
+    ctx.fillText("H = "+f(w.H,3)+" m",xc+6,(yc+yt)/2);
+    const yb=Math.min(ca.bottom-P.font,yt+P.font*1.6);
+    arrow(ctx,xa,yb,xb,yb,P.coral,P.lw); arrow(ctx,xb,yb,xa,yb,P.coral,P.lw);
+    ctx.fillStyle=P.coral; ctx.textAlign="center"; ctx.fillText("T = "+f(w.T,2)+" s",(xa+xb)/2,yb-P.font*0.9);
+  }
+  ctx.restore();
+}};
+function arrow(ctx,x0,y0,x1,y1,col,lw){ const a=Math.atan2(y1-y0,x1-x0),h=6+lw*2; ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=lw; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y1); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x1-h*Math.cos(a-0.4),y1-h*Math.sin(a-0.4)); ctx.lineTo(x1-h*Math.cos(a+0.4),y1-h*Math.sin(a+0.4)); ctx.closePath(); ctx.fill(); }
+function etaWindow(B){
+  const tb0=B.t[0],tb1=B.t[B.t.length-1],dur=tb1-tb0; const L=S.winLen>0?Math.min(S.winLen,dur):dur;
+  const x0=tb0+(dur-L)*S.winPos/1000; return [x0,x0+L];
+}
+function etaConfig(P,B,x0,x1,W,onPick){
+  const lo=lowerIdx(B.t,x0),hi=Math.min(B.t.length,lowerIdx(B.t,x1)+2);
+  const ds=[{data:downsample(B.t,B.zd,lo,hi,P.title?6000:3000),borderColor:P.accent,borderWidth:P.lw,pointRadius:0,order:3}];
+  const showMarks=(x1-x0)<=900;
+  if(showMarks){
+    ds.push({type:"scatter",data:B.cr.filter(c=>c.tc>=x0&&c.tc<=x1).map(c=>({x:c.tc,y:0})),pointBackgroundColor:P.red,pointBorderColor:P.red,pointRadius:P.title?7:4,order:1});
+    const ws=B.waves.filter(w=>w.t1>=x0&&w.t0<=x1);
+    ds.push({type:"scatter",data:ws.map(w=>({x:B.t[w.ic],y:w.crest})),pointStyle:"triangle",pointBackgroundColor:P.coral,pointBorderColor:P.coral,pointRadius:P.title?8:4,order:2});
+    ds.push({type:"scatter",data:ws.map(w=>({x:B.t[w.it],y:w.trough})),pointStyle:"triangle",rotation:180,pointBackgroundColor:P.coral,pointBorderColor:P.coral,pointRadius:P.title?8:4,order:2});
+  }
+  let mn=Infinity,mx=-Infinity; for(let i=lo;i<hi;i++){const v=B.zd[i]; if(v<mn)mn=v; if(v>mx)mx=v}
+  const padY=(mx-mn)*0.18||0.1;
+  return {type:"line",data:{datasets:ds},plugins:[etaPlugin,bgPlugin],options:baseOpts(P,{
+    plugins:{legend:{display:false},tooltip:{enabled:!P.title,filter:it=>it.datasetIndex===0,callbacks:{label:it=>"η = "+f(it.parsed.y,3)+" m",title:it=>"t = "+f(it[0].parsed.x,2)+" s"}},etaAnn:{B,W,P},bg:{color:P.title?P.bg:null}},
+    scales:{x:axis(P,{text:"Waktu sejak awal burst (s)",extra:{type:"linear",min:x0,max:x1,ticks:{color:P.muted,font:{size:P.font},maxRotation:0}}}),
+            y:axis(P,{text:"Elevasi muka air, η (m)",extra:{suggestedMin:mn-padY,suggestedMax:mx+padY}})},
+    onClick:(P.title||!onPick)?undefined:(e,_,c)=>{ const xv=c.scales.x.getValueForPixel(e.x); const k=B.waves.findIndex(w=>xv>=w.t0&&xv<w.t1); if(k>=0) onPick(k); }
+  })};
+}
+function lowerIdx(a,v){ let lo=0,hi=a.length; while(lo<hi){const m=(lo+hi)>>1; if(a[m]<v) lo=m+1; else hi=m;} return Math.max(0,lo-1); }
+function wavesCSV(B,k){ return B.waves.map(w=>[k!=null?k+1:null,w.no,f(w.t0,3),f(w.t1,3),f(w.crest,4),f(w.trough,4),f(w.H,4),f(w.T,3)].filter(v=>v!==null).join(",")).join("\n"); }
+function histConfig(P,B){
+  const st=B.stats, Hs=B.waves.map(w=>w.H), mx=Math.max(...Hs);
+  const nb=Math.max(5,Math.min(20,Math.round(Math.sqrt(st.N)*1.3))); const bw=niceStep(mx/nb); const nbin=Math.ceil(mx/bw+1e-9)||1;
+  const cnt=new Array(nbin).fill(0); Hs.forEach(h=>cnt[Math.min(nbin-1,Math.floor(h/bw))]++);
+  const labels=cnt.map((_,i)=>f(i*bw,2)+"–"+f((i+1)*bw,2));
+  const ray=cnt.map((_,i)=>{ const a=i*bw,b=(i+1)*bw,R=st.Hrms; return st.N*(Math.exp(-(a*a)/(R*R))-Math.exp(-(b*b)/(R*R))); });
+  return {type:"bar",data:{labels,datasets:[{type:"bar",data:cnt,backgroundColor:P.accent,borderRadius:2,order:2,label:"Jumlah gelombang"},{type:"line",data:ray,borderColor:P.coral,borderWidth:P.lw*1.4,pointRadius:P.title?4:2.5,pointBackgroundColor:P.coral,tension:0.35,order:1,label:"Rayleigh"}]},
+    plugins:[bgPlugin],options:baseOpts(P,{parsing:true,plugins:{legend:{display:true,labels:{color:P.fg,font:{size:P.font},boxWidth:P.font}},tooltip:{enabled:!P.title},bg:{color:P.title?P.bg:null}},
+      scales:{x:axis(P,{text:"Kelas tinggi gelombang H (m)",extra:{ticks:{color:P.muted,font:{size:P.font-1},maxRotation:P.title?30:45}}}),y:axis(P,{text:"Jumlah gelombang",extra:{beginAtZero:true,ticks:{color:P.muted,font:{size:P.font},precision:0}}})}})};
+}
+function niceStep(x){ const p=Math.pow(10,Math.floor(Math.log10(x))); const m=x/p; return (m<1.5?1:m<3?2:m<7?5:10)*p; }
+const SECT8=["N","NE","E","SE","S","SW","W","NW"], SECT16=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+const SECT_ID={N:"Utara",NNE:"Utara-Timur Laut",NE:"Timur Laut",ENE:"Timur-Timur Laut",E:"Timur",ESE:"Timur-Tenggara",SE:"Tenggara",SSE:"Selatan-Tenggara",S:"Selatan",SSW:"Selatan-Barat Daya",SW:"Barat Daya",WSW:"Barat-Barat Daya",W:"Barat",WNW:"Barat-Barat Laut",NW:"Barat Laut",NNW:"Utara-Barat Laut"};
+function matrixHTML(X,mode){
+  const P=v=>mode==="cnt"?String(v):f(X.N?v/X.N*100:0,2);
+  const mx=Math.max(1,...X.M.flat());
+  let h=`<thead><tr><th>Rentang Hs (m)</th>${X.names.map(n=>`<th>${n}${mode==="cnt"?"":" (%)"}</th>`).join("")}<th>Total${mode==="cnt"?"":" (%)"}</th></tr></thead><tbody>`;
+  X.M.forEach((row,i)=>{ h+=`<tr><td>${X.cls[i]}</td>${row.map(v=>`<td style="background:${v?`color-mix(in srgb, var(--accent) ${Math.round(8+60*v/mx)}%, transparent)`:"transparent"};${v/mx>0.55?"color:var(--accent-ink);":""}">${P(v)}</td>`).join("")}<td class="tot">${P(X.rowT[i])}</td></tr>`; });
+  h+=`<tr class="tot"><td>Total${mode==="cnt"?"":" (%)"}</td>${X.colT.map(v=>`<td>${P(v)}</td>`).join("")}<td>${mode==="cnt"?X.N:"100.00"}</td></tr></tbody>`;
+  return h;
+}
+function matrixInterp(X){
+  if(!X.N) return "Tidak ada data dengan arah yang valid.";
+  const j=X.colT.indexOf(Math.max(...X.colT)), nm=X.names[j];
+  let top=X.nc-1; while(top>0&&X.rowT[top]===0) top--;
+  const row=X.M[top].map((v,k)=>({v,k})).filter(o=>o.v>0).sort((a,b)=>b.v-a.v).slice(0,2);
+  let s=`Gelombang dominan berasal dari arah ${SECT_ID[nm]} (${nm}) dengan total frekuensi ${fid(X.colT[j]/X.N*100)}%.`;
+  if(row.length) s+=` Gelombang tertinggi (${X.cls[top]} m) paling sering muncul dari sektor `+row.map(o=>`${X.names[o.k]} (${fid(o.v/X.N*100)}%)`).join(" dan ")+".";
+  const ci=X.rowT.indexOf(Math.max(...X.rowT)); s+=` Kelas Hs yang paling sering terjadi adalah ${X.cls[ci]} m (${fid(X.rowT[ci]/X.N*100)}%).`;
+  return s;
+}
+function roseSVG(X,o){
+  const P=o.P, sz=o.size||560, cx=sz/2, cy=(o.title?70:0)+sz/2, R=sz/2-48, H=sz+(o.title?70:0)+(o.legend?70+22*(o.print?1.3:1)*X.nc:0);
+  const pct=X.colT.map(v=>X.N?v/X.N*100:0), mx=Math.max(...pct,1);
+  const step=[1,2,5,10,15,20,25,50].find(s=>mx/s<=5)||50, top=Math.ceil(mx/step)*step;
+  const col=roseRamp(X.nc,o.print); const w=2*Math.PI/X.ns, gap=w*0.08;
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${sz} ${H}" width="${sz}" height="${H}" font-family="IBM Plex Sans, Arial, sans-serif">`;
+  s+=`<rect x="0" y="0" width="${sz}" height="${H}" fill="${P.bg}"/>`;
+  s+=`<rect x="1" y="1" width="${sz-2}" height="${H-2}" fill="none" stroke="${P.grid}" stroke-width="${o.print?3:1.5}" rx="6"/>`;
+  if(o.title) s+=`<text x="${cx}" y="38" text-anchor="middle" font-size="${P.title*0.8}" font-weight="700" fill="${P.fg}">${escXml(o.title)}</text><text x="${cx}" y="62" text-anchor="middle" font-size="${P.font*0.8}" fill="${P.muted}">${escXml(o.sub||"")}</text>`;
+  const kmin=pct.indexOf(Math.min(...pct)), la=kmin*w;
+  for(let v=step;v<=top+1e-9;v+=step){ const r=R*v/top; s+=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${P.grid}" stroke-width="${o.print?2:1}"/>`;
+    s+=`<text x="${(cx+r*Math.sin(la)).toFixed(1)}" y="${(cy-r*Math.cos(la)-3).toFixed(1)}" text-anchor="middle" font-size="${o.print?20:11}" fill="${P.muted}" stroke="${P.bg}" stroke-width="3" paint-order="stroke">${v}%</text>`; }
+  for(let k=0;k<X.ns;k++){ const a=k*w; s+=`<line x1="${cx}" y1="${cy}" x2="${cx+R*Math.sin(a)}" y2="${cy-R*Math.cos(a)}" stroke="${P.grid}" stroke-width="${o.print?1.5:0.8}"/>`; }
+  // stacked wedges
+  for(let k=0;k<X.ns;k++){ let acc=0; const a0=k*w-w/2+gap,a1=k*w+w/2-gap;
+    for(let c=0;c<X.nc;c++){ const v=X.N?X.M[c][k]/X.N*100:0; if(!v) continue; const r0=R*acc/top, r1=R*(acc+v)/top; acc+=v;
+      const p=(r,a)=>`${(cx+r*Math.sin(a)).toFixed(2)},${(cy-r*Math.cos(a)).toFixed(2)}`;
+      s+=`<path d="M${p(r0,a0)} L${p(r1,a0)} A${r1.toFixed(2)},${r1.toFixed(2)} 0 0 1 ${p(r1,a1)} L${p(r0,a1)} ${r0>0?`A${r0.toFixed(2)},${r0.toFixed(2)} 0 0 0 ${p(r0,a0)}`:""} Z" fill="${col[c]}" stroke="${P.bg}" stroke-width="${o.print?1.5:0.7}"><title>${escXml(X.names[k]+" · "+X.cls[c]+" m: "+f(v,2)+"%")}</title></path>`; } }
+  const lab=X.ns===16?SECT16:SECT8; const fs=o.print?22:13;
+  lab.forEach((n,k)=>{ const a=k*2*Math.PI/lab.length, r=R+(o.print?26:22); const main=n.length<=2;
+    if(X.ns===16&&!main&&!o.print) return;
+    s+=`<text x="${(cx+r*Math.sin(a)).toFixed(1)}" y="${(cy-r*Math.cos(a)+fs*0.35).toFixed(1)}" text-anchor="middle" font-size="${main?fs:fs*0.75}" font-weight="${n==="N"?700:600}" fill="${P.fg}">${n}</text>`; });
+  if(o.legend){ let y=sz+(o.title?70:0)+18; s+=`<text x="40" y="${y}" font-size="${fs}" font-weight="600" fill="${P.fg}">Hs (m)</text>`;
+    X.cls.forEach((c,i)=>{ const yy=y+14+i*22*(o.print?1.3:1); s+=`<rect x="40" y="${yy}" width="${fs}" height="${fs}" fill="${col[i]}" rx="2"/><text x="${40+fs*1.6}" y="${yy+fs*0.85}" font-size="${fs*0.85}" fill="${P.fg}">${escXml(c)}  —  ${f(X.N?X.rowT[i]/X.N*100:0,2)}%</text>`; });
+    if(o.caption) s+=`<text x="${sz-40}" y="${y}" text-anchor="end" font-size="${fs*0.85}" fill="${P.muted}">${escXml(o.caption)}</text>`; }
+  return s+"</svg>";
+}
+function quadrant(n){ return {N:"utara",NNE:"timur laut",NE:"timur laut",ENE:"timur laut",E:"timur",ESE:"tenggara",SE:"tenggara",SSE:"tenggara",S:"selatan",SSW:"barat daya",SW:"barat daya",WSW:"barat daya",W:"barat",WNW:"barat laut",NW:"barat laut",NNW:"barat laut"}[n]; }
+function descStats(a){ a=a.filter(isFinite); const n=a.length; if(n<1) return null; const m=a.reduce((x,y)=>x+y,0)/n;
+  let s2=0,s3=0,s4=0; a.forEach(v=>{const d=v-m; s2+=d*d}); const sd=n>1?Math.sqrt(s2/(n-1)):0;
+  a.forEach(v=>{const z=sd?(v-m)/sd:0; s3+=z**3; s4+=z**4});
+  const skew=n>2?n/((n-1)*(n-2))*s3:NaN; const kurt=n>3?(n*(n+1))/((n-1)*(n-2)*(n-3))*s4-3*(n-1)**2/((n-2)*(n-3)):NaN;
+  return {n,mean:m,max:Math.max(...a),min:Math.min(...a),sd,skew,kurt}; }
+function tsConfig(kind,P,R,o4){
+  const t0=R[0].t,t1=R[R.length-1].t, tk=timeTicks(t0,t1,S.rekapRel);
+  let ds,yl,ymin,ymax,yticks;
+  if(kind==="H"){ ds=[{data:R.map(r=>({x:r.t,y:r.Hs})),borderColor:P.accent,borderWidth:P.lw,pointRadius:0,label:"Hs"}];
+    if(R.some(r=>isFinite(r.H10))) ds.push({data:R.filter(r=>isFinite(r.H10)).map(r=>({x:r.t,y:r.H10})),borderColor:P.coral,borderWidth:P.lw*0.8,pointRadius:0,label:"H1/10"});
+    if(R.some(r=>isFinite(r.Hmax))) ds.push({data:R.filter(r=>isFinite(r.Hmax)).map(r=>({x:r.t,y:r.Hmax})),borderColor:P.muted,borderWidth:P.lw*0.7,borderDash:[4,3],pointRadius:0,label:"Hmax"});
+    yl="Tinggi (m)"; ymin=0; }
+  else if(kind==="T"){ ds=[{data:R.map(r=>({x:r.t,y:r.T})),borderColor:P.coral,borderWidth:P.lw,pointRadius:0,label:S.perLabel}]; yl=S.perLabel+" (s)"; }
+  else if(kind==="Z"){ ds=[{data:R.filter(r=>isFinite(r.depth)).map(r=>({x:r.t,y:r.depth})),borderColor:P.muted,borderWidth:P.lw,pointRadius:0,label:"Kedalaman"}]; yl="Kedalaman (m)"; }
+  else { ds=[{type:"scatter",data:R.map(r=>({x:r.t,y:r.Dir})),pointBackgroundColor:P.dir,pointBorderColor:P.dir,pointRadius:P.title?3.5:R.length>400?1.5:2.5,label:"Dir"}]; yl="Dir (°)"; ymin=0; ymax=360; yticks=[0,90,180,270,360]; }
+  return {type:"line",data:{datasets:ds},plugins:[bgPlugin],options:baseOpts(P,{
+    plugins:{legend:{display:kind==="H"&&ds.length>1,position:"top",align:"end",labels:{color:P.fg,font:{size:P.font},boxWidth:P.font*1.5,boxHeight:2}},tooltip:{enabled:!P.title,callbacks:{title:it=>fmtDT(it[0].parsed.x,S.rekapRel)}},bg:{color:P.title?P.bg:null}},
+    scales:{x:axis(P,{text:kind===(o4&&o4.last||"D")?(S.rekapRel?"Waktu (jam ke-)":"Waktu"):"",extra:{type:"linear",min:t0,max:t1,afterBuildTicks:ax=>{ax.ticks=tk.ticks.map(v=>({value:v}))},ticks:{color:P.muted,font:{size:P.font},callback:v=>tk.fmt(v),maxRotation:0,autoSkip:false}}}),
+      y:axis(P,{text:yl,extra:Object.assign({min:ymin,max:ymax,afterFit:ax=>{ax.width=P.title?110:58}},yticks?{afterBuildTicks:ax=>{ax.ticks=yticks.map(v=>({value:v}))}}:{})})}})};
+}
+function exSummary(){
+  const R=S.rekap, X=computeMatrix(), hs=descStats(R.map(r=>r.Hs)), ts=descStats(R.map(r=>r.T)), hx=descStats(R.map(r=>r.Hmax)), h10=descStats(R.map(r=>r.H10)), dz=descStats(R.map(r=>r.depth));
+  const j=X.N?X.colT.indexOf(Math.max(...X.colT)):-1;
+  return {R,X,hs,ts,hx,h10,dz,dom:j>=0?X.names[j]:null,domP:j>=0?X.colT[j]/X.N*100:NaN};
+}
+function autoText(E){
+  const loc=$("#repLoc").value||"lokasi pengamatan", inst=$("#repInst").value, dep=$("#repDepth").value;
+  let s=`Pengukuran gelombang di ${loc}${inst?" menggunakan "+inst:""}${dep?" pada kedalaman sensor "+dep+" m":""} mencakup ${E.R.length} perekaman dari ${fmtDT(E.R[0].t,S.rekapRel)} hingga ${fmtDT(E.R[E.R.length-1].t,S.rekapRel)}. `;
+  s+=`Tinggi gelombang signifikan (Hs) rata-rata ${fid(E.hs.mean)} m dengan rentang ${fid(E.hs.min)}–${fid(E.hs.max)} m, dan periode ${S.perLabel} rata-rata ${fid(E.ts.mean,1)} s. `;
+  if(E.h10) s+=`H1/10 rata-rata ${fid(E.h10.mean)} m. `;
+  if(E.hx) s+=`Tinggi gelombang maksimum (Hmax) tertinggi yang tercatat adalah ${fid(E.hx.max)} m. `;
+  if(E.dom) s+=`Gelombang dominan datang dari arah ${SECT_ID[E.dom]} (${E.dom}) dengan frekuensi ${fid(E.domP)}%. `+matrixInterp(E.X).replace(/^Gelombang dominan[^.]*\.\s*/,"");
+  return s;
+}
+function showPNG(url,title){ $("#modalImg").src=url; $("#modalTitle").textContent=title; $("#modal").hidden=false; }
+function renderOff(cfg,w,h){ const cv=document.createElement("canvas"); cv.width=w; cv.height=h; cv.style.width=w+"px"; cv.style.height=h+"px"; $("#offscreen").appendChild(cv);
+  cfg.options.responsive=false; cfg.options.devicePixelRatio=1; const ch=new Chart(cv,cfg); const img=cv; return {ch,cv:img}; }
+function compose(parts,title,sub){ // parts: [{cv}] stacked
+  const W=parts[0].cv.width, top=sub?120:90, H=top+parts.reduce((a,p)=>a+p.cv.height,0)+20;
+  const c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d");
+  x.fillStyle="#fff"; x.fillRect(0,0,W,H); x.fillStyle="#1b2b2b"; x.font="700 34px IBM Plex Sans, Arial"; x.textAlign="center"; x.fillText(title,W/2,54);
+  if(sub){ x.font="22px IBM Plex Sans, Arial"; x.fillStyle="#4a5e5e"; x.fillText(sub,W/2,92); }
+  let y=top; parts.forEach(p=>{ x.drawImage(p.cv,0,y); y+=p.cv.height; p.ch.destroy(); p.cv.remove(); });
+  x.strokeStyle="#c9d6d6"; x.lineWidth=3; x.strokeRect(1.5,1.5,W-3,H-3);
+  return c.toDataURL("image/png");
+}
+
+/* ================= burst processing (elevation workflow) ================= */
+function buildBursts(){
+  const E=S.eta; S.bursts=[]; if(!E){ deriveEtaStore(); return; }
+  const t=E.t,n=t.length; const L=S.burstMin*60;
+  const diffs=[]; for(let i=1;i<Math.min(n,2000);i++) diffs.push(t[i]-t[i-1]); diffs.sort((a,b)=>a-b);
+  const dtm=diffs[Math.floor(diffs.length/2)]||E.dt||1;
+  const segs=[]; let s0=0; for(let i=1;i<n;i++) if(t[i]-t[i-1]>5*dtm){segs.push([s0,i]);s0=i} segs.push([s0,n]);
+  for(const [a,b] of segs){ let i=a;
+    while(i<b){ const ts=t[i]; let j=i; while(j<b&&t[j]<ts+L-1e-9) j++;
+      const dur=t[j-1]-ts; if(j-i>=20&&(dur>=0.5*L||(i===a&&j===b))) S.bursts.push({i0:i,i1:j,ts}); i=j; } }
+  S.bursts.forEach((B,k)=>{
+    const tt=t.subarray(B.i0,B.i1), zz=E.z.subarray(B.i0,B.i1);
+    B.t=tt; B.zd=detrendArr(zz,tt,S.detrend); const r=zeroCross(tt,B.zd,S.cross); B.cr=r.cr; B.waves=r.waves; B.stats=waveStats(B.waves);
+    B.dir=E.dir?circMean(E.dir.subarray(B.i0,B.i1)):NaN; B.k=k;
+    B.label=E.t0ms!=null?fmtDT(E.t0ms+B.ts*1000):("t = "+f(B.ts,0)+" s");
+  });
+  if(S.selBurst>=S.bursts.length) S.selBurst=0;
+  deriveEtaStore();
+}
+function deriveEtaStore(){
+  const E=S.eta, ok=S.bursts.filter(B=>B.stats);
+  if(!E||!ok.length) S.store.e=null;
+  else { const rel=E.t0ms==null;
+    S.store.e={recs:ok.map(B=>({t:rel?B.ts*1000:E.t0ms+B.ts*1000,Hs:B.stats.Hs,T:B.stats.Ts,Dir:B.dir,Hmax:B.stats.Hmax,H10:B.stats.H10,depth:NaN})),
+      src:E.name+" — rekap "+ok.length+" burst",perLabel:"Ts",rel,qc:E.dir?"":"Data η tidak memiliki kolom arah: matriks dan wave rose tidak dapat dibuat."}; }
+  if(S.g==="e") activate("e",true);
+  sideStatus();
+}
+
+/* ================= data setters ================= */
+function setEta(E){
+  E.name=E.name||E.src; S.eta=E; S.selBurst=0; S.selWave=null; S.winPos=0; $("#winPos").value=0; buildBursts();
+  const dur=E.t[E.t.length-1]-E.t[0];
+  $("#stEta").className="status ok";
+  $("#stEta").textContent=`${E.src}: ${E.t.length.toLocaleString("id-ID")} sampel, durasi ${dur>=3600?fid(dur/3600,2)+" jam":fid(dur,1)+" s"}, dt = ${fid(E.dt,3)} s → ${S.bursts.length} burst, ${S.bursts.reduce((a,b)=>a+b.waves.length,0).toLocaleString("id-ID")} gelombang individu. Lanjut ke "Cek deret η(t)".`;
+  $("#mapEta").innerHTML="";
+}
+function setH(recs,src,perLabel,rel,qc){
+  S.store.h={recs,src,perLabel:perLabel||"Ts",rel:!!rel,qc:qc||""};
+  $("#stRek").className="status ok";
+  $("#stRek").textContent=`${src}: ${recs.length} perekaman, ${fmtDT(recs[0].t,rel)} s.d. ${fmtDT(recs[recs.length-1].t,rel)}. ${qc||""} Lanjut ke "Time series & QC".`;
+  $("#mapRek").innerHTML="";
+  if(S.g==="h") activate("h",true);
+  sideStatus();
+}
+function setRekap(recs,src,perLabel,rel,qc){ setH(recs,src,perLabel,rel,qc); } // called by handleRekFile
+function activate(g,reset){
+  S.g=g; if(g!=="e"&&g!=="h") return;
+  const changed=S.lastG!==g; S.lastG=g;
+  const st=S.store[g]; S.rekap=st?st.recs:null; S.rekapSrc=st?st.src:""; S.perLabel=st?st.perLabel:"Ts"; S.rekapRel=st?st.rel:false; S.qc=st?st.qc:""; S.rekapKind=g==="h"?"instrumen":"eta";
+  if(changed||reset){ S.exTextDirty=false; $("#repInst").value=S.inst[g];
+    const dz=(S.rekap||[]).map(r=>r.depth).filter(isFinite); $("#repDepth").value=dz.length?f(dz.reduce((a,b)=>a+b,0)/dz.length,1):""; }
+}
+
+/* ================= uploads ================= */
+function handleEtaFile(txt,name){
+  const P=parseCSV(txt); if(!P||!P.rows.length){ $("#stEta").className="status err"; $("#stEta").textContent="File kosong atau tidak terbaca."; return; }
+  if(guess(P.header,"hs")>=0&&!ALIAS.eta.slice(0,6).some(a=>P.header.map(norm).some(h=>h.split(" ")[0]===a))){
+    go("h-data"); handleRekFile(txt,name);
+    $("#stRek").className="status"; $("#stRek").textContent=`${name} berisi Hs/periode/arah (keluaran instrumen, bukan η mentah), jadi dibuka di alur "Olah data Hs, Tp, Dir". Periksa pencocokan kolom lalu klik Terapkan.`;
+    return; }
+  const gt=guess(P.header,"time"), ge=guess(P.header,"eta"), gd=guess(P.header,"dir");
+  const isP=ge>=0&&/press|tekan|^p$|dbar/i.test(P.header[ge]);
+  $("#mapEta").innerHTML=`<div class="card" style="background:var(--surface2);display:grid;gap:10px"><b class="small">${esc(name)} · ${P.rows.length.toLocaleString("id-ID")} baris · cocokkan kolom</b>
+   <div class="mapgrid">
+    <label class="f">Waktu ${selectHTML("mT",P.header,gt,true,"— tidak ada (pakai fs) —")}</label>
+    <label class="f">Frekuensi sampling (Hz)<input type="number" id="mFs" value="2" step="any" min="0.01"></label>
+    <label class="f">η / tekanan ${selectHTML("mE",P.header,ge,false)}</label>
+    <label class="f">Satuan kolom η<select id="mU"><option value="m"${isP?"":" selected"}>m</option><option value="cm">cm</option><option value="mm">mm</option><option value="dbar"${isP?" selected":""}>tekanan (dbar)</option></select></label>
+    <label class="f">Arah datang (opsional) ${selectHTML("mD",P.header,gd,true)}</label>
+   </div><div><button class="btn sm" id="mGo">Terapkan</button></div><p class="status err" id="mErr" hidden></p></div>`;
+  $("#stEta").className="status"; $("#stEta").textContent="Periksa pencocokan kolom di atas, lalu klik Terapkan.";
+  $("#mGo").onclick=()=>{
+    const ct=+$("#mT").value, ce=+$("#mE").value, cd=+$("#mD").value, u=$("#mU").value, fs=+$("#mFs").value;
+    if(ce<0){ $("#mErr").hidden=false; $("#mErr").textContent="Pilih kolom η terlebih dahulu."; return; }
+    const tt=[],zz=[],dd=[]; let t0ms=null, bad=0; const k={m:1,cm:0.01,mm:0.001,dbar:1e4/(1025*9.81)}[u];
+    P.rows.forEach((r,i)=>{ const z=num(r[ce],P.dc); let tv;
+      if(ct<0) tv=i/fs; else { const s=r[ct]; const nv=num(s,P.dc); if(isFinite(nv)&&!/[-\/:]/.test(s.slice(1))) tv=nv; else { const ms=parseTime(s); if(ms==null){tv=NaN} else { if(t0ms==null) t0ms=ms; tv=(ms-t0ms)/1000; } } }
+      if(!isFinite(z)||!isFinite(tv)){bad++;return}
+      tt.push(tv); zz.push(z*k); dd.push(cd>=0?num(r[cd],P.dc):NaN); });
+    if(tt.length<20){ $("#mErr").hidden=false; $("#mErr").textContent="Kurang dari 20 baris valid. Periksa pemilihan kolom waktu dan η."; return; }
+    const t=Float64Array.from(tt), t00=t[0]; for(let i=0;i<t.length;i++) t[i]-=t00; if(t0ms!=null) t0ms+=t00*1000;
+    const dts=[]; for(let i=1;i<Math.min(t.length,2000);i++) dts.push(t[i]-t[i-1]); dts.sort((a,b)=>a-b);
+    const dt=dts[Math.floor(dts.length/2)];
+    if(!(dt>0)){ $("#mErr").hidden=false; $("#mErr").textContent="Kolom waktu tidak naik (dt ≤ 0). Periksa urutan atau format waktu."; return; }
+    let m=0; for(const v of zz) m+=v; m/=zz.length;
+    S.detrend=(u==="dbar"||Math.abs(m*k)>0.3)?"linear":"mean"; $("#detrend").value=S.detrend;
+    setEta({t,z:Float64Array.from(zz),dir:cd>=0?Float64Array.from(dd):null,t0ms,dt,name,src:name+(bad?` (${bad} baris tak valid dibuang)`:""),unit:u});
+  };
+}
+wireDrop("#dropEta","#fileEta",handleEtaFile);
+wireDrop("#dropRek","#fileRek",(txt,name)=>{
+  const P=parseCSV(txt);
+  if(P&&guess(P.header,"hs")<0&&guess(P.header,"eta")>=0){ go("e-data"); handleEtaFile(txt,name);
+    $("#stEta").className="status"; $("#stEta").textContent=`${name} berisi deret elevasi/tekanan (bukan Hs/Tp/Dir), jadi dibuka di alur "Olah data elevasi". Periksa pencocokan kolom lalu klik Terapkan.`; return; }
+  handleRekFile(txt,name);
+});
+$("#exEta24").onclick=()=>{ S.detrend="linear"; $("#detrend").value="linear"; S.winLen=120; $("#winLen").value="120"; setEta(Object.assign(makeEta24(),{name:"Contoh 24 jam"})); };
+$("#exEta120").onclick=()=>{ S.detrend="none"; $("#detrend").value="none"; S.winLen=0; $("#winLen").value="0"; setEta(Object.assign(makeSlideEta(),{name:"Contoh slide 120 s"})); };
+$("#exAdcp").onclick=()=>setH(makeAdcp14(),"Contoh ADCP 14 hari","Tp",false,"QC: semua baris lolos.");
+$("#exRekap").onclick=()=>setH(makeRekap30(),"Contoh 30 hari (slide 17)","Ts",false,"");
+$$("[data-copytpl]").forEach(b=>b.onclick=()=>copyText(TPL[b.dataset.copytpl],b.nextElementSibling));
+function armClear(btn,fn){ btn.onclick=()=>{
+  if(btn.hasAttribute("data-armed")){ clearTimeout(btn._t); btn.removeAttribute("data-armed"); btn.textContent="Hapus data"; fn(); return; }
+  btn.setAttribute("data-armed",""); btn.textContent="Klik lagi untuk menghapus";
+  btn._t=setTimeout(()=>{ btn.removeAttribute("data-armed"); btn.textContent="Hapus data"; },4000); }; }
+function killCharts(keys){ keys.forEach(k=>{ if(S.charts[k]){ S.charts[k].destroy(); delete S.charts[k]; } }); }
+armClear($("#clrEta"),()=>{
+  S.eta=null; S.selBurst=0; S.selWave=null; S.winPos=0; $("#winPos").value=0; buildBursts();
+  $("#mapEta").innerHTML=""; $("#fileEta").value=""; $("#selBurst").innerHTML="";
+  killCharts(["raw","eta","hist","tsH","tsT","tsD"]);
+  $("#stEta").className="status"; $("#stEta").textContent="Data dihapus. Unggah file baru atau muat contoh."; });
+armClear($("#clrRek"),()=>{
+  S.store.h=null; if(S.g==="h") activate("h",true); sideStatus();
+  $("#mapRek").innerHTML=""; $("#fileRek").value="";
+  killCharts(["rH","rT","rD","rZ","hsHist","hsT","tsH","tsT","tsD"]);
+  $("#stRek").className="status"; $("#stRek").textContent="Data dihapus. Unggah file baru atau muat contoh."; });
+
+/* ================= Materi ================= */
+function demoB(type){ const c=S.demo.cache; if(!c[type]){ const E=c.E||(c.E=makeSlideEta()); const zd=Float64Array.from(E.z); const r=zeroCross(E.t,zd,type); c[type]={t:E.t,zd,cr:r.cr,waves:r.waves,stats:waveStats(r.waves),label:"contoh slide"}; } return c[type]; }
+function demo30(){ return S.demo.r30||(S.demo.r30=makeRekap30()); }
+function renderMParam(){ const B=demoB("up"); mkChart("mOne",$("#cMOne"),etaConfig(pal(false),B,7,20,B.waves[2],null)); }
+function renderMZC(rebuild=true){
+  const B=demoB(S.demo.cross); if(S.demo.sel>=B.waves.length) S.demo.sel=0;
+  mkChart("mEta",$("#cMEta"),etaConfig(pal(false),B,0,120,B.waves[S.demo.sel],k=>{S.demo.sel=k;renderMZC(false)}));
+  if(rebuild){
+    const u=demoB("up").stats,d=demoB("down").stats;
+    $("#mCompare").innerHTML=tile("Up-crossing · N",u.N,"")+tile("Up · Hs",f(u.Hs,2),"m",S.demo.cross==="up")+tile("Up · Ts",f(u.Ts,2),"s")+tile("Down-crossing · N",d.N,"")+tile("Down · Hs",f(d.Hs,2),"m",S.demo.cross==="down")+tile("Down · Ts",f(d.Ts,2),"s");
+    $("#mWaveTitle").textContent=`Tabel gelombang individu — zero ${S.demo.cross==="up"?"up":"down"}-crossing (N = ${B.waves.length})`;
+    let h=`<thead><tr><th>No.</th><th>t awal (s)</th><th>t akhir (s)</th><th>Puncak (m)</th><th>Lembah (m)</th><th>Tinggi H (m)</th><th>Periode T (s)</th></tr></thead><tbody>`;
+    B.waves.forEach((w,k)=>h+=`<tr class="click${k===S.demo.sel?" sel":""}${B.stats.top3set.has(w.no)?" top3":""}" data-k="${k}"><td>${w.no}</td><td>${f(w.t0,2)}</td><td>${f(w.t1,2)}</td><td>${f(w.crest,3)}</td><td>${f(w.trough,3)}</td><td>${f(w.H,3)}</td><td>${f(w.T,2)}</td></tr>`);
+    $("#mWaveTbl").innerHTML=h+"</tbody>";
+  } else $$("#mWaveTbl tbody tr").forEach(tr=>tr.classList.toggle("sel",+tr.dataset.k===S.demo.sel));
+}
+$("#mWaveTbl").addEventListener("click",e=>{ const tr=e.target.closest("tr[data-k]"); if(!tr) return; S.demo.sel=+tr.dataset.k; renderMZC(false); });
+$$("#mCrossSeg button").forEach(b=>b.onclick=()=>{ S.demo.cross=b.dataset.v; $$("#mCrossSeg button").forEach(x=>x.classList.toggle("on",x===b)); S.demo.sel=0; renderMZC(); });
+function statsInto(B,ids,histKey){
+  const st=B.stats;
+  $(ids.tiles).innerHTML=tile("N gelombang",st.N,"")+tile("Hs = H1/3",f(st.Hs,2),"m",true)+tile("Ts = T1/3",f(st.Ts,2),"s",true)+tile("H1/10",f(st.H10,2),"m")+
+    tile("Hmean",f(st.Hmean,2),"m")+tile("Hrms",f(st.Hrms,2),"m")+tile("Hmax",f(st.Hmax,2),"m")+tile("Tmean (Tz)",f(st.Tmean,2),"s")+tile("Hmax / Hs",f(st.Hmax/st.Hs,2),"")+tile("Hs / Hrms",f(st.Hs/st.Hrms,3),"");
+  const top=st.sorted.slice(0,st.n3); const lim=12;
+  $(ids.formula).innerHTML=`Hs = (1 / (N/3)) · Σ H<sub>i</sub> , i = 1 … N/3 &nbsp;&nbsp;(N = ${st.N} → N/3 = ${st.n3} gelombang)<br>`+
+    `Hs = (${top.slice(0,lim).map(w=>f(w.H,3)).join(" + ")}${top.length>lim?" + … ("+(top.length-lim)+" lagi)":""}) / ${st.n3} = <b>${f(st.Hs,3)} m</b><br>`+
+    `Ts = (${top.slice(0,lim).map(w=>f(w.T,2)).join(" + ")}${top.length>lim?" + …":""}) / ${st.n3} = <b>${f(st.Ts,3)} s</b>`;
+  let h=`<thead><tr><th>Peringkat</th><th>No. gelombang</th><th>Tinggi H (m)</th><th>Periode T (s)</th><th>Termasuk</th></tr></thead><tbody>`;
+  st.sorted.forEach((w,i)=>h+=`<tr class="${i<st.n3?"top3":""}"><td>${i+1}</td><td>#${w.no}</td><td>${f(w.H,3)}</td><td>${f(w.T,2)}</td><td>${i<st.n10?"H1/10, H1/3":i<st.n3?"H1/3":"–"}</td></tr>`);
+  $(ids.sort).innerHTML=h+"</tbody>";
+  mkChart(histKey,$(ids.hist),histConfig(pal(false),B));
+}
+function renderMStat(){ statsInto(demoB("up"),{tiles:"#mStatTiles",formula:"#mFormula",sort:"#mSortTbl",hist:"#cMHist"},"mHist"); }
+function renderMMat(){ const X=computeMatrix(demo30(),8,[0.5,1,1.5,2]); $("#mMatTbl").innerHTML=matrixHTML(X,"pct"); $("#mMatInterp").textContent=matrixInterp(X); }
+function renderMRose(){ const X=computeMatrix(demo30(),8,[0.5,1,1.5,2]); $("#mRose").innerHTML=roseSVG(X,{P:pal(false),size:560});
+  const col=roseRamp(X.nc,false); $("#mRoseLegend").innerHTML='<b style="color:var(--fg)">Kelas Hs (m)</b>'+X.cls.map((c,i)=>`<span><i style="background:${col[i]}"></i>${c} — ${fid(X.rowT[i]/X.N*100)}%</span>`).join(""); }
+
+/* ================= Elevation workflow pages ================= */
+function needEta(el){ if(S.eta) return false; $(el).innerHTML=""; return true; }
+function renderECek(){
+  const E=S.eta, P=pal(false);
+  if(!E){ $("#etaTiles").innerHTML=""; $("#rawNote").textContent="Belum ada data η. Unggah file atau muat contoh di halaman 1."; return; }
+  $("#rawTitle").textContent="Deret waktu η(t) mentah — "+E.name;
+  const n=E.t.length, dur=E.t[n-1]-E.t[0]; let mn=Infinity,mx=-Infinity,sm=0; for(let i=0;i<n;i++){const v=E.z[i]; if(v<mn)mn=v; if(v>mx)mx=v; sm+=v}
+  $("#etaTiles").innerHTML=tile("Sampel",n.toLocaleString("id-ID"),"")+tile("Durasi",dur>=3600?f(dur/3600,2):f(dur,1),dur>=3600?"jam":"s")+tile("dt",f(E.dt,3),"s")+tile("fs",f(1/E.dt,2),"Hz")+tile("η rata-rata",f(sm/n,3),"m")+tile("η min / maks",f(mn,2)+" / "+f(mx,2),"m")+tile("Burst",S.bursts.length,"")+tile("Arah",E.dir?"ada":"tidak ada","");
+  mkChart("raw",$("#cRaw"),rawConfig(P));
+  $("#rawNote").textContent=(E.unit==="dbar"?"Tekanan sudah dikonversi ke η secara hidrostatik. ":"")+
+    (Math.abs(sm/n)>0.2?"Rata-rata η jauh dari nol (sensor mengukur dari dasar dan/atau ada pasut). Pada halaman Zero-crossing gunakan koreksi \"Hapus tren linear\" agar garis nol = muka air rata-rata tiap burst.":"Rata-rata η mendekati nol: sinyal sudah relatif terhadap muka air rata-rata.")+
+    (E.dir?"":" Tidak ada kolom arah, jadi matriks dan wave rose tidak bisa dibuat di alur ini.");
+}
+function curBurstSafe(){ return S.bursts[S.selBurst]; }
+function renderEZC(rebuildTable=true){
+  const B=curBurstSafe();
+  if(!B){ $("#zcNote").textContent="Belum ada data η. Unggah file atau muat contoh di halaman 1."; $("#waveTbl").innerHTML=""; if(S.charts.eta){S.charts.eta.destroy();delete S.charts.eta} return; }
+  fillBurstSel();
+  if(S.selWave!=null&&S.selWave>=B.waves.length) S.selWave=null;
+  if(S.selWave!=null){ const w=B.waves[S.selWave]; const [x0,x1]=etaWindow(B); if(w.t0<x0||w.t1>x1){ const dur=B.t[B.t.length-1]-B.t[0], L=S.winLen>0?Math.min(S.winLen,dur):dur; const target=Math.max(B.t[0],Math.min((w.t0+w.t1)/2-L/2,B.t[B.t.length-1]-L)); S.winPos=dur>L?Math.round((target-B.t[0])/(dur-L)*1000):0; $("#winPos").value=S.winPos; } }
+  const [x0,x1]=etaWindow(B);
+  mkChart("eta",$("#cEta"),etaConfig(pal(false),B,x0,x1,S.selWave!=null?B.waves[S.selWave]:null,k=>{S.selWave=k;renderEZC(false)}));
+  const tw=S.cross==="up"?"up-crossing":"down-crossing";
+  $("#zcNote").textContent=`Burst ${S.selBurst+1}: ${B.t.length.toLocaleString("id-ID")} sampel, ${B.cr.length} titik ${tw} → ${B.waves.length} gelombang individu utuh.`+((x1-x0)>900?" Perkecil jendela (≤ 600 s) untuk menampilkan titik crossing, puncak, dan lembah.":"")+(S.detrend==="none"?" Koreksi muka air: tidak ada (garis nol = 0 pada data).":S.detrend==="mean"?" Garis nol = rata-rata η burst ini.":" Garis nol = tren linear η burst ini (pasut dihilangkan).");
+  $("#waveTitle").textContent=`Tabel gelombang individu — burst ${S.selBurst+1} (N = ${B.waves.length})`;
+  if(rebuildTable){
+    let h=`<thead><tr><th>No.</th><th>t awal (s)</th><th>t akhir (s)</th><th>Puncak (m)</th><th>Lembah (m)</th><th>Tinggi H (m)</th><th>Periode T (s)</th></tr></thead><tbody>`;
+    B.waves.forEach((w,k)=>h+=`<tr class="click${k===S.selWave?" sel":""}${B.stats&&B.stats.top3set.has(w.no)?" top3":""}" data-k="${k}"><td>${w.no}</td><td>${f(w.t0,2)}</td><td>${f(w.t1,2)}</td><td>${f(w.crest,3)}</td><td>${f(w.trough,3)}</td><td>${f(w.H,3)}</td><td>${f(w.T,2)}</td></tr>`);
+    $("#waveTbl").innerHTML=h+"</tbody>";
+  } else $$("#waveTbl tbody tr").forEach(tr=>tr.classList.toggle("sel",+tr.dataset.k===S.selWave));
+}
+$("#waveTbl").addEventListener("click",e=>{ const tr=e.target.closest("tr[data-k]"); if(!tr) return; S.selWave=+tr.dataset.k; renderEZC(false); });
+$("#selBurst").onchange=e=>{ S.selBurst=+e.target.value; S.selWave=null; S.winPos=0; $("#winPos").value=0; renderEZC(); };
+$("#burstMin").onchange=e=>{ S.burstMin=+e.target.value; S.selBurst=0; S.selWave=null; buildBursts(); renderEZC(); };
+$("#detrend").onchange=e=>{ S.detrend=e.target.value; S.selWave=null; buildBursts(); renderEZC(); };
+$$("#crossSeg button").forEach(b=>b.onclick=()=>{ S.cross=b.dataset.v; $$("#crossSeg button").forEach(x=>x.classList.toggle("on",x===b)); S.selWave=null; buildBursts(); renderEZC(); });
+$("#winLen").onchange=e=>{ S.winLen=+e.target.value; renderEZC(false); };
+$("#winPos").oninput=e=>{ S.winPos=+e.target.value; renderEZC(false); };
+$("#cpWaves").onclick=()=>{ const B=curBurstSafe(); if(!B) return; copyText("no,t_awal_s,t_akhir_s,puncak_m,lembah_m,H_m,T_s\n"+wavesCSV(B),$("#outWaves")); };
+$("#cpWavesAll").onclick=()=>{ if(!S.bursts.length) return; copyText("burst,no,t_awal_s,t_akhir_s,puncak_m,lembah_m,H_m,T_s\n"+S.bursts.map((B,k)=>wavesCSV(B,k)).filter(Boolean).join("\n"),$("#outWaves")); };
+
+function renderEStat(){
+  const B=curBurstSafe(), st=B&&B.stats;
+  if(!st){ $("#statTiles").innerHTML=""; $("#formula").textContent=S.eta?"Tidak ada gelombang terdeteksi pada burst ini.":"Belum ada data η. Unggah file atau muat contoh di halaman 1."; $("#sortTbl").innerHTML=""; $("#burstTbl").innerHTML=""; return; }
+  $("#statTitle").textContent=`Statistik burst ${S.selBurst+1}${S.bursts.length>1?" ("+B.label+")":""}`;
+  statsInto(B,{tiles:"#statTiles",formula:"#formula",sort:"#sortTbl",hist:"#cHist"},"hist");
+  const hasD=S.eta&&S.eta.dir;
+  let b=`<thead><tr><th>Burst</th><th>Mulai</th><th>N</th><th>Hs (m)</th><th>Ts (s)</th><th>H1/10 (m)</th><th>Hmean (m)</th><th>Hmax (m)</th><th>Tmean (s)</th>${hasD?"<th>Dir (°)</th>":""}</tr></thead><tbody>`;
+  S.bursts.forEach((x,k)=>{ const s=x.stats; b+=`<tr class="click${k===S.selBurst?" sel":""}" data-b="${k}"><td>${k+1}</td><td>${esc(x.label)}</td><td>${s?s.N:0}</td><td>${s?f(s.Hs,3):"–"}</td><td>${s?f(s.Ts,2):"–"}</td><td>${s?f(s.H10,3):"–"}</td><td>${s?f(s.Hmean,3):"–"}</td><td>${s?f(s.Hmax,3):"–"}</td><td>${s?f(s.Tmean,2):"–"}</td>${hasD?`<td>${f(x.dir,1)}</td>`:""}</tr>`; });
+  $("#burstTbl").innerHTML=b+"</tbody>";
+}
+$("#burstTbl").addEventListener("click",e=>{ const tr=e.target.closest("tr[data-b]"); if(!tr) return; S.selBurst=+tr.dataset.b; S.selWave=null; S.winPos=0; $("#winPos").value=0; renderEStat(); });
+$("#cpBurst").onclick=()=>{ if(!S.bursts.length) return; const hasD=S.eta&&S.eta.dir;
+  copyText("burst,mulai,N,Hs_m,Ts_s,H1_10_m,Hmean_m,Hmax_m,Tmean_s"+(hasD?",Dir_deg":"")+"\n"+S.bursts.map((x,k)=>{const s=x.stats||{}; return [k+1,x.label,s.N||0,f(s.Hs,4),f(s.Ts,3),f(s.H10,4),f(s.Hmean,4),f(s.Hmax,4),f(s.Tmean,3)].concat(hasD?[f(x.dir,1)]:[]).join(",")}).join("\n"),$("#outBurst")); };
+
+/* ================= Hs/Tp/Dir workflow pages ================= */
+function renderHTS(){
+  const R=S.rekap, P=pal(false);
+  if(!R){ $("#rekTiles").innerHTML='<p class="note">Belum ada data. Unggah file atau muat contoh di halaman 1.</p>'; $("#rekPreview").innerHTML=""; $("#qcNote").textContent=""; return; }
+  const hs=R.map(r=>r.Hs); const dt=R.length>1?(R[R.length-1].t-R[0].t)/(R.length-1)/60000:NaN;
+  let gaps=0; for(let i=1;i<R.length;i++) if(R[i].t-R[i-1].t>1.5*dt*60000) gaps++;
+  $("#rekTiles").innerHTML=tile("Perekaman",R.length,"")+tile("Interval",isFinite(dt)?f(dt,0):"–","menit")+tile("Celah data",gaps,"")+tile("Hs min / maks",f(Math.min(...hs),2)+"–"+f(Math.max(...hs),2),"m")+tile(S.perLabel+" rata-rata",f(mean(R.map(r=>r.T)),2),"s");
+  const hasX=R.some(r=>isFinite(r.Hmax)), has10=R.some(r=>isFinite(r.H10)), hasZ=R.some(r=>isFinite(r.depth));
+  let h=`<thead><tr><th>Waktu</th><th>Hs (m)</th>${has10?"<th>H1/10 (m)</th>":""}${hasX?"<th>Hmax (m)</th>":""}<th>${S.perLabel} (s)</th><th>Dir (°)</th>${hasZ?"<th>Kedalaman (m)</th>":""}</tr></thead><tbody>`;
+  R.slice(0,72).forEach(r=>h+=`<tr><td>${fmtDT(r.t,S.rekapRel)}</td><td>${f(r.Hs,3)}</td>${has10?`<td>${f(r.H10,3)}</td>`:""}${hasX?`<td>${f(r.Hmax,3)}</td>`:""}<td>${f(r.T,2)}</td><td>${f(r.Dir,1)}</td>${hasZ?`<td>${f(r.depth,2)}</td>`:""}</tr>`);
+  $("#rekPreview").innerHTML=h+"</tbody>";
+  $("#qcNote").textContent=(S.qc?S.qc+" ":"")+(gaps?`Terdeteksi ${gaps} celah waktu (> 1,5 × interval). `:"Tidak ada celah waktu. ")+(R.length>72?`Tabel menampilkan 72 dari ${R.length} baris.`:"");
+  $("#boxRZ").hidden=!hasZ; const o4={last:hasZ?"Z":"D"};
+  mkChart("rH",$("#cRH"),tsConfig("H",P,R,o4)); mkChart("rT",$("#cRT"),tsConfig("T",P,R,o4)); mkChart("rD",$("#cRD"),tsConfig("D",P,R,o4));
+  if(hasZ) mkChart("rZ",$("#cRZ"),tsConfig("Z",P,R,o4));
+  $("#rekPanelCap").textContent="(a) Tinggi gelombang: Hs"+(has10?", H1/10":"")+(hasX?", Hmax":"")+" · (b) periode "+S.perLabel+" · (c) arah datang"+(hasZ?" · (d) kedalaman sensor":"")+".";
+}
+function renderHStat(){
+  const R=S.rekap; if(!R){ $("#rekStatTiles").innerHTML='<p class="note">Belum ada data. Unggah file atau muat contoh di halaman 1.</p>'; $("#hStatTbl").innerHTML=""; return; }
+  const P=pal(false), hs=descStats(R.map(r=>r.Hs)), tt=descStats(R.map(r=>r.T)), hx=descStats(R.map(r=>r.Hmax)), h10=descStats(R.map(r=>r.H10)), dz=descStats(R.map(r=>r.depth));
+  const ratio=descStats(R.filter(r=>isFinite(r.Hmax)&&r.Hs>0).map(r=>r.Hmax/r.Hs));
+  $("#rekStatTitle").textContent=`Statistik ${R.length} perekaman`;
+  $("#rekStatTiles").innerHTML=tile("Hs rata-rata",f(hs.mean,2),"m",true)+tile("Hs maks",f(hs.max,2),"m")+tile("Hs min",f(hs.min,2),"m")+tile("Std. dev. Hs",f(hs.sd,2),"m")+
+    (h10?tile("H1/10 rata-rata",f(h10.mean,2),"m"):"")+(hx?tile("Hmax tertinggi",f(hx.max,2),"m"):"")+(ratio?tile("Hmax/Hs rata-rata",f(ratio.mean,2),""):"")+tile(S.perLabel+" rata-rata",f(tt.mean,2),"s");
+  mkChart("hsHist",$("#cHsHist"),hsHistConfig(P,R)); mkChart("hsT",$("#cHsT"),hsTConfig(P,R));
+  const rows=[["Hs (m)",hs,3],[S.perLabel+" (s)",tt,2]]; if(h10) rows.push(["H1/10 (m)",h10,3]); if(hx) rows.push(["Hmax (m)",hx,3]); if(ratio) rows.push(["Hmax / Hs",ratio,2]); if(dz) rows.push(["Kedalaman sensor (m)",dz,2]);
+  $("#hStatTbl").innerHTML=statRowsHTML(rows);
+}
+function statRowsHTML(rows){ return `<thead><tr><th>Parameter</th><th>N</th><th>Mean</th><th>Max</th><th>Min</th><th>Std. Dev.</th><th>Skewness</th><th>Kurtosis</th></tr></thead><tbody>`+
+  rows.map(([n,s,d])=>`<tr><td>${n}</td><td>${s.n}</td><td>${f(s.mean,d)}</td><td>${f(s.max,d)}</td><td>${f(s.min,d)}</td><td>${f(s.sd,d)}</td><td>${f(s.skew,3)}</td><td>${f(s.kurt,3)}</td></tr>`).join("")+"</tbody>"; }
+
+/* ================= shared: matrix ================= */
+function sectNames(ns){ return (ns||S.nSect)===16?SECT16:SECT8; }
+function classLabels(b){ b=b||S.bins; const L=[]; let lo=0; b.forEach(e=>{L.push(f(lo,1)+" – "+f(e,1));lo=e}); L.push("> "+f(lo,1)); return L; }
+function computeMatrix(recs,ns,bins){
+  recs=recs||S.rekap||[]; ns=ns||S.nSect; bins=bins||S.bins;
+  const R=recs.filter(r=>isFinite(r.Dir)&&isFinite(r.Hs)); const nc=bins.length+1, w=360/ns;
+  const M=Array.from({length:nc},()=>new Array(ns).fill(0));
+  R.forEach(r=>{ const s=Math.floor((((r.Dir+w/2)%360)+360)%360/w)%ns; let c=0; while(c<bins.length&&r.Hs>=bins[c]) c++; M[c][s]++; });
+  const N=R.length, colT=new Array(ns).fill(0), rowT=M.map(row=>row.reduce((a,b)=>a+b,0));
+  M.forEach(row=>row.forEach((v,j)=>colT[j]+=v));
+  return {M,N,colT,rowT,ns,nc,names:sectNames(ns),cls:classLabels(bins)};
+}
+function render24(){
+  if(!S.rekap){ $("#matTbl").innerHTML=""; $("#sectNote").textContent=""; $("#matInterp").textContent="Belum ada data. Unggah atau muat contoh di halaman 1 alur ini."; return; }
+  const X=computeMatrix(); const w=360/S.nSect;
+  $("#sectNote").textContent=`Sektor ${fid(w,1)}°: `+X.names.map((n,i)=>`${n} (${fid(((i*w-w/2)+360)%360,1)}°–${fid(i*w+w/2,1)}°)`).join(", ")+`. N total = ${X.N} perekaman.`+(S.rekap.length>X.N?` ${S.rekap.length-X.N} perekaman tanpa arah tidak dihitung.`:"");
+  $("#matTbl").innerHTML=X.N?matrixHTML(X,S.cell):""; $("#matInterp").textContent=matrixInterp(X);
+}
+$("#nSect").onchange=e=>{S.nSect=+e.target.value; render24();};
+$("#binsIn").onchange=e=>{ const b=e.target.value.split(/[;,\s]+/).map(s=>parseFloat(s.replace(",","."))).filter(v=>isFinite(v)&&v>0).sort((a,b)=>a-b);
+  const u=[...new Set(b)]; if(u.length){ S.bins=u; e.target.value=u.map(v=>f(v,1)).join(", "); } else e.target.value=S.bins.map(v=>f(v,1)).join(", "); render24(); };
+$$("#cellSeg button").forEach(b=>b.onclick=()=>{ S.cell=b.dataset.v; $$("#cellSeg button").forEach(x=>x.classList.toggle("on",x===b)); render24(); });
+$("#cpMat").onclick=()=>{ if(!S.rekap) return; const X=computeMatrix(); const pc=v=>S.cell==="cnt"?v:f(X.N?v/X.N*100:0,2);
+  const lines=["Rentang Hs (m),"+X.names.join(",")+",Total"]; X.M.forEach((r,i)=>lines.push('"'+X.cls[i]+'",'+r.map(pc).join(",")+","+pc(X.rowT[i])));
+  lines.push("Total,"+X.colT.map(pc).join(",")+","+(S.cell==="cnt"?X.N:"100.00")); copyText(lines.join("\n"),$("#outMat")); };
+
+/* ================= shared: rose ================= */
+function renderRose(target,legendEl,interpEl){
+  if(!S.rekap){ $(target).innerHTML='<p class="note">Belum ada data. Unggah atau muat contoh di halaman 1 alur ini.</p>'; if(legendEl) $(legendEl).innerHTML=""; if(interpEl) $(interpEl).textContent=""; return; }
+  const X=computeMatrix();
+  if(!X.N){ $(target).innerHTML='<p class="note">Data tidak memiliki arah: wave rose tidak dapat dibuat.</p>'; if(legendEl) $(legendEl).innerHTML=""; if(interpEl) $(interpEl).textContent=""; return; }
+  $(target).innerHTML=roseSVG(X,{P:pal(false),size:560});
+  if(legendEl){ const col=roseRamp(X.nc,false); $(legendEl).innerHTML='<b style="color:var(--fg)">Kelas Hs (m)</b>'+X.cls.map((c,i)=>`<span><i style="background:${col[i]}"></i>${c} — ${fid(X.rowT[i]/X.N*100)}%</span>`).join(""); }
+  if(interpEl){ const j=X.colT.indexOf(Math.max(...X.colT)); const pc=X.colT.map((v,k)=>({k,p:v/X.N*100})).sort((a,b)=>b.p-a.p);
+    $(interpEl).textContent=`Sektor dominan ${X.names[j]} (${SECT_ID[X.names[j]]}) dengan ${fid(pc[0].p)}%`+(pc[1]&&pc[1].p>0?`, didukung ${X.names[pc[1].k]} (${fid(pc[1].p)}%)`:"")+`. Gelombang datang dari kuadran ${quadrant(X.names[j])} sepanjang periode observasi.`; }
+}
+
+/* ================= shared: report ================= */
+function render26(){
+  if(!S.rekap){ $("#exTiles").innerHTML='<p class="note">Belum ada data. Unggah atau muat contoh di halaman 1 alur ini.</p>'; $("#exText").value=""; $("#statTbl").innerHTML=""; $("#matTbl2").innerHTML=""; $("#rose2").innerHTML=""; ["tsH","tsT","tsD"].forEach(k=>{if(S.charts[k]){S.charts[k].destroy();delete S.charts[k]}}); return; }
+  const E=exSummary(), P=pal(false);
+  $("#exTiles").innerHTML=tile("Hs rata-rata",f(E.hs.mean,2),"m",true)+tile(S.perLabel+" rata-rata",f(E.ts.mean,2),"s",true)+tile("Hs maksimum",f(E.hs.max,2),"m")+(E.hx?tile("Hmax tertinggi",f(E.hx.max,2),"m"):"")+tile("Arah dominan",E.dom||"–",E.dom?" "+fid(E.domP,1)+"%":"")+tile("Perekaman",E.R.length,"");
+  if(!S.exTextDirty) $("#exText").value=autoText(E);
+  mkChart("tsH",$("#cTsH"),tsConfig("H",P,E.R)); mkChart("tsT",$("#cTsT"),tsConfig("T",P,E.R)); mkChart("tsD",$("#cTsD"),tsConfig("D",P,E.R));
+  $("#matTbl2").innerHTML=E.X.N?matrixHTML(E.X,"pct"):"<tbody><tr><td>Tidak ada data arah.</td></tr></tbody>";
+  renderRose("#rose2");
+  const rows=[["Hs (m)",E.hs,3],[S.perLabel+" (s)",E.ts,2]]; if(E.h10) rows.push(["H1/10 (m)",E.h10,3]); if(E.hx) rows.push(["Hmax (m)",E.hx,3]); if(E.dz) rows.push(["Kedalaman sensor (m)",E.dz,2]);
+  if(E.R.some(r=>isFinite(r.Dir))) rows.push(["Dir (°) — rata-rata sirkular",{n:E.R.filter(r=>isFinite(r.Dir)).length,mean:circMean(E.R.map(r=>r.Dir)),max:NaN,min:NaN,sd:NaN,skew:NaN,kurt:NaN},1]);
+  $("#statTbl").innerHTML=statRowsHTML(rows);
+}
+$("#exText").oninput=()=>S.exTextDirty=true;
+$("#regen").onclick=()=>{ S.exTextDirty=false; render26(); };
+$("#repInst").addEventListener("input",()=>{ if(S.g==="e"||S.g==="h") S.inst[S.g]=$("#repInst").value; });
+["#repLoc","#repInst","#repDepth"].forEach(id=>$(id).addEventListener("input",()=>{ if(!S.exTextDirty&&S.rekap) $("#exText").value=autoText(exSummary()); }));
+$("#cpReport").onclick=()=>{
+  if(!S.rekap) return; const E=exSummary(), X=E.X; const L=[];
+  L.push("LAPORAN PENGOLAHAN DATA GELOMBANG"); L.push("Lokasi: "+$("#repLoc").value+" | Instrumen: "+$("#repInst").value+($("#repDepth").value?" | Kedalaman sensor: "+$("#repDepth").value+" m":""));
+  L.push("Sumber data: "+S.rekapSrc); L.push("Periode: "+fmtDT(E.R[0].t,S.rekapRel)+" s.d. "+fmtDT(E.R[E.R.length-1].t,S.rekapRel)+" ("+E.R.length+" perekaman)"); L.push("");
+  L.push("1. RINGKASAN EKSEKUTIF"); L.push($("#exText").value); L.push("");
+  L.push("2. GRAFIK DERET WAKTU TIGA PANEL (Hs, "+S.perLabel+", Dir) — lampirkan gambar dari tombol 'Buka Versi Cetak (PNG)'."); L.push("");
+  if(X.N){ L.push("3. MATRIKS DISTRIBUSI FREKUENSI (Hs vs arah datang, %)");
+    const W=13, row=a=>a.map((v,i)=>i?String(v).padStart(8):String(v).padEnd(W)).join("");
+    L.push(row(["Hs (m)",...X.names,"Total"])); X.M.forEach((r,i)=>L.push(row([X.cls[i],...r.map(v=>f(v/X.N*100,2)),f(X.rowT[i]/X.N*100,2)])));
+    L.push(row(["Total",...X.colT.map(v=>f(v/X.N*100,2)),"100.00"])); L.push(""); L.push(matrixInterp(X)); L.push("");
+    L.push("4. WAVE ROSE — lampirkan gambar dari halaman Wave Rose."); L.push(""); }
+  else { L.push("3–4. MATRIKS & WAVE ROSE — tidak tersedia (data tanpa arah)."); L.push(""); }
+  L.push("5. TABEL STATISTIK"); L.push(["Parameter".padEnd(12),"N","Mean","Max","Min","StdDev","Skew","Kurt"].map((v,i)=>i?String(v).padStart(9):v).join(""));
+  [["Hs (m)",E.hs,3],[S.perLabel+" (s)",E.ts,2]].concat(E.h10?[["H1/10 (m)",E.h10,3]]:[],E.hx?[["Hmax (m)",E.hx,3]]:[],E.dz?[["Depth (m)",E.dz,2]]:[]).forEach(([n,s,d])=>L.push([n.padEnd(12),s.n,f(s.mean,d),f(s.max,d),f(s.min,d),f(s.sd,d),f(s.skew,3),f(s.kurt,3)].map((v,i)=>i?String(v).padStart(9):v).join("")));
+  copyText(L.join("\n"),$("#outReport"));
+};
+
+/* ================= print PNG ================= */
+$("#modalClose").onclick=()=>$("#modal").hidden=true;
+$("#modal").addEventListener("click",e=>{ if(e.target.id==="modal") $("#modal").hidden=true; });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") $("#modal").hidden=true; });
+function printPNG(which){
+  if(typeof Chart==="undefined"&&which!=="rose") return;
+  const P=pal(true);
+  if(which==="eta"){ const B=curBurstSafe(); if(!B) return; const [x0,x1]=etaWindow(B);
+    showPNG(compose([renderOff(etaConfig(P,B,x0,x1,S.selWave!=null?B.waves[S.selWave]:null),2400,900)],"Identifikasi Gelombang Individu — Zero "+(S.cross==="up"?"Up":"Down")+"-Crossing",`${S.eta.name} · burst ${S.selBurst+1} · ${B.label} · N = ${B.waves.length}`+(B.stats?` · Hs = ${f(B.stats.Hs,2)} m, Ts = ${f(B.stats.Ts,2)} s`:"")),"Zero-crossing (PNG)"); }
+  else if(which==="raw"){ const E=S.eta; if(!E) return; showPNG(compose([renderOff(rawConfig(P),2400,800)],"Deret Waktu Elevasi Muka Air η(t)",E.src),"η mentah (PNG)"); }
+  else if(which==="hist"){ const B=curBurstSafe(); if(!B||!B.stats) return;
+    showPNG(compose([renderOff(histConfig(P,B),2000,1000)],"Distribusi Tinggi Gelombang Individu",`Burst ${S.selBurst+1} · N = ${B.stats.N} · Hs = ${f(B.stats.Hs,2)} m · Hmean = ${f(B.stats.Hmean,2)} m · Hmax = ${f(B.stats.Hmax,2)} m`),"Histogram (PNG)"); }
+  else if(which==="ts4"){ const R=S.rekap; if(!R) return; const hasZ=R.some(r=>isFinite(r.depth)); const o4={last:hasZ?"Z":"D"};
+    const parts=["H","T","D"].concat(hasZ?["Z"]:[]).map(k=>renderOff(tsConfig(k,P,R,o4),2600,520));
+    showPNG(compose(parts,"Time Series Parameter Gelombang",S.rekapSrc+" · "+fmtDT(R[0].t,S.rekapRel)+" s.d. "+fmtDT(R[R.length-1].t,S.rekapRel)),"Time series parameter (PNG)"); }
+  else if(which==="hshist"){ const R=S.rekap; if(!R) return;
+    const a=renderOff(hsHistConfig(P,R),1400,900), b=renderOff(hsTConfig(P,R),1400,900);
+    const c=document.createElement("canvas"); c.width=2800; c.height=900; const x=c.getContext("2d"); x.drawImage(a.cv,0,0); x.drawImage(b.cv,1400,0); a.ch.destroy(); b.ch.destroy(); a.cv.remove(); b.cv.remove();
+    showPNG(compose([{cv:c,ch:{destroy(){}}}],"Distribusi Hs dan Sebaran Hs–"+S.perLabel,S.rekapSrc+" · N = "+R.length),"Distribusi Hs (PNG)"); }
+  else if(which==="ts3"){ const R=S.rekap; if(!R) return;
+    const parts=["H","T","D"].map(k=>renderOff(tsConfig(k,P,R),2600,560));
+    showPNG(compose(parts,"Grafik Deret Waktu Gelombang: Hs, "+S.perLabel+", Dir",($("#repLoc").value||"")+" · "+fmtDT(R[0].t,S.rekapRel)+" s.d. "+fmtDT(R[R.length-1].t,S.rekapRel)),"Deret waktu tiga panel (PNG)"); }
+  else if(which==="rose"){ if(!S.rekap) return; const X=computeMatrix(); if(!X.N) return;
+    const j=X.colT.indexOf(Math.max(...X.colT));
+    const svg=roseSVG(X,{P:Object.assign(pal(true),{font:26,title:34}),size:1100,print:true,legend:true,title:"Mawar Gelombang (Wave Rose) — Distribusi Hs vs Arah Datang",sub:($("#repLoc").value||"")+" · N = "+X.N+" perekaman · arah datang (coming from)",caption:"Dominan: "+X.names[j]+" ("+f(X.colT[j]/X.N*100,2)+"%)"});
+    const img=new Image(); img.onload=()=>{ const c=document.createElement("canvas"); c.width=img.width; c.height=img.height; c.getContext("2d").drawImage(img,0,0); showPNG(c.toDataURL("image/png"),"Wave rose (PNG)"); };
+    img.onerror=()=>{ $("#roseInterp").textContent="Gagal membuat gambar cetak wave rose."; };
+    img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); }
+}
+$$("[data-png]").forEach(b=>b.onclick=()=>printPNG(b.dataset.png));
+
+/* ================= navigation ================= */
+const ROUTES=[
+ {id:"m-parameter",g:"m",sec:"m-parameter",n:"2.1",t:"Parameter & alur"},
+ {id:"m-zerocrossing",g:"m",sec:"m-zerocrossing",n:"2.2",t:"Zero up/down-crossing"},
+ {id:"m-statistik",g:"m",sec:"m-statistik",n:"2.3",t:"Statistik Hs & Ts"},
+ {id:"m-matriks",g:"m",sec:"m-matriks",n:"2.4",t:"Matriks frekuensi"},
+ {id:"m-waverose",g:"m",sec:"m-waverose",n:"2.5",t:"Wave rose"},
+ {id:"m-laporan",g:"m",sec:"m-laporan",n:"2.6",t:"Sistematika laporan"},
+ {id:"e-data",g:"e",sec:"e-data",n:"1",t:"Unggah data η"},
+ {id:"e-cek",g:"e",sec:"e-cek",n:"2",t:"Cek deret η(t)"},
+ {id:"e-zc",g:"e",sec:"e-zc",n:"3",t:"Zero-crossing"},
+ {id:"e-stat",g:"e",sec:"e-stat",n:"4",t:"Statistik & rekap burst"},
+ {id:"e-matriks",g:"e",sec:"matriks",n:"5",t:"Matriks frekuensi"},
+ {id:"e-rose",g:"e",sec:"rose",n:"6",t:"Wave rose"},
+ {id:"e-laporan",g:"e",sec:"laporan",n:"7",t:"Laporan"},
+ {id:"h-data",g:"h",sec:"h-data",n:"1",t:"Unggah data Hs, Tp, Dir"},
+ {id:"h-ts",g:"h",sec:"h-ts",n:"2",t:"Time series & QC"},
+ {id:"h-stat",g:"h",sec:"h-stat",n:"3",t:"Statistik"},
+ {id:"h-matriks",g:"h",sec:"matriks",n:"4",t:"Matriks frekuensi"},
+ {id:"h-rose",g:"h",sec:"rose",n:"5",t:"Wave rose"},
+ {id:"h-laporan",g:"h",sec:"laporan",n:"6",t:"Laporan"}];
+const GROUPS={m:["Materi","var(--g-m)"],e:["Olah data elevasi η(t)","var(--g-e)"],h:["Olah data Hs, Tp, Dir","var(--g-h)"]};
+$("#side").innerHTML=Object.entries(GROUPS).map(([g,[t,c]])=>`<div class="grp" style="--gc:${c}"><div class="gh"><i style="background:${c}"></i>${t}</div>${g!=="m"?`<div class="gs" id="sb-${g}"></div>`:""}${ROUTES.filter(r=>r.g===g).map(r=>`<button class="it" data-route="${r.id}"><b>${r.n}</b><span>${r.t}</span></button>`).join("")}</div>`).join("");
+function sideStatus(){ const a=$("#sb-e"),b=$("#sb-h"); if(a) a.textContent=S.eta?"Data: "+S.eta.name:"Belum ada data"; if(b) b.textContent=S.store.h?"Data: "+S.store.h.src:"Belum ada data"; }
+function closeMenu(){ $("#side").classList.remove("open"); $("#menuBtn").setAttribute("aria-expanded","false"); }
+$("#menuBtn").onclick=()=>{ const o=$("#side").classList.toggle("open"); $("#menuBtn").setAttribute("aria-expanded",String(o)); };
+document.addEventListener("click",e=>{
+  const r=e.target.closest("[data-route]"); if(r){ go(r.dataset.route); closeMenu(); window.scrollTo({top:0}); return; }
+  const b=e.target.closest("[data-go]"); if(b){ go(b.dataset.go); window.scrollTo({top:0}); }
+});
+function go(id,noHash){
+  const r=ROUTES.find(x=>x.id===id)||ROUTES[0]; S.route=r.id;
+  activate(r.g);
+  $$("section.page").forEach(s=>s.hidden=s.dataset.page!==r.sec);
+  const sec=$(`section[data-page="${r.sec}"]`);
+  if(["matriks","rose","laporan"].includes(r.sec)){
+    sec.style.setProperty("--gc",GROUPS[r.g][1]); sec.querySelector(".gname").textContent=GROUPS[r.g][0]; sec.querySelector(".pnum").textContent=r.n;
+    sec.querySelector(".dchip").innerHTML=`<b>Data:</b> <span>${S.rekap?esc(S.rekapSrc)+" · "+S.rekap.length+" perekaman · "+fmtDT(S.rekap[0].t,S.rekapRel)+" s.d. "+fmtDT(S.rekap[S.rekap.length-1].t,S.rekapRel):"belum ada data"}</span><button class="btn sm ghost" data-go="${r.g}-data">Ganti data</button>`;
+  }
+  $$("[data-route]").forEach(b=>{ if(b.dataset.route===r.id) b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  const grp=ROUTES.filter(x=>x.g===r.g), i=grp.indexOf(r), pv=grp[i-1], nx=grp[i+1];
+  $("#pager").innerHTML=(pv?`<button class="btn ghost" data-go="${pv.id}">← ${pv.n} ${pv.t}</button>`:"<span></span>")+(nx?`<button class="btn" data-go="${nx.id}">${nx.n} ${nx.t} →</button>`:"<span></span>");
+  $("#menuBtn").textContent="Menu · "+GROUPS[r.g][0];
+  if(!noHash){ try{ history.replaceState(null,"","#"+r.id) }catch(e){} }
+  renderRoute();
+}
+function renderRoute(){
+  switch(S.route){
+    case "m-parameter": renderMParam(); break; case "m-zerocrossing": renderMZC(); break; case "m-statistik": renderMStat(); break;
+    case "m-matriks": renderMMat(); break; case "m-waverose": renderMRose(); break;
+    case "e-cek": renderECek(); break; case "e-zc": renderEZC(); break; case "e-stat": renderEStat(); break;
+    case "h-ts": renderHTS(); break; case "h-stat": renderHStat(); break;
+    case "e-matriks": case "h-matriks": render24(); break;
+    case "e-rose": case "h-rose": renderRose("#rose","#roseLegend","#roseInterp"); break;
+    case "e-laporan": case "h-laporan": render26(); break;
+  }
+}
+window.addEventListener("hashchange",()=>go(location.hash.slice(1),true));
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",renderRoute);
+new MutationObserver(renderRoute).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+if(typeof Chart!=="undefined"){ Chart.defaults.font.family=FF; }
+
+/* initial working state: example data loaded in both workflows */
+S.detrend="linear"; $("#detrend").value="linear";
+setEta(Object.assign(makeEta24(),{name:"Contoh 24 jam"}));
+setH(makeAdcp14(),"Contoh ADCP 14 hari","Tp",false,"QC: semua baris lolos.");
+go(location.hash.slice(1)||"m-parameter",true);
+
+</script>
+
+<!-- Tombol kembali ke website -->
+<style>
+.fk-home{position:fixed;left:16px;bottom:16px;z-index:9999;display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:999px;background:#0b1416;color:#fff!important;font:600 13px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;text-decoration:none!important;box-shadow:0 4px 14px rgba(0,0,0,.18);opacity:.92;transition:opacity .15s,transform .15s}
+.fk-home:hover,.fk-home:focus-visible{opacity:1;transform:translateY(-1px)}
+.fk-home svg{width:14px;height:14px}
+@media (max-width:600px){.fk-home{left:12px;bottom:12px;padding:8px 12px;font-size:12px}}
+@media print{.fk-home{display:none!important}}
+@media (min-width:901px){.fk-home{position:absolute;left:auto;right:max(24px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 22px);bottom:auto;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.55);box-shadow:none}}
+@media (max-width:900px){main{padding-bottom:80px!important}}
+</style>
+<a class="fk-home" href="/" title="Kembali ke website Faruq Khadami"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>Home</a>
+</body>
+</html>

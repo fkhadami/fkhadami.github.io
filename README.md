@@ -17,7 +17,7 @@ Dibangun dengan template [Academic Pages](https://github.com/academicpages/acade
 
 ## Menambah tool baru
 
-1. Simpan file HTML ke folder `tools/`, misal `tools/gelombang.html`.
+1. Simpan file HTML ke folder `tools/`, misal `tools/bengkel-gelombang.html`. File harus berupa dokumen HTML lengkap (`<!doctype html>`, `<head>`, `<body>`) dan menyertakan tombol `.fk-home` untuk kembali ke Home.
 2. Tambahkan satu kartu di `_pages/tools.md` (salin blok `<div class="tool-card">`), dan bila perlu satu baris di `_pages/about.md`.
 3. Commit dan push — website diperbarui otomatis dalam 1–2 menit.
 

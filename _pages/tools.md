@@ -17,6 +17,13 @@ Kumpulan aplikasi web yang saya kembangkan untuk membantu pengolahan data oseano
   </div>
 
   <div class="tool-card">
+    <p class="tool-tag">Gelombang · Modul praktikum</p>
+    <h2>Bengkel Gelombang</h2>
+    <p>Mengikuti Modul 2 Pengolahan Data Gelombang, dalam tiga bagian terpisah. <strong>Materi</strong>: parameter gelombang, metode <em>zero up-crossing</em> dan <em>zero down-crossing</em>, statistik Hs/Ts, matriks frekuensi, <em>wave rose</em>, dan sistematika laporan, dengan contoh interaktif dari bahan kuliah. <strong>Olah data elevasi η(t)</strong> untuk rekaman mentah <em>wave logger</em>/<em>pressure sensor</em>: koreksi muka air, deteksi gelombang individu per burst, statistik, hingga laporan. <strong>Olah data Hs, Tp, Dir</strong> untuk keluaran ADCP/AWAC: QC, <em>time series</em>, statistik, matriks, <em>wave rose</em>, dan laporan. Gambar resolusi cetak siap diunduh.</p>
+    <p><a class="btn btn--primary" href="{{ '/tools/bengkel-gelombang.html' | relative_url }}">Buka Bengkel Gelombang</a></p>
+  </div>
+
+  <div class="tool-card">
     <p class="tool-tag">Arus · Modul praktikum</p>
     <h2>Bengkel Arus</h2>
     <p>Mengikuti Modul 3 Pengolahan Data Arus: konversi vektor, <em>averaging</em>, matriks frekuensi kejadian, visualisasi (termasuk <em>current rose</em>), dan pelaporan. Semua perhitungan berjalan lokal di peramban, dan gambar resolusi cetak siap diunduh.</p>
