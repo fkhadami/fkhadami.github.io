@@ -3,6 +3,9 @@ main:
   - title: "Analisis Data Tools"
     url: /tools/
 
+  - title: "Materi Kuliah"
+    url: /materi/
+
   - title: "Publications"
     url: /cv/publications/
 
