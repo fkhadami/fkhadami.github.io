@@ -24,7 +24,7 @@ Bahan ajar mata kuliah dan program pelatihan yang saya ampu. Setiap materi dapat
       <li>Pelaporan Survey dan Data Oseanografi</li>
     </ol>
     <p>Untuk latihan pengolahan data gelombang dan arus, gunakan juga <a href="{{ '/tools/' | relative_url }}">Bengkel Gelombang dan Bengkel Arus</a>.</p>
-    <p><a class="btn btn--primary" href="https://claude.ai/artifact/RJfYNJv5cAdvS7zEUBniFp" target="_blank" rel="noopener">Buka Materi ICE Survey Oseanografi</a></p>
+    <p><a class="btn btn--primary" href="{{ '/materi/ice-survey-oseanografi.html' | relative_url }}">Buka Materi ICE Survey Oseanografi</a></p>
   </div>
 
 </div>
