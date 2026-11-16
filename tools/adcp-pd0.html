@@ -50,6 +50,7 @@ nav button[aria-selected=true]{color:var(--ink);box-shadow:inset 0 -5px 0 var(--
 .ctl select,.ctl input{width:auto;min-width:120px}
 .ctl .grow{flex:1;min-width:220px}.ctl .grow input{width:100%}
 .figbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:flex-end;margin:10px 0 0}.figbar span{color:var(--mut);font-size:12.5px;margin-right:auto}.figbar button{min-height:34px;font-size:13px;padding:0 12px;border-width:1px}
+.bsrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:24px}@media(max-width:900px){.bsrow{grid-template-columns:1fr}}
 .plot{width:100%;height:min(68vh,620px);min-height:360px}
 .plot.tall{height:min(90vh,860px)}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 16px;border-top:2px solid var(--line);margin-top:18px}
@@ -209,6 +210,32 @@ pre{background:var(--panel);padding:12px 14px;font-size:12.5px;overflow-x:auto;w
     <div class="plot" id="vTrack" style="height:420px;display:none"></div>
   </section>
 
+  <section class="tab" id="t-backscatter">
+    <div class="ctl">
+      <label>Beam <select id="bsBeam"><option value="avg">Mean of beams 1–4</option><option value="0">Beam 1</option><option value="1">Beam 2</option><option value="2">Beam 3</option><option value="3">Beam 4</option><option value="vb">Vertical beam (5th)</option></select></label>
+      <label>Output <select id="bsMode"><option value="rel">Relative backscatter (dB)</option><option value="abs">Absolute Sv (dB re 1 m⁻¹)</option></select></label>
+      <label>Frequency (kHz) <input id="bsFreq" type="number" step="1" style="width:110px;min-width:0"></label>
+      <label>Kc (dB/count) <input id="bsKc" type="number" step="0.01" value="0.45" style="width:110px;min-width:0"></label>
+      <label>Noise floor Er (counts) <input id="bsEr" type="number" step="1" placeholder="auto" style="width:110px;min-width:0"></label>
+      <label>Salinity (PSU) <input id="bsSal" type="number" step="0.1" placeholder="from file" style="width:110px;min-width:0"></label>
+      <label>Noise correction <select id="bsNoise"><option value="1">On (Mullison 2017)</option><option value="0">Off (Deines 1999)</option></select></label>
+      <label>Velocity QC mask <select id="bsQC"><option value="0">Off</option><option value="1">Apply</option></select></label>
+      <label class="bsAbs">C (dB) <input id="bsC" type="number" step="0.1" style="width:110px;min-width:0"></label>
+      <label class="bsAbs">Transmit power (W) <input id="bsPw" type="number" step="0.1" style="width:110px;min-width:0"></label>
+    </div>
+    <p class="note" id="bsInfo" style="max-width:none"></p>
+    <div class="ctl">
+      <label>Colour min <input id="bsMin" type="number" step="1" placeholder="auto" style="width:110px;min-width:0"></label>
+      <label>Colour max <input id="bsMax" type="number" step="1" placeholder="auto" style="width:110px;min-width:0"></label>
+      <label class="grow"><span id="bsBinLab">Bin</span><input id="bsBin" type="range" min="0" max="0" value="0"></label>
+      <label>Profile <select id="bsPMode"><option value="mean">Mean ± 1 s.d.</option><option value="ens">Single profile</option></select></label>
+      <label class="grow"><span id="bsEnsLab">Profile</span><input id="bsEns" type="range" min="0" max="0" value="0"></label>
+    </div>
+    <div class="plot" id="bsContour"></div>
+    <div class="bsrow"><div class="plot" id="bsProfile"></div><div class="plot" id="bsSeries"></div></div>
+    <p class="note" style="max-width:none">Sv = C + 10 log((T+273.16)·R²) − 10 log(L) − 10 log(P) + 2αR + 10 log(10^(Kc(E−Er)/10) − 1), with R the slant range to the cell, α from Ainslie &amp; McColm (1998) using the recorded temperature and salinity, and the last term reduced to Kc(E−Er) when noise correction is off (Deines 1999; Mullison 2017). Relative backscatter drops C, L, P and the temperature term. Kc, Er and C are instrument-specific: the defaults are typical Workhorse values, so calibrate against water samples before reading the numbers as concentrations. Averaging uses the same windows as the velocities, done in linear units.</p>
+  </section>
+
   <section class="tab" id="t-quality">
     <div class="two">
       <div class="plot" id="qPlot"></div>
@@ -358,12 +385,15 @@ const PD0 = (() => {
         }
       }
       // Sentinel V vertical beam (5th) velocity, guarded by block-length check
-      const vl = dir.find(b => b.id === 0x0F01), vv = dir.find(b => b.id === 0x0A00);
-      if (vl && vv) {
+      const vl = dir.find(b => b.id === 0x0F01), vv = dir.find(b => b.id === 0x0A00), ve = dir.find(b => b.id === 0x0C00);
+      if (vl && (vv || ve)) {
         const n5 = dv.getUint16(vl.o + 2, true);
-        if (n5 > 0 && n5 < 1024 && vv.len >= 2 + 2 * n5) {
-          if (!R.vb) R.vb = { n: n5, cell: dv.getUint16(vl.o + 6, true) / 100, bin1: dv.getUint16(vl.o + 8, true) / 100, vel: new Float32Array(NE * n5).fill(NaN) };
-          if (R.vb.n === n5) for (let k = 0; k < n5; k++) { const v = dv.getInt16(vv.o + 2 + 2 * k, true); R.vb.vel[e * n5 + k] = v === -32768 ? NaN : v / 1000; }
+        if (n5 > 0 && n5 < 1024) {
+          if (!R.vb) R.vb = { n: n5, cell: dv.getUint16(vl.o + 6, true) / 100, bin1: dv.getUint16(vl.o + 8, true) / 100, vel: new Float32Array(NE * n5).fill(NaN), echo: null };
+          if (R.vb.n === n5) {
+            if (vv && vv.len >= 2 + 2 * n5) for (let k = 0; k < n5; k++) { const v = dv.getInt16(vv.o + 2 + 2 * k, true); R.vb.vel[e * n5 + k] = v === -32768 ? NaN : v / 1000; }
+            if (ve && ve.len >= 2 + n5) { if (!R.vb.echo) R.vb.echo = new Uint8Array(NE * n5); R.vb.echo.set(u8.subarray(ve.o + 2, ve.o + 2 + n5), e * n5); }
+          }
         }
       }
       e++;
@@ -379,7 +409,7 @@ const PD0 = (() => {
       if (R[k]) R[k] = R[k].slice(0, n);
     for (const k of ['vel', 'corr', 'echo', 'pg']) if (R[k]) R[k] = R[k].slice(0, n * per);
     for (const k of ['btRange', 'btVel']) if (R[k]) R[k] = R[k].slice(0, n * 4);
-    if (R.vb) R.vb.vel = R.vb.vel.slice(0, n * R.vb.n);
+    if (R.vb) { R.vb.vel = R.vb.vel.slice(0, n * R.vb.n); if (R.vb.echo) R.vb.echo = R.vb.echo.slice(0, n * R.vb.n); }
   }
   /* merge several raw files with identical geometry, sorted by start time */
   function merge(list) {
@@ -535,6 +565,7 @@ const PD0 = (() => {
       temp: R.temp.slice(i0, i1 + 1), pressure: R.pressure.slice(i0, i1 + 1), sos: R.sos.slice(i0, i1 + 1), instDepth, side, btU, btV,
       lat: R.lat ? R.lat.slice(i0, i1 + 1) : null, lon: R.lon ? R.lon.slice(i0, i1 + 1) : null
     };
+    out.flag = flag; out.sideRaw = side; out.instDepthRaw = instDepth;
     // averaging
     if (S.avgMode !== 'none') out = average(out, S, log);
     // rotation to along/cross axis
@@ -570,7 +601,7 @@ const PD0 = (() => {
       ne: ng, time, heading, U: avg2(P.U, need), V: avg2(P.V, need), W: avg2(P.W, need), E: avg2(P.E, need),
       echo: avg2(P.echo), corr: avg2(P.corr), pg: avg2(P.pg), pitch: avg1(P.pitch), roll: avg1(P.roll), temp: avg1(P.temp),
       pressure: avg1(P.pressure), sos: avg1(P.sos), instDepth: avg1(P.instDepth), side: avg1(Float32Array.from(P.side, v => Number.isFinite(v) ? v : NaN)),
-      btU: avg1(P.btU), btV: avg1(P.btV), lat: avg1(P.lat), lon: avg1(P.lon), nAvg: cnt
+      btU: avg1(P.btU), btV: avg1(P.btV), lat: avg1(P.lat), lon: avg1(P.lon), nAvg: cnt, groups: Int32Array.from(g, k => idx.get(k))
     });
   }
 
@@ -602,6 +633,59 @@ const PD0 = (() => {
     let a = 0; while (a < n && !ok[a]) a++; let b = n - 1; while (b > a && !ok[b]) b--;
     // drop one extra ensemble at each end (settling)
     return { i0: Math.min(a + 1, b), i1: Math.max(b - 1, a) };
+  }
+
+
+  /* ---------------- backscatter (Deines 1999; noise correction Mullison 2017) ---------------- */
+  // seawater absorption, Ainslie & McColm (1998), dB/m; f kHz, T degC, S PSU, z km
+  function absorption(f, T, S, z, pH = 8) {
+    const f1 = 0.78 * Math.sqrt(Math.max(S, 0) / 35) * Math.exp(T / 26), f2 = 42 * Math.exp(T / 17), f2_ = f * f;
+    return (0.106 * f1 * f2_ / (f1 * f1 + f2_) * Math.exp((pH - 8) / 0.56) + 0.52 * (1 + T / 43) * (S / 35) * f2 * f2_ / (f2 * f2 + f2_) * Math.exp(-z / 6) + 0.00049 * f2_ * Math.exp(-(T / 27 + z / 17))) / 1000;
+  }
+  const BS_TABLE = { 300: [-143.5, 14.0], 600: [-139.3, 9.0], 1200: [-129.1, 4.8] }; // Workhorse values, Deines (1999)
+  function backscatter(R, P, B) {
+    const vb = B.beam === 'vb';
+    if (vb && !(R.vb && R.vb.echo)) throw new Error('This file has no vertical-beam echo data.');
+    if (!vb && !R.echo) throw new Error('This file has no echo-intensity data.');
+    const nbR = R.nBeams, i0 = P.i0, ne = P.i1 - P.i0 + 1, nc = vb ? R.vb.n : R.nCells, D = vb ? R.vb.cell : R.cellSize;
+    const th = vb ? 0 : P.beamAngle * D2R, b1 = vb ? R.vb.bin1 : R.bin1;
+    const dist = Float32Array.from({ length: nc }, (_, c) => b1 + c * D);
+    const beams = vb ? [0] : B.beam === 'avg' ? [0, 1, 2, 3].slice(0, nbR) : [+B.beam];
+    const echoAt = (e, c, b) => vb ? R.vb.echo[e * nc + c] : R.echo[(e * R.nCells + c) * nbR + b];
+    // noise floor per beam: user value or 1st percentile of all counts in the range
+    const Er = beams.map(b => {
+      if (Number.isFinite(B.Er)) return B.Er;
+      const h = new Uint32Array(256); let n = 0; for (let e = i0; e <= P.i1; e++) for (let c = 0; c < nc; c++) { h[echoAt(e, c, b)]++; n++; }
+      let acc = 0; for (let k = 0; k < 256; k++) { acc += h[k]; if (acc >= 0.01 * n) return k; } return 0;
+    });
+    const abs = B.mode === 'abs', C = abs ? B.C : 0, LDBM = abs ? 10 * Math.log10(Math.max(1e-3, R.fixed.xmit || D)) : 0, PDBW = abs ? 10 * Math.log10(Math.max(1e-3, B.power)) : 0;
+    const raw = new Float32Array(ne * nc).fill(NaN); let aSum = 0, aN = 0;
+    for (let j = 0; j < ne; j++) {
+      const e = i0 + j, T = R.temp[e], S = Number.isFinite(B.sal) ? B.sal : R.sal[e], zd = P.instDepthRaw[j];
+      const a = absorption(B.freq, T, S, Number.isFinite(zd) ? Math.max(0, zd) / 1000 : 0); aSum += a; aN++;
+      const lim = vb ? (Number.isFinite(zd) && P.up ? zd - D : Infinity) : P.sideRaw[j];
+      for (let c = 0; c < nc; c++) {
+        if (B.sidelobe && dist[c] > lim) continue;
+        if (!vb && B.useQC && P.flag[j * nc + c]) continue;
+        const Rr = (dist[c] + D / 4) / Math.cos(th);
+        const geo = (abs ? C + 10 * Math.log10((T + 273.16) * Rr * Rr) - LDBM - PDBW : 20 * Math.log10(Rr)) + 2 * a * Rr;
+        let lin = 0, n = 0;
+        for (let k = 0; k < beams.length; k++) {
+          const x = B.Kc * (echoAt(e, c, beams[k]) - Er[k]);
+          const t = B.noiseCorr ? (x > 0 ? 10 * Math.log10(Math.pow(10, x / 10) - 1) : NaN) : x;
+          if (Number.isFinite(t)) { lin += Math.pow(10, (geo + t) / 10); n++; }
+        }
+        if (n) raw[j * nc + c] = 10 * Math.log10(lin / n);
+      }
+    }
+    let sv = raw, time = P.time;
+    if (P.groups) { // average in the linear domain, same windows as the velocities
+      const ng = P.ne, s = new Float64Array(ng * nc), n = new Uint32Array(ng * nc);
+      for (let j = 0; j < ne; j++) { const gi = P.groups[j]; for (let c = 0; c < nc; c++) { const v = raw[j * nc + c]; if (Number.isFinite(v)) { s[gi * nc + c] += Math.pow(10, v / 10); n[gi * nc + c]++; } } }
+      sv = Float32Array.from(s, (v, q) => n[q] ? 10 * Math.log10(v / n[q]) : NaN);
+    }
+    const depth = Float32Array.from(dist, x => P.up ? P.meanDepth - x : P.meanDepth + x);
+    return { ne: P.ne, nc, time, dist, depth, sv, Er, alpha: aSum / aN, mode: abs ? 'abs' : 'rel', beams, vb, rmin: (dist[0] + D / 4) / Math.cos(th), rmax: (dist[nc - 1] + D / 4) / Math.cos(th), ldbm: LDBM, pdbw: PDBW };
   }
 
   /* ---------------- export helpers ---------------- */
@@ -745,7 +829,7 @@ const PD0 = (() => {
     return bufs.buffer;
   }
 
-  return { parse, merge, process, field, depthMean, principalAxis, autoRange, earthMatrix, beamToInst, makeSample, matVars, mat4, zip, toCSV, dropEmptyBins, tabMatrix, tabLong, tabBin, binName, iso, datenum, nanmean, median, QC, DEFAULTS };
+  return { parse, merge, process, backscatter, absorption, BS_TABLE, field, depthMean, principalAxis, autoRange, earthMatrix, beamToInst, makeSample, matVars, mat4, zip, toCSV, dropEmptyBins, tabMatrix, tabLong, tabBin, binName, iso, datenum, nanmean, median, QC, DEFAULTS };
 })();
 if (typeof module !== 'undefined') module.exports = PD0;
 
@@ -753,7 +837,7 @@ if (typeof module !== 'undefined') module.exports = PD0;
 <script>
 {
 const $ = id => document.getElementById(id);
-const TABS = [['overview','Overview'],['contour','Contour'],['series','Time series'],['profile','Profiles'],['vectors','Vectors'],['quality','Quality'],['export','Export'],['log','Log']];
+const TABS = [['overview','Overview'],['contour','Contour'],['series','Time series'],['profile','Profiles'],['vectors','Vectors'],['backscatter','Backscatter'],['quality','Quality'],['export','Export'],['log','Log']];
 const SKEYS = Object.keys(PD0.DEFAULTS).filter(k => $(k));
 const st = { raws: [], R: null, P: null, tab: 'overview', bin: 0, ens: 0 };
 let plotlyOK = typeof Plotly !== 'undefined';
@@ -848,6 +932,7 @@ async function loadFiles(files) {
     $('btRef').disabled = !R.btVel; $('btNote').textContent = R.btVel ? 'Bottom track found in this file.' : 'No bottom-track data in this file.';
     if (!R.btVel) $('btRef').checked = false;
     $('beamAngle').placeholder = R.beamAngle + ' (file)';
+    bsDefaults(); for (const id of ['bsKc', 'bsNoise', 'bsQC', 'bsMode']) { try { const v = localStorage.getItem('pd0proc.' + id); if (v !== null) $(id).value = v; } catch (e) { } } st.bsBin = st.bsEns = undefined; bsCache = null;
     remember(R);
     $('empty').hidden = true; $('work').hidden = false;
     run();
@@ -905,7 +990,7 @@ $('tabs').addEventListener('click', e => { const b = e.target.closest('button');
 
 function render() {
   if (!st.P) return;
-  ({ overview: rOverview, contour: rContour, series: rSeries, profile: rProfile, vectors: rVectors, quality: rQuality, export: rExport, log: rLog })[st.tab]();
+  ({ overview: rOverview, contour: rContour, series: rSeries, profile: rProfile, vectors: rVectors, backscatter: rBS, quality: rQuality, export: rExport, log: rLog })[st.tab]();
 }
 
 /* ---------- per-figure save picture / save data ---------- */
@@ -1107,6 +1192,74 @@ function rVectors() {
   else { tr.style.display = 'none'; tr.previousElementSibling.style.display = 'none'; }
 }
 
+/* ---------- backscatter ---------- */
+const BSK = ['bsBeam', 'bsMode', 'bsFreq', 'bsKc', 'bsEr', 'bsSal', 'bsNoise', 'bsQC', 'bsC', 'bsPw'];
+const num = id => $(id).value === '' ? NaN : +$(id).value;
+function bsParams() {
+  return { beam: $('bsBeam').value, mode: $('bsMode').value, freq: num('bsFreq') || st.R.fixed.freq, Kc: num('bsKc') || 0.45, Er: num('bsEr'), sal: num('bsSal'), noiseCorr: $('bsNoise').value === '1', useQC: $('bsQC').value === '1', sidelobe: st.P.settings.sidelobe, C: num('bsC'), power: num('bsPw') };
+}
+function bsDefaults() {
+  const R = st.R, f = R.fixed.freq, t = PD0.BS_TABLE[f];
+  $('bsFreq').value = f; $('bsC').value = t ? t[0] : ''; $('bsPw').value = t ? t[1] : '';
+  $('bsC').placeholder = $('bsPw').placeholder = t ? '' : 'enter';
+  $('bsBeam').querySelector('[value=vb]').disabled = !(R.vb && R.vb.echo); if ($('bsBeam').value === 'vb' && !(R.vb && R.vb.echo)) $('bsBeam').value = 'avg';
+  for (let b = 0; b < 4; b++) $('bsBeam').querySelector(`[value="${b}"]`).disabled = !R.echo || b >= R.nBeams;
+}
+let bsCache = null;
+function getBS() {
+  const B = bsParams(), key = JSON.stringify(B);
+  if (bsCache && bsCache.P === st.P && bsCache.key === key) return bsCache.bs;
+  if (B.mode === 'abs' && !(Number.isFinite(B.C) && Number.isFinite(B.power))) { B.mode = 'rel'; B.fellBack = true; }
+  const bs = PD0.backscatter(st.R, st.P, B); bs.params = B; bsCache = { P: st.P, key, bs }; return bs;
+}
+const bsUnit = bs => bs.mode === 'abs' ? 'Sv (dB re 1 m⁻¹)' : 'Relative backscatter (dB)';
+const bsName = bs => (bs.vb ? 'vertical beam' : bs.beams.length > 1 ? 'mean of beams 1–4' : 'beam ' + (bs.beams[0] + 1));
+function bsY(bs) {
+  const m = $('yaxis').value, P = st.P;
+  if (m === 'bin') return { y: Array.from({ length: bs.nc }, (_, i) => i + 1), title: 'Bin', rev: false };
+  if (m === 'depth') return { y: Array.from(bs.depth), title: 'Depth (m, mean)', rev: true };
+  return { y: Array.from(bs.dist), title: P.up ? 'Height above ADCP (m)' : 'Distance below ADCP (m)', rev: !P.up };
+}
+function rBS() {
+  const P = st.P, c = colors();
+  for (const el of document.querySelectorAll('.bsAbs')) el.style.display = $('bsMode').value === 'abs' ? '' : 'none';
+  let bs; try { bs = getBS(); } catch (e) { $('bsInfo').textContent = e.message; return; }
+  const nc = bs.nc, Y = bsY(bs), s = stride(bs.ne, 1600), u = bsUnit(bs), name = bsName(bs);
+  st.bsBin = Math.min(st.bsBin ?? Math.floor(nc / 3), nc - 1); $('bsBin').max = nc - 1; $('bsBin').value = st.bsBin;
+  st.bsEns = Math.min(st.bsEns ?? 0, bs.ne - 1); $('bsEns').max = bs.ne - 1; $('bsEns').value = st.bsEns;
+  $('bsInfo').innerHTML = `<b>${name}, ${bs.mode === 'abs' ? 'absolute Sv' : 'relative backscatter'}</b>${bs.params.fellBack ? ' (absolute needs C and transmit power — showing relative)' : ''} · ${bs.params.freq} kHz · α = ${bs.alpha.toFixed(3)} dB/m · Er = ${bs.Er.join(' / ')} counts${Number.isFinite(bs.params.Er) ? '' : ' (auto, 1st percentile)'} · Kc = ${bs.params.Kc} dB/count · slant range ${bs.rmin.toFixed(2)}–${bs.rmax.toFixed(2)} m${bs.mode === 'abs' ? ` · 10 log L = ${bs.ldbm.toFixed(2)}, 10 log P = ${bs.pdbw.toFixed(2)}` : ''} · ${procState()}.`;
+  // contour
+  const x = [], z = []; for (let j = 0; j < bs.ne; j += s) x.push(isoT(bs.time[j]));
+  for (let q = 0; q < nc; q++) { const r = []; for (let j = 0; j < bs.ne; j += s) { const v = bs.sv[j * nc + q]; r.push(Number.isFinite(v) ? v : null); } z.push(r); }
+  let [lo, hi] = autoRange(z, false); if ($('bsMin').value !== '') lo = +$('bsMin').value; if ($('bsMax').value !== '') hi = +$('bsMax').value;
+  $('bsMin').placeholder = lo.toFixed(0); $('bsMax').placeholder = hi.toFixed(0);
+  const cd = [{ type: 'heatmap', x, y: Y.y, z, zmin: lo, zmax: hi, colorscale: 'Viridis', hoverongaps: false, colorbar: { title: { text: 'dB', side: 'right' }, thickness: 14, outlinewidth: 0 }, hovertemplate: `%{x}<br>${Y.title}: %{y}<br>%{z:.1f} dB<extra></extra>`, name: 'Backscatter' }];
+  if (P.up && $('yaxis').value !== 'bin') { const ly = []; for (let j = 0; j < P.ne; j += s) { const d = P.instDepth[j]; ly.push(Number.isFinite(d) ? ($('yaxis').value === 'depth' ? P.meanDepth - d : d) : null); } cd.push({ x, y: ly, mode: 'lines', line: { color: c.ink, width: 1.2 }, name: 'Surface', hoverinfo: 'skip' }); }
+  const yr = [Math.min(...Y.y), Math.max(...Y.y)];
+  draw('bsContour', cd, baseLayout({ showlegend: cd.length > 1, xaxis: ax('', { type: 'date' }), yaxis: ax(Y.title, { range: Y.rev ? [yr[1], yr[0]] : yr }), margin: { l: 64, r: 16, t: 76, b: 44 }, title: ttl(`${u} — ${name}`) }));
+  setFig('bsContour', 'backscatter_contour', false, () => ({ head: ['time', ...Array.from({ length: nc }, (_, q) => `bin${String(q + 1).padStart(2, '0')}_${bs.dist[q].toFixed(2)}m_dB`)], rows: Array.from({ length: bs.ne }, (_, j) => [isoT(bs.time[j]), ...Array.from({ length: nc }, (_, q) => bs.sv[j * nc + q])]) }));
+  // profile
+  const mu = [], sd = [], one = [];
+  for (let q = 0; q < nc; q++) { let a = 0, a2 = 0, n = 0; for (let j = 0; j < bs.ne; j++) { const v = bs.sv[j * nc + q]; if (Number.isFinite(v)) { a += v; a2 += v * v; n++; } } const m = n ? a / n : NaN; mu.push(m); sd.push(n > 1 ? Math.sqrt(Math.max(0, a2 / n - m * m)) : NaN); one.push(bs.sv[st.bsEns * nc + q]); }
+  const pm = $('bsPMode').value; $('bsEns').disabled = pm !== 'ens';
+  $('bsEnsLab').textContent = pm === 'ens' ? `Profile ${st.bsEns + 1} of ${bs.ne} · ${isoT(bs.time[st.bsEns])}` : 'Profile (single-profile mode)';
+  const nz = v => Number.isFinite(v) ? v : null, pd = [];
+  const ok = mu.map((m, q) => Number.isFinite(m) && Number.isFinite(sd[q]) ? q : -1).filter(q => q >= 0);
+  if (pm === 'mean') pd.push({ x: ok.map(q => mu[q] + sd[q]).concat(ok.map(q => mu[q] - sd[q]).reverse()), y: ok.map(q => Y.y[q]).concat(ok.map(q => Y.y[q]).reverse()), fill: 'toself', fillcolor: '#e4002b', opacity: .12, line: { width: 0 }, hoverinfo: 'skip', showlegend: false });
+  pd.push({ x: (pm === 'mean' ? mu : one).map(nz), y: Y.y, mode: 'lines+markers', marker: { size: 4, color: '#e4002b' }, line: { color: '#e4002b', width: 1.6 }, name: pm === 'mean' ? 'Mean' : isoT(bs.time[st.bsEns]).slice(5, 16) });
+  draw('bsProfile', pd, baseLayout({ xaxis: ax(u), yaxis: ax(Y.title, { autorange: Y.rev ? 'reversed' : true }), margin: { l: 64, r: 16, t: 76, b: 48 }, title: ttl('Profile') }));
+  setFig('bsProfile', 'backscatter_profile_' + pm + (pm === 'ens' ? st.bsEns + 1 : ''), false, () => colT(['bin', 'dist_m', 'depth_m', ...(pm === 'mean' ? ['mean_dB', 'sd_dB'] : ['dB'])], [i => i + 1, bs.dist, bs.depth, ...(pm === 'mean' ? [mu, sd] : [one])], nc));
+  // time series
+  $('bsBinLab').textContent = `Time series at bin ${st.bsBin + 1} · ${bs.dist[st.bsBin].toFixed(2)} m from ADCP · ≈${bs.depth[st.bsBin].toFixed(1)} m depth`;
+  const ts = Array.from({ length: bs.ne }, (_, j) => bs.sv[j * nc + st.bsBin]);
+  const dm = Array.from({ length: bs.ne }, (_, j) => { let a = 0, n = 0; for (let q = 0; q < nc; q++) { const v = bs.sv[j * nc + q]; if (Number.isFinite(v)) { a += Math.pow(10, v / 10); n++; } } return n ? 10 * Math.log10(a / n) : NaN; });
+  const s2 = stride(bs.ne, 6000), tx = [], pk = a => { const o = []; for (let j = 0; j < bs.ne; j += s2) o.push(nz(a[j])); return o; };
+  for (let j = 0; j < bs.ne; j += s2) tx.push(isoT(bs.time[j]));
+  draw('bsSeries', [{ x: tx, y: pk(ts), name: `Bin ${st.bsBin + 1}`, line: { color: '#e4002b', width: 1.2 } }, { x: tx, y: pk(dm), name: 'Depth-mean', line: { color: c.ink, width: 1.2 } }, { x: tx, y: pk(P.instDepth), name: 'Instrument depth', yaxis: 'y2', line: { color: '#5f8fcf', width: 1, dash: 'dot' } }],
+    baseLayout({ xaxis: ax('', { type: 'date' }), yaxis: ax(u), yaxis2: ax('Depth (m)', { overlaying: 'y', side: 'right', showgrid: false }), margin: { l: 64, r: 64, t: 76, b: 44 }, title: ttl('Time series') }));
+  setFig('bsSeries', 'backscatter_timeseries_bin' + (st.bsBin + 1), false, () => colT(['time', `bin${st.bsBin + 1}_dB`, 'depth_mean_dB', 'inst_depth_m', 'temp_C'], [i => isoT(bs.time[i]), ts, dm, P.instDepth, P.temp], bs.ne));
+}
+
 /* ---------- quality ---------- */
 function rQuality() {
   const P = st.P, Y = yAxis(), c = colors();
@@ -1136,12 +1289,25 @@ function procState() {
   const S = st.P.settings, a = S.avgMode === 'none' ? 'no averaging (every ensemble)' : S.avgMode === 'ens' ? `averaged every ${S.avgN} ensembles` : `averaged into ${S.avgMin}-minute bins`;
   return `Processed data: ${a}, ${st.P.ne.toLocaleString()} profiles × ${st.P.nc} cells, ${st.P.coord} coordinates`;
 }
+function bsKeep(bs) { const k = []; for (let q = 0; q < bs.nc; q++) { if ($('dropEmpty').value !== '1') { k.push(q); continue; } for (let j = 0; j < bs.ne; j++) if (Number.isFinite(bs.sv[j * bs.nc + q])) { k.push(q); break; } } return k; }
+function bsMatVars() {
+  let bs; try { bs = getBS(); } catch (e) { return []; }
+  const k = bsKeep(bs), d = new Float64Array(k.length * bs.ne);
+  for (let j = 0; j < bs.ne; j++) for (let i = 0; i < k.length; i++) { const v = bs.sv[j * bs.nc + k[i]]; d[j * k.length + i] = Number.isFinite(v) ? v : NaN; }
+  return [{ name: 'sv', rows: k.length, cols: bs.ne, data: d }, { name: 'sv_dist', rows: k.length, cols: 1, data: Float64Array.from(k, q => bs.dist[q]) }, { name: 'sv_depth', rows: k.length, cols: 1, data: Float64Array.from(k, q => bs.depth[q]) }, { name: 'sv_Er', rows: bs.Er.length, cols: 1, data: Float64Array.from(bs.Er) }];
+}
+function bsCSV() {
+  const bs = getBS(), k = bsKeep(bs);
+  return CSV({ head: ['time', ...k.map(q => `bin${String(q + 1).padStart(2, '0')}_${bs.dist[q].toFixed(2)}m_dB`)], rows: Array.from({ length: bs.ne }, (_, j) => [isoT(bs.time[j]), ...k.map(q => bs.sv[j * bs.nc + q])]) });
+}
+function bsDesc() { try { const bs = getBS(); return `${bs.mode === 'abs' ? 'Absolute Sv' : 'Relative backscatter'} (dB), ${bsName(bs)}, with the settings on the Backscatter tab. Rows are times, columns are bins.`; } catch (e) { return e.message; } }
 const EXPORTS = [
-  ['MATLAB / Python (.mat in .zip)', () => 'All 2-D fields (cells × profiles) plus time (datenum), depth, attitude, temperature, pressure.', () => save(base() + '_mat.zip', PD0.zip([{ name: base() + '.mat', data: PD0.mat4(PD0.matVars(PX())) }, { name: 'processing_log.txt', data: logText() }]))],
+  ['MATLAB / Python (.mat in .zip)', () => 'All 2-D fields (cells × profiles) plus time (datenum), depth, attitude, temperature, pressure, and backscatter sv (dB) with sv_dist, sv_depth.', () => save(base() + '_mat.zip', PD0.zip([{ name: base() + '.mat', data: PD0.mat4(PD0.matVars(PX()).concat(bsMatVars())) }, { name: 'processing_log.txt', data: logText() }]))],
   ['CSV matrices (.zip)', () => { const byT = $('matLay').value === 'time', n = byT ? st.P.nc + 1 : st.P.ne + 3; return `One table per variable (${byT ? 'rows are times, columns are bins' : 'rows are bins, columns are times'}).` + (n > 16384 ? ` ⚠ ${n.toLocaleString()} columns exceeds Excel's 16,384 limit — switch the layout.` : ''); },
-    () => { const P = PX(), byD = $('matLay').value === 'depth', files = varList().map(([k, l]) => ({ name: `${base()}_${slug(l)}.csv`, data: CSV(PD0.tabMatrix(P, k, byD)) })); files.push({ name: 'processing_log.txt', data: logText() }); save(base() + '_csv.zip', PD0.zip(files)); }],
+    () => { const P = PX(), byD = $('matLay').value === 'depth', files = varList().map(([k, l]) => ({ name: `${base()}_${slug(l)}.csv`, data: CSV(PD0.tabMatrix(P, k, byD)) })); try { files.push({ name: `${base()}_backscatter_db.csv`, data: bsCSV() }); } catch (e) { } files.push({ name: 'processing_log.txt', data: logText() }); save(base() + '_csv.zip', PD0.zip(files)); }],
   ['CSV long table', () => { const n = st.P.ne * st.P.nc; return `One row per profile and cell (${n.toLocaleString()} rows) — for pandas, R or pivot tables.` + (n > 1048575 ? ' ⚠ More rows than Excel can open; use the matrices or average more.' : ''); }, () => save(base() + '_long.csv', CSV(PD0.tabLong(PX())))],
   ['CSV at selected bin', () => binLabel(st.bin) + ', with attitude, temperature and pressure. Change the bin on the Time series tab.', () => save(`${base()}_bin${st.bin + 1}.csv`, CSV(PD0.tabBin(st.P, st.bin)))],
+  ['Backscatter (CSV)', bsDesc, () => save(base() + '_backscatter_db.csv', bsCSV())],
   ['Settings preset (.json)', () => 'Reload later with “Load preset” to repeat the same processing.', () => save('pd0_preset.json', JSON.stringify(readS(), null, 1))],
   ['Processing log (.txt)', () => '', () => save(base() + '_log.txt', logText())]
 ];
@@ -1157,7 +1323,7 @@ $('exTable').addEventListener('click', e => { const b = e.target.closest('button
 function logText() {
   const R = st.R, P = st.P;
   return [`PD0 Processor log — ${new Date().toISOString()}`, `Files: ${R.name}`, `Instrument: ${R.fixed.freq} kHz, ${R.nBeams} beams, ${R.beamAngle}°, serial ${R.fixed.serial ?? '-'}, firmware ${R.fixed.fw}`,
-  `Record: ${isoT(R.time[0])} to ${isoT(R.time[R.nEns - 1])}, ${R.nEns} ensembles, ${R.badChecksums} checksum failures, ${R.skipped} skipped`, '', ...P.log, '', 'Settings:', JSON.stringify(P.settings, null, 1)].join('\n');
+  `Record: ${isoT(R.time[0])} to ${isoT(R.time[R.nEns - 1])}, ${R.nEns} ensembles, ${R.badChecksums} checksum failures, ${R.skipped} skipped`, '', ...P.log, ...(() => { try { const b = getBS(); return [`Backscatter: ${b.mode === 'abs' ? 'absolute Sv' : 'relative'} (dB), ${bsName(b)}, ${b.params.freq} kHz, Kc ${b.params.Kc} dB/count, Er ${b.Er.join('/')} counts, alpha ${b.alpha.toFixed(4)} dB/m (Ainslie & McColm 1998), noise correction ${b.params.noiseCorr ? 'on (Mullison 2017)' : 'off'}${b.mode === 'abs' ? `, C ${b.params.C} dB, P ${b.params.power} W, 10logL ${b.ldbm.toFixed(2)}` : ''}; averaged in linear units.`]; } catch (e) { return []; } })(), '', 'Settings:', JSON.stringify(P.settings, null, 1)].join('\n');
 }
 
 /* ---------- log ---------- */
@@ -1192,6 +1358,10 @@ $('tsBin').addEventListener('input', e => { st.bin = +e.target.value; $('vBin').
 $('vBin').addEventListener('input', e => { st.bin = +e.target.value; $('tsBin').value = st.bin; rVectors(); });
 $('pEns').addEventListener('input', e => { st.ens = +e.target.value; rProfile(); });
 $('cVar').addEventListener('change', () => { $('cMin').value = ''; $('cMax').value = ''; rContour(); });
+for (const id of BSK) $(id).addEventListener('input', () => { try { localStorage.setItem('pd0proc.' + id, $(id).value); } catch (e) { } rBS(); });
+for (const id of ['bsMin', 'bsMax', 'bsPMode']) $(id).addEventListener('input', rBS);
+$('bsBin').addEventListener('input', e => { st.bsBin = +e.target.value; rBS(); });
+$('bsEns').addEventListener('input', e => { st.bsEns = +e.target.value; rBS(); });
 $('usePA').onclick = () => { if (st.pa) { $('rotAngle').value = st.pa.compass.toFixed(1); run(); } };
 new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
