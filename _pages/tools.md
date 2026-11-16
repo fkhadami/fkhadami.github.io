@@ -31,6 +31,13 @@ Kumpulan aplikasi web yang saya kembangkan untuk membantu pengolahan data oseano
   </div>
 
   <div class="tool-card">
+    <p class="tool-tag">Arus · ADCP · Data mentah PD0</p>
+    <h2>PD0 ADCP Processor</h2>
+    <p>Tools untuk mengolah data ADCP langsung dari file keluaran RDI ADCP (format biner PD0), khususnya <strong>Sentinel V50</strong>, dengan alur kerja seperti perangkat lunak Velocity. Membaca konfigurasi instrumen dan seluruh ensemble, memotong data saat instrumen belum/sudah tidak di air, transformasi koordinat <em>beam</em> → instrumen → bumi (ENU) dengan koreksi deklinasi magnetik, QC (korelasi, intensitas gema, <em>percent good</em>, kecepatan galat, kemiringan, <em>side-lobe</em>), rata-rata waktu, dan rotasi ke sumbu utama (<em>along/cross channel</em>). Visualisasi kontur, <em>time series</em> dengan <em>quiver</em>, profil, <em>scatter</em> dan diagram vektor progresif; setiap gambar dan datanya bisa diunduh, serta ekspor ke MATLAB (.mat) dan CSV. File juga bisa dari Workhorse, Ocean Surveyor dan VmDas. Semua pengolahan berjalan lokal di peramban.</p>
+    <p><a class="btn btn--primary" href="{{ '/tools/adcp-pd0.html' | relative_url }}">Buka PD0 ADCP Processor</a></p>
+  </div>
+
+  <div class="tool-card">
     <p class="tool-tag">Pasang surut · Aplikasi Python</p>
     <h2>Tide Agent</h2>
     <p>Aplikasi Streamlit untuk analisis data pasut: unggah CSV, statistik ringkas, pembersihan <em>spike</em> (filter Hampel), spektrum FFT, analisis harmonik UTide, peta stasiun, interpretasi opsional berbasis LLM, dan ekspor laporan PDF. Berjalan daring di Streamlit Community Cloud.</p>

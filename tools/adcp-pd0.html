@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PD0 ADCP Processor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+/* VOICE: instrument-room clinical; a working tool, data first, no decoration.
+   IDEA: a Swiss timetable for ensembles — strict left edge, heavy rules, numerals that hang.
+   PICTURE: the velocity contour itself, full width under the tab rule.
+   COLOUR and TYPE: white / black / signal red #e4002b / one grey; Archivo wide 800 + Archivo.
+   LAYOUT: settings column left, plot stage right; stacks to one column below 900px. */
+:root{color-scheme:light dark;--bg:light-dark(#fff,#0e0e0e);--ink:light-dark(#111,#ececec);--mut:light-dark(#6b6b6b,#9a9a9a);
+--line:light-dark(#111,#ececec);--grid:light-dark(#e6e6e6,#262626);--panel:light-dark(#f4f4f4,#171717);--red:#e4002b;--mid:light-dark(#f4f4f2,#1d1d1d)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Archivo,system-ui,sans-serif;overflow-x:clip}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 28px;padding:18px max(2.5vw,14px) 12px;border-bottom:4px solid var(--line)}
+.mark{font-weight:800;font-stretch:125%;font-size:30px;line-height:1;letter-spacing:-.01em}
+.mark b{color:var(--red)}
+.sum{display:flex;flex-wrap:wrap;gap:4px 22px;color:var(--mut);font-size:13px;flex:1}
+.sum span b{color:var(--ink);font-weight:600}
+.hbtn{display:flex;gap:8px;flex-wrap:wrap}
+button,.btn{font:inherit;font-weight:600;font-size:14px;min-height:40px;padding:0 16px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;border-radius:0;display:inline-flex;align-items:center;gap:8px}
+button.pri{background:var(--ink);color:var(--bg)}
+button.red{background:var(--red);border-color:var(--red);color:#fff}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+button:disabled{opacity:.4;cursor:default}
+.app{display:grid;grid-template-columns:330px minmax(0,1fr);min-height:calc(100vh - 70px)}
+aside{border-right:2px solid var(--line);padding:6px 0 40px;overflow:auto;max-height:calc(100vh - 70px);position:sticky;top:0}
+details{border-bottom:1px solid var(--grid);padding:0 18px}
+summary{font-weight:700;font-stretch:112%;padding:12px 0;cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:'+';color:var(--mut)}details[open] summary::after{content:'–'}
+.f{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:6px 10px;align-items:center;margin:0 0 8px;font-size:13.5px}
+.f label{color:var(--ink)}.f small{grid-column:1/-1;color:var(--mut);font-size:12.5px;margin-top:-4px}
+input,select{font:inherit;font-size:16px;height:36px;padding:0 8px;border:1px solid var(--mut);background:var(--bg);color:var(--ink);border-radius:0;width:100%}
+input[type=checkbox]{width:20px;height:20px;accent-color:var(--red);justify-self:end}
+input[type=range]{padding:0;border:0;accent-color:var(--red)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+main{padding:0 max(2.5vw,14px) 40px;min-width:0}
+nav{display:flex;flex-wrap:wrap;gap:0 4px;border-bottom:2px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:3}
+nav button{border:0;min-height:44px;padding:0 14px;background:none;color:var(--mut);font-weight:600}
+nav button[aria-selected=true]{color:var(--ink);box-shadow:inset 0 -5px 0 var(--red)}
+.ctl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:end;padding:14px 0 6px}
+.ctl label{display:grid;gap:3px;font-size:12.5px;color:var(--mut)}
+.ctl select,.ctl input{width:auto;min-width:120px}
+.ctl .grow{flex:1;min-width:220px}.ctl .grow input{width:100%}
+.figbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:flex-end;margin:10px 0 0}.figbar span{color:var(--mut);font-size:12.5px;margin-right:auto}.figbar button{min-height:34px;font-size:13px;padding:0 12px;border-width:1px}
+.plot{width:100%;height:min(68vh,620px);min-height:360px}
+.plot.tall{height:min(90vh,860px)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:0 16px;border-top:2px solid var(--line);margin-top:18px}
+.stats div{padding:12px 14px 14px 0;border-bottom:1px solid var(--grid)}
+.stats .n{font-weight:800;font-stretch:108%;font-size:clamp(20px,2vw,28px);line-height:1.1}
+.stats .l{color:var(--mut);font-size:12.5px}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+td,th{padding:7px 10px 7px 0;border-bottom:1px solid var(--grid);text-align:left;vertical-align:top}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px}
+h2{font-weight:800;font-stretch:115%;font-size:22px;line-height:1.1;margin:24px 0 8px}
+p.note{color:var(--mut);font-size:13px;max-width:72ch}
+pre{background:var(--panel);padding:12px 14px;font-size:12.5px;overflow-x:auto;white-space:pre}
+.log{white-space:pre-wrap;font-size:13px;background:var(--panel);padding:12px 14px;max-height:340px;overflow:auto}
+.empty{display:grid;place-items:center;min-height:70vh;text-align:center}
+.drop{border:3px dashed var(--mut);padding:clamp(28px,6vw,72px) clamp(18px,5vw,80px);max-width:720px}
+.drop.on{border-color:var(--red);background:var(--panel)}
+.drop .big{font-weight:800;font-stretch:120%;font-size:clamp(28px,4vw,44px);line-height:1.05;margin:0 0 10px;text-wrap:balance}
+.drop p{color:var(--mut);margin:0 auto 22px;max-width:52ch}
+.busy{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 70%,transparent);display:none;place-items:center;z-index:20;font-weight:700;font-size:18px}
+.busy.on{display:grid}
+.err{background:var(--red);color:#fff;padding:10px 14px;margin:12px 0;display:none}
+.tab{display:none}.tab.on{display:block}
+.probe{position:absolute;width:0;height:0;overflow:hidden}
+.p-ink{color:var(--ink)}.p-grid{color:var(--grid)}.p-mut{color:var(--mut)}.p-mid{color:var(--mid)}
+.flist{font-size:13px;margin:0 0 10px;padding:0;list-style:none}.flist li{padding:4px 0;border-bottom:1px solid var(--grid);display:flex;justify-content:space-between;gap:8px}
+.flist li span{color:var(--mut);white-space:nowrap}
+.tag{display:inline-block;background:var(--red);color:#fff;font-size:11.5px;font-weight:700;padding:1px 6px;margin-left:6px}
+@media(max-width:900px){.app{grid-template-columns:1fr}aside{position:static;max-height:none;border-right:0;border-bottom:2px solid var(--line)}.two{grid-template-columns:1fr}}
+@media(max-width:600px){.sum{order:3;flex-basis:100%}.mark{font-size:24px}.plot{height:440px}.f{grid-template-columns:minmax(0,1fr) 100px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="probe"><i class="p-ink"></i><i class="p-grid"></i><i class="p-mut"></i><i class="p-mid"></i></div>
+<header>
+  <div><a href="/tools/" style="color:var(--mut);font-size:13px;text-decoration:none;display:block;margin-bottom:4px">← Tools Pengolahan Data Oseanografi</a><div class="mark">PD0<b>/</b>Processor</div></div>
+  <div class="sum" id="sum"><span>No file loaded</span></div>
+  <div class="hbtn">
+    <button class="pri" id="openBtn">Open PD0…</button>
+    <button id="sampleBtn">Sample data</button>
+    <input type="file" id="file" multiple hidden accept=".000,.pd0,.PD0,.ENR,.ENS,.ENX,.STA,.LTA,.bin,*/*">
+  </div>
+</header>
+<div class="busy" id="busy">Reading ensembles…</div>
+<div class="app">
+<aside id="side">
+  <details open><summary>Files</summary>
+    <ul class="flist" id="flist"><li>None yet</li></ul>
+    <p class="note" style="margin-top:0">Several files from one deployment (same cell setup) are joined in time order.</p>
+  </details>
+  <details open><summary>Ensembles</summary>
+    <div class="f"><label for="i0">First ensemble</label><input id="i0" type="number" min="0" step="1" value="0"></div>
+    <div class="f"><label for="i1">Last ensemble</label><input id="i1" type="number" min="0" step="1" value="0"></div>
+    <div class="row"><button id="autoBtn">Auto in-water range</button><button id="allBtn">All</button></div>
+  </details>
+  <details open><summary>Coordinates</summary>
+    <div class="f"><label for="target">Output frame</label><select id="target"><option value="earth">Earth (ENU)</option><option value="inst">Instrument (XYZ)</option><option value="beam">Beam</option></select></div>
+    <div class="f"><label for="orient">Orientation</label><select id="orient"><option value="auto">From file</option><option value="up">Upward</option><option value="down">Downward</option></select></div>
+    <div class="f"><label for="beamAngle">Beam angle (°)</label><input id="beamAngle" type="number" step="0.1" placeholder="from file"></div>
+    <div class="f"><label for="threeBeam">Allow 3-beam solutions</label><input id="threeBeam" type="checkbox" checked></div>
+    <div class="f"><label for="pitchCorr">Gimbal pitch correction</label><input id="pitchCorr" type="checkbox" checked><small>RDI: pitch = atan(tan P · cos R). Turn off for Sentinel V / external tilt sensors if your manual says so.</small></div>
+    <div class="f"><label for="declination">Magnetic declination (°E)</label><input id="declination" type="number" step="0.01" value="0"></div>
+    <div class="f"><label for="headingOffset">Heading offset (°)</label><input id="headingOffset" type="number" step="0.01" value="0"></div>
+    <div class="f"><label for="btRef">Reference to bottom track</label><input id="btRef" type="checkbox"><small id="btNote">Needs bottom-track data (moving-vessel surveys).</small></div>
+  </details>
+  <details open><summary>Screening</summary>
+    <div class="f"><label for="corrMin">Correlation min (counts)</label><input id="corrMin" type="number" value="64"></div>
+    <div class="f"><label for="echoMin">Echo intensity min (counts)</label><input id="echoMin" type="number" value="0"></div>
+    <div class="f"><label for="pgMin">Percent good min (%)</label><input id="pgMin" type="number" value="0"><small>Earth data: 3-beam + 4-beam %.</small></div>
+    <div class="f"><label for="errMax">|Error velocity| max (m/s)</label><input id="errMax" type="number" step="0.01" value="0"><small>0 turns a limit off.</small></div>
+    <div class="f"><label for="wMax">|Vertical velocity| max (m/s)</label><input id="wMax" type="number" step="0.01" value="0"></div>
+    <div class="f"><label for="spdMax">Horizontal speed max (m/s)</label><input id="spdMax" type="number" step="0.1" value="5"></div>
+    <div class="f"><label for="tiltMax">Tilt max (°)</label><input id="tiltMax" type="number" step="1" value="20"></div>
+    <div class="f"><label for="fishThr">Fish rejection Δecho (counts)</label><input id="fishThr" type="number" value="0"></div>
+    <div class="f"><label for="sidelobe">Side-lobe / surface cut-off</label><input id="sidelobe" type="checkbox" checked><small>Removes cells beyond D·cos θ − 1 cell (surface for upward, bottom-track range for downward).</small></div>
+  </details>
+  <details><summary>Depth</summary>
+    <div class="f"><label for="depthSrc">Instrument depth from</label><select id="depthSrc"><option value="auto">Auto</option><option value="pressure">Pressure</option><option value="xdcr">Transducer depth field</option><option value="const">Constant</option></select></div>
+    <div class="f"><label for="depthConst">Constant depth (m)</label><input id="depthConst" type="number" step="0.1" value="10"></div>
+    <div class="f"><label for="depthOffset">Depth offset (m)</label><input id="depthOffset" type="number" step="0.01" value="0"><small>E.g. sensor-to-transducer distance or atmospheric correction.</small></div>
+    <div class="f"><label for="rho">Water density (kg/m³)</label><input id="rho" type="number" step="0.5" value="1025"></div>
+  </details>
+  <details open><summary>Averaging</summary>
+    <div class="f"><label for="avgMode">Method</label><select id="avgMode"><option value="none">None</option><option value="ens">Every N ensembles</option><option value="min">Time interval</option></select></div>
+    <div class="f"><label for="avgN">N ensembles</label><input id="avgN" type="number" min="1" value="6"></div>
+    <div class="f"><label for="avgMin">Interval (minutes)</label><input id="avgMin" type="number" min="0.1" step="0.1" value="10"></div>
+    <div class="f"><label for="avgMinGood">Min good in average (%)</label><input id="avgMinGood" type="number" min="0" max="100" value="0"></div>
+  </details>
+  <details open><summary>Rotation</summary>
+    <div class="f"><label for="rotAngle">Along-axis direction (°T)</label><input id="rotAngle" type="number" step="0.1" placeholder="off"><small>Adds along/cross components. Vectors tab suggests the principal axis.</small></div>
+  </details>
+  <details><summary>Display</summary>
+    <div class="f"><label for="unit">Velocity units</label><select id="unit"><option value="1">m/s</option><option value="100">cm/s</option></select></div>
+    <div class="f"><label for="yaxis">Vertical axis</label><select id="yaxis"><option value="dist">Distance from ADCP</option><option value="depth">Depth (mean)</option><option value="bin">Bin number</option></select></div>
+  </details>
+  <div style="padding:14px 18px" class="row"><button id="resetBtn">Reset settings</button><button id="presetSave">Save preset</button><button id="presetLoad">Load preset</button><input type="file" id="presetFile" hidden accept=".json"></div>
+</aside>
+<main>
+  <div class="err" id="err"></div>
+  <div id="empty" class="empty">
+    <div class="drop" id="drop">
+      <p class="big">Drop a PD0 file to start processing</p>
+      <p>Processes ADCP data straight from the binary PD0 output of Teledyne RDI ADCPs, built especially for the Sentinel V50; Workhorse, Ocean Surveyor and VmDas files (.000, .PD0, .ENR, .STA, .LTA) also load. Everything runs in your browser; the file never leaves your computer.</p>
+      <div class="row" style="justify-content:center"><button class="red" id="openBtn2">Open PD0 file</button><button id="sampleBtn2">Try synthetic sample</button></div>
+    </div>
+  </div>
+  <div id="work" hidden>
+  <nav role="tablist" id="tabs"></nav>
+
+  <section class="tab" id="t-overview">
+    <div class="stats" id="ovStats"></div>
+    <div class="ctl"><label>Show <select id="ovVar"><option value="depth">Instrument depth &amp; tilt</option><option value="hdg">Heading, pitch, roll</option><option value="temp">Temperature &amp; sound speed</option></select></label></div>
+    <div class="plot" id="ovPlot" style="height:420px"></div>
+    <p class="note">The shaded band is the ensemble range being processed. Use “Auto in-water range” to drop deployment and recovery ensembles.</p>
+    <div class="two"><div><h2>Instrument setup</h2><table id="cfgA"></table></div><div><h2>File</h2><table id="cfgB"></table></div></div>
+  </section>
+
+  <section class="tab" id="t-contour">
+    <div class="ctl">
+      <label>Variable <select id="cVar"></select></label>
+      <label>Colour min <input id="cMin" type="number" step="0.01" placeholder="auto" style="width:110px;min-width:0"></label>
+      <label>Colour max <input id="cMax" type="number" step="0.01" placeholder="auto" style="width:110px;min-width:0"></label>
+      <label>Surface / limit line <select id="cLine"><option value="1">Show</option><option value="0">Hide</option></select></label>
+    </div>
+    <div class="plot" id="cPlot"></div>
+  </section>
+
+  <section class="tab" id="t-series">
+    <div class="ctl">
+      <label class="grow"><span id="tsBinLab">Bin</span><input id="tsBin" type="range" min="0" max="0" value="0"></label>
+      <label>Velocity <select id="tsMode"><option value="bin">At this bin</option><option value="mean">Depth-averaged</option></select></label>
+      <label>Components <select id="tsComp"><option value="enu">East, North, Up</option><option value="ax">Along, Cross</option><option value="err">Error velocity</option></select></label>
+      <label>Quiver arrows <select id="tsArrows"><option value="120">120</option><option value="240" selected>240</option><option value="480">480</option></select></label>
+    </div>
+    <div class="plot" id="tsPlot" style="height:1080px"></div>
+    <p class="note">Quiver: arrows point the way the current flows (north up), each one a vector average over its time window, drawn so that East and North share one scale.</p>
+  </section>
+
+  <section class="tab" id="t-profile">
+    <div class="ctl">
+      <label>Show <select id="pMode"><option value="mean">Mean ± 1 s.d.</option><option value="ens">Single ensemble</option><option value="max">Max flood / ebb</option></select></label>
+      <label class="grow"><span id="pEnsLab">Ensemble</span><input id="pEns" type="range" min="0" max="0" value="0"></label>
+    </div>
+    <div class="plot" id="pPlot"></div>
+  </section>
+
+
+  <section class="tab" id="t-vectors">
+    <div class="ctl">
+      <label class="grow"><span id="vBinLab">Bin</span><input id="vBin" type="range" min="0" max="0" value="0"></label>
+      <label>Use <select id="vMode"><option value="bin">This bin</option><option value="mean">Depth-averaged</option></select></label>
+      <button id="usePA">Use principal axis as rotation</button>
+    </div>
+    <div class="two"><div class="plot" id="vScatter"></div><div class="plot" id="vPvd"></div></div>
+    <p class="note" id="paNote"></p>
+    <div class="plot" id="vTrack" style="height:420px;display:none"></div>
+  </section>
+
+  <section class="tab" id="t-quality">
+    <div class="two">
+      <div class="plot" id="qPlot"></div>
+      <div><h2>Why cells were removed</h2><table id="qTable"></table>
+      <p class="note">A cell can fail several tests, so counts can add up to more than the total removed. “Missing in file” means the instrument already flagged it.</p></div>
+    </div>
+  </section>
+
+  <section class="tab" id="t-export">
+    <h2>Processed data</h2>
+        <div class="ctl">
+      <label>CSV format <select id="csvFmt"><option value="comma">Comma separator, decimal point (pandas, MATLAB, English Excel)</option><option value="semi">Semicolon separator, decimal comma (Excel with Indonesian/European settings)</option></select></label>
+      <label>Empty bins <select id="dropEmpty"><option value="1">Leave out bins with no valid data</option><option value="0">Keep all bins</option></select></label>
+      <label>Matrix layout <select id="matLay"><option value="time">Rows = time, columns = bins</option><option value="depth">Rows = bins, columns = time</option></select></label>
+    </div>
+    <p class="note" id="exState"></p>
+    <table id="exTable"></table>
+    <h2>Reading the MATLAB file</h2>
+    <pre id="snip"></pre>
+  </section>
+
+  <section class="tab" id="t-log">
+    <h2>Processing log</h2><div class="log" id="logBox"></div>
+    <h2>Recent files</h2><table id="recent"></table>
+    <p class="note">The recent-files list is kept only in this browser.</p>
+  </section>
+  </div>
+</main>
+</div>
+<script>
+/* PD0 core: reader, transforms, QC, averaging, export helpers, synthetic sample. No DOM. */
+const PD0 = (() => {
+  const D2R = Math.PI / 180, R2D = 180 / Math.PI;
+  const FREQS = [75, 150, 300, 600, 1200, 2400, 38, 0];
+  const COORDS = ['beam', 'inst', 'ship', 'earth'];
+
+  /* ---------------- reader ---------------- */
+  function scan(u8, dv) {
+    const N = u8.length, offs = []; let i = 0, bad = 0;
+    while (i + 6 < N) {
+      if (u8[i] !== 0x7f || u8[i + 1] !== 0x7f) { i++; continue; }
+      const L = dv.getUint16(i + 2, true);
+      if (L < 8 || i + L + 2 > N) { i++; continue; }
+      let s = 0; for (let k = i; k < i + L; k++) s += u8[k];
+      if ((s & 0xffff) !== dv.getUint16(i + L, true)) { bad++; i++; continue; }
+      offs.push(i); i += L + 2;
+    }
+    return { offs, bad };
+  }
+  function directory(u8, dv, o) {
+    const L = dv.getUint16(o + 2, true), nt = u8[o + 5], d = [];
+    for (let k = 0; k < nt; k++) {
+      const off = dv.getUint16(o + 6 + 2 * k, true);
+      if (off + 2 > L) continue;
+      d.push({ id: dv.getUint16(o + off, true), o: o + off });
+    }
+    d.sort((a, b) => a.o - b.o);
+    for (let k = 0; k < d.length; k++) d[k].len = (k + 1 < d.length ? d[k + 1].o : o + L) - d[k].o;
+    return d;
+  }
+  function parseFixed(u8, dv, o, len) {
+    const b4 = u8[o + 4], b5 = u8[o + 5], g16 = k => dv.getUint16(o + k, true), s16 = k => dv.getInt16(o + k, true);
+    const f = {
+      fw: u8[o + 2] + '.' + String(u8[o + 3]).padStart(2, '0'), freq: FREQS[b4 & 7], convex: !!(b4 & 8),
+      up: !!(b4 & 128), beamAngleCode: b5 & 3, beamCfg: b5 >> 4, simulated: u8[o + 6] !== 0,
+      nBeams: u8[o + 8], nCells: u8[o + 9], pings: g16(10), cellSize: g16(12) / 100, blank: g16(14) / 100,
+      mode: u8[o + 16], corrThr: u8[o + 17], codeReps: u8[o + 18], pgMin: u8[o + 19], errMax: g16(20) / 1000,
+      tpp: u8[o + 22] * 60 + u8[o + 23] + u8[o + 24] / 100, ex: u8[o + 25], ea: s16(26) / 100, eb: s16(28) / 100,
+      ez: u8[o + 30], bin1: g16(32) / 100, xmit: g16(34) / 100
+    };
+    f.coord = COORDS[(f.ex >> 3) & 3]; f.tiltsUsed = !!(f.ex & 4); f.threeBeamOn = !!(f.ex & 2); f.binMap = !!(f.ex & 1);
+    if (len >= 58) f.serial = dv.getUint32(o + 54, true);
+    if (len >= 59) { const ba = u8[o + 58]; if (ba >= 10 && ba <= 40) f.beamAngleByte = ba; }
+    f.beamAngle = f.beamAngleByte || [15, 20, 30, 25][f.beamAngleCode];
+    return f;
+  }
+  function parseVarTime(u8, dv, o, len) {
+    let y, mo, d, h, mi, s, hs;
+    if (len >= 65 && u8[o + 57] >= 19 && u8[o + 57] <= 21) {
+      y = u8[o + 57] * 100 + u8[o + 58]; mo = u8[o + 59]; d = u8[o + 60]; h = u8[o + 61]; mi = u8[o + 62]; s = u8[o + 63]; hs = u8[o + 64];
+    } else {
+      y = u8[o + 4]; y += y < 80 ? 2000 : 1900; mo = u8[o + 5]; d = u8[o + 6]; h = u8[o + 7]; mi = u8[o + 8]; s = u8[o + 9]; hs = u8[o + 10];
+    }
+    return Date.UTC(y, mo - 1, d, h, mi, s, hs * 10);
+  }
+
+  function parse(buf, name) {
+    const u8 = new Uint8Array(buf), dv = new DataView(buf);
+    const { offs, bad } = scan(u8, dv);
+    if (!offs.length) throw new Error('No valid PD0 ensembles found (no 0x7F7F headers with good checksums).');
+    let fx = null, has = {};
+    for (const o of offs.slice(0, 5)) for (const b of directory(u8, dv, o)) {
+      if (b.id === 0x0000 && !fx) fx = parseFixed(u8, dv, b.o, b.len);
+      has[b.id] = true;
+    }
+    if (!fx) throw new Error('No fixed leader (ID 0x0000) in the first ensembles.');
+    const nc = fx.nCells, nb = fx.nBeams, NE = offs.length;
+    const R = {
+      name, bytes: u8.length, fixed: fx, nCells: nc, nBeams: nb, coord: fx.coord, up: fx.up, beamAngle: fx.beamAngle,
+      convex: fx.convex, cellSize: fx.cellSize, bin1: fx.bin1, badChecksums: bad, skipped: 0,
+      time: new Float64Array(NE), ensNum: new Uint32Array(NE), heading: new Float32Array(NE), pitch: new Float32Array(NE),
+      roll: new Float32Array(NE), temp: new Float32Array(NE), sal: new Float32Array(NE), sos: new Float32Array(NE),
+      xdcrDepth: new Float32Array(NE), pressure: new Float32Array(NE).fill(NaN), hStd: new Float32Array(NE),
+      vel: new Float32Array(NE * nc * nb).fill(NaN), corr: has[0x0200] ? new Uint8Array(NE * nc * nb) : null,
+      echo: has[0x0300] ? new Uint8Array(NE * nc * nb) : null, pg: has[0x0400] ? new Uint8Array(NE * nc * nb) : null,
+      btRange: has[0x0600] ? new Float32Array(NE * 4).fill(NaN) : null, btVel: has[0x0600] ? new Float32Array(NE * 4).fill(NaN) : null,
+      lat: has[0x2000] ? new Float64Array(NE).fill(NaN) : null, lon: has[0x2000] ? new Float64Array(NE).fill(NaN) : null,
+      vb: null, ids: Object.keys(has).map(k => '0x' + (+k).toString(16).padStart(4, '0'))
+    };
+    const per = nc * nb; let e = 0;
+    for (const o of offs) {
+      const dir = directory(u8, dv, o); let ok = true, vbBlk = null;
+      for (const b of dir) if (b.id === 0x0000) { if (u8[b.o + 9] !== nc || u8[b.o + 8] !== nb) ok = false; }
+      if (!ok) { R.skipped++; continue; }
+      for (const b of dir) {
+        const p = b.o;
+        switch (b.id) {
+          case 0x0080:
+            R.ensNum[e] = dv.getUint16(p + 2, true) + (b.len > 11 ? u8[p + 11] * 65536 : 0);
+            R.time[e] = parseVarTime(u8, dv, p, b.len);
+            R.sos[e] = dv.getUint16(p + 14, true); R.xdcrDepth[e] = dv.getUint16(p + 16, true) / 10;
+            R.heading[e] = dv.getUint16(p + 18, true) / 100; R.pitch[e] = dv.getInt16(p + 20, true) / 100;
+            R.roll[e] = dv.getInt16(p + 22, true) / 100; R.sal[e] = dv.getUint16(p + 24, true);
+            R.temp[e] = dv.getInt16(p + 26, true) / 100; R.hStd[e] = u8[p + 31];
+            if (b.len >= 52) R.pressure[e] = dv.getUint32(p + 48, true) / 1000;
+            break;
+          case 0x0100:
+            if (b.len < 2 + per * 2) break;
+            for (let k = 0; k < per; k++) { const v = dv.getInt16(p + 2 + 2 * k, true); R.vel[e * per + k] = v === -32768 ? NaN : v / 1000; }
+            break;
+          case 0x0200: if (b.len >= 2 + per) R.corr.set(u8.subarray(p + 2, p + 2 + per), e * per); break;
+          case 0x0300: if (b.len >= 2 + per) R.echo.set(u8.subarray(p + 2, p + 2 + per), e * per); break;
+          case 0x0400: if (b.len >= 2 + per) R.pg.set(u8.subarray(p + 2, p + 2 + per), e * per); break;
+          case 0x0600:
+            if (b.len < 40) break;
+            for (let k = 0; k < 4; k++) {
+              let r = dv.getUint16(p + 16 + 2 * k, true); if (b.len >= 81) r += u8[p + 77 + k] * 65536;
+              R.btRange[e * 4 + k] = r === 0 ? NaN : r / 100;
+              const v = dv.getInt16(p + 24 + 2 * k, true); R.btVel[e * 4 + k] = v === -32768 ? NaN : v / 1000;
+            }
+            break;
+          case 0x2000:
+            if (b.len >= 34) { const s = 180 / 2147483648; R.lat[e] = dv.getInt32(p + 26, true) * s; R.lon[e] = dv.getInt32(p + 30, true) * s; }
+            break;
+          case 0x0F01: vbBlk = b; break;
+          case 0x0A00: if (vbBlk || R.vb) { /* handled below */ } break;
+        }
+      }
+      // Sentinel V vertical beam (5th) velocity, guarded by block-length check
+      const vl = dir.find(b => b.id === 0x0F01), vv = dir.find(b => b.id === 0x0A00);
+      if (vl && vv) {
+        const n5 = dv.getUint16(vl.o + 2, true);
+        if (n5 > 0 && n5 < 1024 && vv.len >= 2 + 2 * n5) {
+          if (!R.vb) R.vb = { n: n5, cell: dv.getUint16(vl.o + 6, true) / 100, bin1: dv.getUint16(vl.o + 8, true) / 100, vel: new Float32Array(NE * n5).fill(NaN) };
+          if (R.vb.n === n5) for (let k = 0; k < n5; k++) { const v = dv.getInt16(vv.o + 2 + 2 * k, true); R.vb.vel[e * n5 + k] = v === -32768 ? NaN : v / 1000; }
+        }
+      }
+      e++;
+    }
+    R.nEns = e;
+    if (e < NE) trimRaw(R, e);
+    R.hasPressure = finiteFrac(R.pressure) > 0.5 && maxAbs(R.pressure) > 0.05;
+    return R;
+  }
+  function trimRaw(R, n) {
+    const per = R.nCells * R.nBeams;
+    for (const k of ['time', 'ensNum', 'heading', 'pitch', 'roll', 'temp', 'sal', 'sos', 'xdcrDepth', 'pressure', 'hStd', 'lat', 'lon'])
+      if (R[k]) R[k] = R[k].slice(0, n);
+    for (const k of ['vel', 'corr', 'echo', 'pg']) if (R[k]) R[k] = R[k].slice(0, n * per);
+    for (const k of ['btRange', 'btVel']) if (R[k]) R[k] = R[k].slice(0, n * 4);
+    if (R.vb) R.vb.vel = R.vb.vel.slice(0, n * R.vb.n);
+  }
+  /* merge several raw files with identical geometry, sorted by start time */
+  function merge(list) {
+    if (list.length === 1) return list[0];
+    list = list.slice().sort((a, b) => a.time[0] - b.time[0]);
+    const a = list[0];
+    for (const r of list) if (r.nCells !== a.nCells || r.nBeams !== a.nBeams || r.coord !== a.coord)
+      throw new Error('Files differ in cell count, beam count or coordinate frame; load them separately.');
+    const n = list.reduce((s, r) => s + r.nEns, 0), out = Object.assign({}, a, { name: list.map(r => r.name).join(' + '), nEns: n });
+    const cat = k => { if (!a[k]) return null; const C = a[k].constructor, len = list.reduce((s, r) => s + r[k].length, 0), o = new C(len); let p = 0; for (const r of list) { o.set(r[k], p); p += r[k].length; } return o; };
+    for (const k of ['time', 'ensNum', 'heading', 'pitch', 'roll', 'temp', 'sal', 'sos', 'xdcrDepth', 'pressure', 'hStd', 'lat', 'lon', 'vel', 'corr', 'echo', 'pg', 'btRange', 'btVel']) out[k] = cat(k);
+    out.vb = null; out.bytes = list.reduce((s, r) => s + r.bytes, 0);
+    out.badChecksums = list.reduce((s, r) => s + r.badChecksums, 0); out.skipped = list.reduce((s, r) => s + r.skipped, 0);
+    return out;
+  }
+
+  /* ---------------- math helpers ---------------- */
+  function finiteFrac(a) { let n = 0; for (const v of a) if (Number.isFinite(v)) n++; return a.length ? n / a.length : 0; }
+  function maxAbs(a) { let m = 0; for (const v of a) if (Math.abs(v) > m) m = Math.abs(v); return m; }
+  function median(a) { const b = Array.from(a).filter(Number.isFinite).sort((x, y) => x - y); return b.length ? b[b.length >> 1] : NaN; }
+  function nanmean(a) { let s = 0, n = 0; for (const v of a) if (Number.isFinite(v)) { s += v; n++; } return n ? s / n : NaN; }
+
+  // RDI earth rotation matrix (row-major) from heading, pitch, roll in degrees
+  function earthMatrix(h, p, r, up, pitchCorr) {
+    if (pitchCorr) p = Math.atan(Math.tan(p * D2R) * Math.cos(r * D2R)) * R2D;
+    if (up) r += 180;
+    const CH = Math.cos(h * D2R), SH = Math.sin(h * D2R), CP = Math.cos(p * D2R), SP = Math.sin(p * D2R), CR = Math.cos(r * D2R), SR = Math.sin(r * D2R);
+    return [CH * CR + SH * SP * SR, SH * CP, CH * SR - SH * SP * CR,
+      -SH * CR + CH * SP * SR, CH * CP, -SH * SR - CH * SP * CR,
+      -CP * SR, SP, CP * CR];
+  }
+  function beamToInst(b, th, convex, threeBeam, out) {
+    let [b1, b2, b3, b4] = b, bad = 0, idx = -1;
+    for (let k = 0; k < 4; k++) if (!Number.isFinite(b[k])) { bad++; idx = k; }
+    if (bad > 1 || (bad === 1 && !threeBeam)) { out[0] = out[1] = out[2] = out[3] = NaN; return 0; }
+    if (bad === 1) { if (idx === 0) b1 = b3 + b4 - b2; else if (idx === 1) b2 = b3 + b4 - b1; else if (idx === 2) b3 = b1 + b2 - b4; else b4 = b1 + b2 - b3; }
+    const a = 1 / (2 * Math.sin(th)), bb = 1 / (4 * Math.cos(th)), c = convex ? 1 : -1, d = a / Math.SQRT2;
+    out[0] = c * a * (b1 - b2); out[1] = c * a * (b4 - b3); out[2] = bb * (b1 + b2 + b3 + b4); out[3] = bad ? NaN : d * (b1 + b2 - b3 - b4);
+    return bad ? 3 : 4;
+  }
+  function rotH(u, v, deg) { const c = Math.cos(deg * D2R), s = Math.sin(deg * D2R); return [u * c + v * s, v * c - u * s]; }
+
+  const QC = { corr: 1, echo: 2, pg: 4, err: 8, w: 16, spd: 32, side: 64, tilt: 128, fish: 256, orig: 512 };
+
+  const DEFAULTS = {
+    i0: 0, i1: -1, target: 'earth', beamAngle: 0, orient: 'auto', threeBeam: true, pitchCorr: true,
+    declination: 0, headingOffset: 0, btRef: false, corrMin: 64, echoMin: 0, pgMin: 0, errMax: 0, wMax: 0,
+    spdMax: 5, tiltMax: 20, fishThr: 0, sidelobe: true, depthSrc: 'auto', depthConst: 10, depthOffset: 0,
+    rho: 1025, avgMode: 'none', avgN: 6, avgMin: 10, avgMinGood: 0, rotAngle: null
+  };
+
+  /* ---------------- processing ---------------- */
+  function process(R, S0) {
+    const S = Object.assign({}, DEFAULTS, S0), log = [];
+    const nb = R.nBeams, nc = R.nCells, per = nc * nb;
+    const i0 = Math.max(0, Math.min(R.nEns - 1, S.i0 | 0)), i1 = S.i1 < 0 ? R.nEns - 1 : Math.max(i0, Math.min(R.nEns - 1, S.i1 | 0));
+    const ne = i1 - i0 + 1, N = ne * nc;
+    const thDeg = S.beamAngle > 0 ? S.beamAngle : R.beamAngle, th = thDeg * D2R;
+    const up = S.orient === 'auto' ? R.up : S.orient === 'up';
+    const src = R.coord, tgt = S.target;
+    const rank = { beam: 0, inst: 1, ship: 2, earth: 3 };
+    if (rank[tgt] < rank[src]) log.push(`Requested ${tgt} but file is in ${src}; reverse transforms are not supported, staying in ${src}.`);
+    const toInst = src === 'beam' && rank[tgt] >= 1, toEarth = (src === 'beam' || src === 'inst') && tgt === 'earth';
+    const outCoord = rank[tgt] < rank[src] ? src : (toEarth ? 'earth' : toInst ? 'inst' : src);
+    log.push(`Ensembles ${i0}–${i1} (${ne} of ${R.nEns}); ${nc} cells × ${R.cellSize} m; beam angle ${thDeg}°; ${up ? 'upward' : 'downward'} looking.`);
+    log.push(`Coordinates: file ${src} → output ${outCoord}${toEarth ? ` (3-beam ${S.threeBeam ? 'on' : 'off'}, pitch correction ${S.pitchCorr ? 'on' : 'off'})` : ''}.`);
+
+    const dist = new Float32Array(nc); for (let c = 0; c < nc; c++) dist[c] = R.bin1 + c * R.cellSize;
+    const U = new Float32Array(N).fill(NaN), V = new Float32Array(N).fill(NaN), W = new Float32Array(N).fill(NaN), E = new Float32Array(N).fill(NaN);
+    const EC = new Float32Array(N).fill(NaN), CO = new Float32Array(N).fill(NaN), PG = new Float32Array(N).fill(NaN);
+    const flag = new Uint16Array(N);
+    const T = R.time.slice(i0, i1 + 1), H = new Float32Array(ne), P = new Float32Array(ne), Ro = new Float32Array(ne);
+    const instDepth = new Float32Array(ne), side = new Float32Array(ne).fill(Infinity);
+    const btU = R.btVel ? new Float32Array(ne).fill(NaN) : null, btV = R.btVel ? new Float32Array(ne).fill(NaN) : null;
+    const pf = 1e4 / (S.rho * 9.80665);
+    const useP = S.depthSrc === 'pressure' || (S.depthSrc === 'auto' && R.hasPressure);
+    const b = [0, 0, 0, 0], o = [0, 0, 0, 0], bt = [0, 0, 0, 0];
+    let n3 = 0, rotDecl = !toEarth && outCoord === 'earth' && S.declination !== 0;
+    if (toEarth && S.declination) log.push(`Magnetic declination ${S.declination}° added to heading.`);
+    if (rotDecl) log.push(`Earth-coordinate data rotated by declination ${S.declination}°.`);
+    const counts = {}; for (const k in QC) counts[k] = 0;
+
+    for (let j = 0; j < ne; j++) {
+      const e = i0 + j;
+      const h = R.heading[e] + S.headingOffset + (toEarth ? S.declination : 0), p = R.pitch[e], r = R.roll[e];
+      H[j] = ((h % 360) + 360) % 360; P[j] = p; Ro[j] = r;
+      const rr = Math.abs(r) > 90 ? 180 - Math.abs(r) : r;
+      const tilt = Math.acos(Math.cos(p * D2R) * Math.cos(rr * D2R)) * R2D;
+      const M = toEarth ? earthMatrix(h, p, r, up, S.pitchCorr) : null;
+      // instrument depth
+      let d = S.depthSrc === 'const' ? S.depthConst : useP ? R.pressure[e] * pf : R.xdcrDepth[e];
+      instDepth[j] = d + S.depthOffset;
+      // bottom track vector in output frame
+      let bx = NaN, by = NaN, bz = NaN;
+      if (R.btVel) {
+        for (let k = 0; k < 4; k++) bt[k] = R.btVel[e * 4 + k];
+        if (toInst) beamToInst(bt, th, R.convex, S.threeBeam, o); else { o[0] = bt[0]; o[1] = bt[1]; o[2] = bt[2]; o[3] = bt[3]; }
+        if (M) { bx = M[0] * o[0] + M[1] * o[1] + M[2] * o[2]; by = M[3] * o[0] + M[4] * o[1] + M[5] * o[2]; bz = M[6] * o[0] + M[7] * o[1] + M[8] * o[2]; }
+        else { bx = o[0]; by = o[1]; bz = o[2]; }
+        if (rotDecl) [bx, by] = rotH(bx, by, S.declination);
+        btU[j] = bx; btV[j] = by;
+      }
+      // side-lobe limit
+      if (S.sidelobe) {
+        if (up && Number.isFinite(instDepth[j]) && instDepth[j] > 0) side[j] = instDepth[j] * Math.cos(th) - R.cellSize;
+        else if (!up && R.btRange) { let m = Infinity; for (let k = 0; k < 4; k++) { const v = R.btRange[e * 4 + k]; if (v > 0 && v < m) m = v; } if (m < Infinity) side[j] = m * Math.cos(th) - R.cellSize; }
+      }
+      const tiltBad = S.tiltMax > 0 && tilt > S.tiltMax;
+      for (let c = 0; c < nc; c++) {
+        const q = j * nc + c, base = (e * nc + c) * nb; let f = 0, lowC = 0, lowE = 0, lowP = 0;
+        let es = 0, emx = -1, emn = 999, cs = 0, ps = 0;
+        for (let k = 0; k < 4; k++) {
+          let v = R.vel[base + k];
+          const cv = R.corr ? R.corr[base + k] : 255, ev = R.echo ? R.echo[base + k] : 255, pv = R.pg ? R.pg[base + k] : 100;
+          cs += cv; es += ev; if (ev > emx) emx = ev; if (ev < emn) emn = ev; ps += pv;
+          if (src === 'beam') {
+            if (cv < S.corrMin) { v = NaN; lowC++; } if (ev < S.echoMin) { v = NaN; lowE++; } if (pv < S.pgMin) { v = NaN; lowP++; }
+          } else { if (cv < S.corrMin) lowC++; if (ev < S.echoMin) lowE++; }
+          b[k] = v;
+        }
+        EC[q] = R.echo ? es / 4 : NaN; CO[q] = R.corr ? cs / 4 : NaN;
+        PG[q] = R.pg ? (src === 'beam' ? ps / 4 : R.pg[base] + R.pg[base + 3]) : NaN;
+        if (src === 'beam') { const maxBad = S.threeBeam ? 1 : 0; if (lowC > maxBad) f |= QC.corr; if (lowE > maxBad) f |= QC.echo; if (lowP > maxBad) f |= QC.pg; }
+        else { if (lowC > 1) f |= QC.corr; if (lowE > 1) f |= QC.echo; if (R.pg && S.pgMin > 0 && PG[q] < S.pgMin) f |= QC.pg; }
+        if (S.fishThr > 0 && R.echo && emx - emn > S.fishThr) f |= QC.fish;
+        // transform
+        if (toInst) { const nn = beamToInst(b, th, R.convex, S.threeBeam, o); if (nn === 3) n3++; }
+        else { o[0] = b[0]; o[1] = b[1]; o[2] = b[2]; o[3] = b[3]; }
+        let x = o[0], y = o[1], z = o[2], er = o[3];
+        if (!Number.isFinite(x) || !Number.isFinite(y)) f |= QC.orig;
+        if (M) { const X = x, Y = y, Z = z; x = M[0] * X + M[1] * Y + M[2] * Z; y = M[3] * X + M[4] * Y + M[5] * Z; z = M[6] * X + M[7] * Y + M[8] * Z; }
+        if (rotDecl) [x, y] = rotH(x, y, S.declination);
+        if (S.btRef && R.btVel) { x -= bx; y -= by; z -= bz; }
+        if (S.errMax > 0 && Math.abs(er) > S.errMax) f |= QC.err;
+        if (S.wMax > 0 && Math.abs(z) > S.wMax) f |= QC.w;
+        if (S.spdMax > 0 && Math.hypot(x, y) > S.spdMax) f |= QC.spd;
+        if (dist[c] > side[j]) f |= QC.side;
+        if (tiltBad) f |= QC.tilt;
+        flag[q] = f;
+        for (const k in QC) if (f & QC[k]) counts[k]++;
+        if (!f) { U[q] = x; V[q] = y; W[q] = z; E[q] = er; }
+      }
+    }
+    if (toInst && n3) log.push(`${n3} cells solved with 3-beam solutions.`);
+    if (S.btRef && R.btVel) log.push('Velocities referenced to bottom track (absolute water velocity).');
+    const goodFrac = new Float32Array(nc);
+    for (let c = 0; c < nc; c++) { let g = 0; for (let j = 0; j < ne; j++) if (!flag[j * nc + c]) g++; goodFrac[c] = g / ne; }
+    let nGood = 0; for (const f of flag) if (!f) nGood++;
+    log.push(`QC kept ${(100 * nGood / N).toFixed(1)}% of cells (corr≥${S.corrMin}, echo≥${S.echoMin}, PG≥${S.pgMin}, |err|≤${S.errMax || '∞'}, |w|≤${S.wMax || '∞'}, speed≤${S.spdMax || '∞'} m/s, tilt≤${S.tiltMax || '∞'}°, side-lobe ${S.sidelobe ? 'on' : 'off'}${S.fishThr ? `, fish Δecho>${S.fishThr}` : ''}).`);
+
+    let out = {
+      ne, nc, time: T, U, V, W, E, echo: EC, corr: CO, pg: PG, heading: H, pitch: P, roll: Ro,
+      temp: R.temp.slice(i0, i1 + 1), pressure: R.pressure.slice(i0, i1 + 1), sos: R.sos.slice(i0, i1 + 1), instDepth, side, btU, btV,
+      lat: R.lat ? R.lat.slice(i0, i1 + 1) : null, lon: R.lon ? R.lon.slice(i0, i1 + 1) : null
+    };
+    // averaging
+    if (S.avgMode !== 'none') out = average(out, S, log);
+    // rotation to along/cross axis
+    const A = new Float32Array(out.ne * nc).fill(NaN), X = new Float32Array(out.ne * nc).fill(NaN);
+    if (S.rotAngle !== null && S.rotAngle !== '' && Number.isFinite(+S.rotAngle)) {
+      const ph = +S.rotAngle * D2R, sp = Math.sin(ph), cp = Math.cos(ph);
+      for (let q = 0; q < A.length; q++) { A[q] = out.U[q] * sp + out.V[q] * cp; X[q] = out.U[q] * cp - out.V[q] * sp; }
+      log.push(`Along-axis = ${(+S.rotAngle).toFixed(1)}° true; cross-axis positive 90° clockwise from it.`);
+    }
+    out.A = A; out.X = X;
+    const md = nanmean(out.instDepth);
+    out.dist = dist; out.depth = Float32Array.from(dist, x => up ? md - x : md + x); out.meanDepth = md;
+    out.goodFrac = goodFrac; out.counts = counts; out.N = N; out.coord = outCoord; out.up = up; out.beamAngle = thDeg;
+    out.cellSize = R.cellSize; out.settings = S; out.log = log; out.i0 = i0; out.i1 = i1;
+    return out;
+  }
+
+  function average(P, S, log) {
+    const nc = P.nc, g = [];
+    if (S.avgMode === 'ens') { const n = Math.max(1, S.avgN | 0); for (let j = 0; j < P.ne; j++) g.push(Math.floor(j / n)); log.push(`Averaged every ${n} ensembles.`); }
+    else { const dt = Math.max(1e-3, +S.avgMin) * 60000, t0 = Math.floor(P.time[0] / dt) * dt; for (let j = 0; j < P.ne; j++) g.push(Math.floor((P.time[j] - t0) / dt)); log.push(`Averaged into ${S.avgMin}-minute bins.`); }
+    const keys = []; let last = null; for (const k of g) if (k !== last) { keys.push(k); last = k; }
+    const ng = keys.length, idx = new Map(keys.map((k, i) => [k, i])), cnt = new Uint32Array(ng);
+    for (const k of g) cnt[idx.get(k)]++;
+    const avg1 = a => { if (!a) return null; const s = new Float64Array(ng), n = new Uint32Array(ng); for (let j = 0; j < P.ne; j++) { const v = a[j]; if (Number.isFinite(v)) { const i = idx.get(g[j]); s[i] += v; n[i]++; } } return Float32Array.from(s, (v, i) => n[i] ? v / n[i] : NaN); };
+    const avg2 = (a, need) => { const s = new Float64Array(ng * nc), n = new Uint32Array(ng * nc); for (let j = 0; j < P.ne; j++) { const i = idx.get(g[j]); for (let c = 0; c < nc; c++) { const v = a[j * nc + c]; if (Number.isFinite(v)) { s[i * nc + c] += v; n[i * nc + c]++; } } } return Float32Array.from(s, (v, q) => n[q] && (!need || n[q] >= need * cnt[Math.floor(q / nc)]) ? v / n[q] : NaN); };
+    const need = S.avgMinGood / 100;
+    const time = new Float64Array(ng); { const s = new Float64Array(ng); for (let j = 0; j < P.ne; j++) s[idx.get(g[j])] += P.time[j]; for (let i = 0; i < ng; i++) time[i] = s[i] / cnt[i]; }
+    // circular mean of heading
+    const hs = new Float64Array(ng), hc = new Float64Array(ng); for (let j = 0; j < P.ne; j++) { const i = idx.get(g[j]); hs[i] += Math.sin(P.heading[j] * D2R); hc[i] += Math.cos(P.heading[j] * D2R); }
+    const heading = Float32Array.from(hs, (s, i) => ((Math.atan2(s, hc[i]) * R2D) + 360) % 360);
+    return Object.assign({}, P, {
+      ne: ng, time, heading, U: avg2(P.U, need), V: avg2(P.V, need), W: avg2(P.W, need), E: avg2(P.E, need),
+      echo: avg2(P.echo), corr: avg2(P.corr), pg: avg2(P.pg), pitch: avg1(P.pitch), roll: avg1(P.roll), temp: avg1(P.temp),
+      pressure: avg1(P.pressure), sos: avg1(P.sos), instDepth: avg1(P.instDepth), side: avg1(Float32Array.from(P.side, v => Number.isFinite(v) ? v : NaN)),
+      btU: avg1(P.btU), btV: avg1(P.btV), lat: avg1(P.lat), lon: avg1(P.lon), nAvg: cnt
+    });
+  }
+
+  /* field accessor: returns Float32Array ne*nc (2D) */
+  function field(P, k) {
+    switch (k) {
+      case 'U': case 'V': case 'W': case 'E': case 'A': case 'X': case 'echo': case 'corr': case 'pg': return P[k];
+      case 'spd': return Float32Array.from(P.U, (u, q) => Math.hypot(u, P.V[q]));
+      case 'dir': return Float32Array.from(P.U, (u, q) => { const d = Math.atan2(u, P.V[q]) * R2D; return Number.isFinite(d) ? (d + 360) % 360 : NaN; });
+    }
+    return null;
+  }
+  function depthMean(P, k) { const f = field(P, k), o = new Float32Array(P.ne); for (let j = 0; j < P.ne; j++) { let s = 0, n = 0; for (let c = 0; c < P.nc; c++) { const v = f[j * P.nc + c]; if (Number.isFinite(v)) { s += v; n++; } } o[j] = n ? s / n : NaN; } return o; }
+  function principalAxis(u, v) {
+    let mu = 0, mv = 0, n = 0; for (let i = 0; i < u.length; i++) if (Number.isFinite(u[i]) && Number.isFinite(v[i])) { mu += u[i]; mv += v[i]; n++; }
+    if (n < 3) return null; mu /= n; mv /= n;
+    let suu = 0, svv = 0, suv = 0; for (let i = 0; i < u.length; i++) if (Number.isFinite(u[i]) && Number.isFinite(v[i])) { const a = u[i] - mu, b = v[i] - mv; suu += a * a; svv += b * b; suv += a * b; }
+    suu /= n; svv /= n; suv /= n;
+    const t = 0.5 * Math.atan2(2 * suv, suu - svv); // radians CCW from east
+    const tr = suu + svv, det = suu * svv - suv * suv, l1 = tr / 2 + Math.sqrt(Math.max(0, tr * tr / 4 - det)), l2 = tr / 2 - Math.sqrt(Math.max(0, tr * tr / 4 - det));
+    let compass = ((90 - t * R2D) % 180 + 180) % 180; // axis 0–180 true
+    return { compass, major: Math.sqrt(l1), minor: Math.sqrt(Math.max(0, l2)), mu, mv, n };
+  }
+  /* suggest in-water range from pressure (or tilt) */
+  function autoRange(R) {
+    const n = R.nEns; let ok = new Uint8Array(n).fill(1);
+    if (R.hasPressure) { const m = median(R.pressure); for (let i = 0; i < n; i++) ok[i] = R.pressure[i] > 0.5 * m ? 1 : 0; }
+    else for (let i = 0; i < n; i++) { const r = Math.abs(R.roll[i]) > 90 ? 180 - Math.abs(R.roll[i]) : R.roll[i]; ok[i] = Math.abs(R.pitch[i]) < 30 && Math.abs(r) < 30 ? 1 : 0; }
+    let a = 0; while (a < n && !ok[a]) a++; let b = n - 1; while (b > a && !ok[b]) b--;
+    // drop one extra ensemble at each end (settling)
+    return { i0: Math.min(a + 1, b), i1: Math.max(b - 1, a) };
+  }
+
+  /* ---------------- export helpers ---------------- */
+  function datenum(ms) { return ms / 86400000 + 719529; }
+  function iso(ms) { return new Date(ms).toISOString().replace('T', ' ').slice(0, 19); }
+  function mat4(vars) { // vars: [{name, rows, cols, data(Float64 col-major)}] → Uint8Array (MATLAB Level 4)
+    const parts = []; let len = 0;
+    for (const v of vars) {
+      const nm = new TextEncoder().encode(v.name + '\0'), hdr = new Int32Array([0, v.rows, v.cols, 0, nm.length]);
+      const d = v.data instanceof Float64Array ? v.data : Float64Array.from(v.data);
+      parts.push(new Uint8Array(hdr.buffer), nm, new Uint8Array(d.buffer, d.byteOffset, d.byteLength)); len += 20 + nm.length + d.byteLength;
+    }
+    const out = new Uint8Array(len); let p = 0; for (const x of parts) { out.set(x, p); p += x.length; } return out;
+  }
+  // nc×ne column-major matrix from P field [j*nc+c] → element (c,j) at j*nc+c : already column-major with rows=nc
+  function matVars(P) {
+    const nc = P.nc, ne = P.ne, f64 = a => Float64Array.from(a, v => Number.isFinite(v) ? v : NaN);
+    const v = [
+      { name: 'time', rows: ne, cols: 1, data: Float64Array.from(P.time, datenum) },
+      { name: 'dist', rows: nc, cols: 1, data: f64(P.dist) }, { name: 'depth', rows: nc, cols: 1, data: f64(P.depth) }
+    ];
+    const two = { u: 'U', v: 'V', w: 'W', err: 'E', speed: 'spd', dir: 'dir', echo: 'echo', corr: 'corr', pg: 'pg' };
+    if (P.settings.rotAngle !== null && P.settings.rotAngle !== '') { two.along = 'A'; two.cross = 'X'; }
+    for (const k in two) v.push({ name: k, rows: nc, cols: ne, data: f64(field(P, two[k])) });
+    for (const k of ['heading', 'pitch', 'roll', 'temp', 'pressure', 'instDepth', 'sos', 'btU', 'btV', 'lat', 'lon']) if (P[k]) v.push({ name: k, rows: ne, cols: 1, data: f64(P[k]) });
+    return v;
+  }
+  // minimal ZIP (store, no compression)
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(u8) { let c = 0xffffffff; for (let i = 0; i < u8.length; i++) c = CRC[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; }
+  function zip(files) { // [{name, data:Uint8Array|string}]
+    const enc = new TextEncoder(), loc = [], cen = []; let off = 0;
+    for (const f of files) {
+      const d = typeof f.data === 'string' ? enc.encode(f.data) : f.data, nm = enc.encode(f.name), crc = crc32(d);
+      const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(8, 0, true); h.setUint16(10, 0, true); h.setUint16(12, 0x21, true);
+      h.setUint32(14, crc, true); h.setUint32(18, d.length, true); h.setUint32(22, d.length, true); h.setUint16(26, nm.length, true);
+      loc.push(new Uint8Array(h.buffer), nm, d);
+      const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(14, 0x21, true);
+      c.setUint32(16, crc, true); c.setUint32(20, d.length, true); c.setUint32(24, d.length, true); c.setUint16(28, nm.length, true); c.setUint32(42, off, true);
+      cen.push(new Uint8Array(c.buffer), nm); off += 30 + nm.length + d.length;
+    }
+    const cs = cen.reduce((s, x) => s + x.length, 0), e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cs, true); e.setUint32(16, off, true);
+    return new Blob([...loc, ...cen, new Uint8Array(e.buffer)], { type: 'application/zip' });
+  }
+  /* drop bins with no valid velocity in the whole record (e.g. above the surface) */
+  function dropEmptyBins(P) {
+    const keep = []; for (let c = 0; c < P.nc; c++) { for (let j = 0; j < P.ne; j++) if (Number.isFinite(P.U[j * P.nc + c])) { keep.push(c); break; } }
+    if (keep.length === P.nc || !keep.length) return P;
+    const nk = keep.length, sub = a => { if (!a) return a; const o = new Float32Array(P.ne * nk); for (let j = 0; j < P.ne; j++) for (let i = 0; i < nk; i++) o[j * nk + i] = a[j * P.nc + keep[i]]; return o; };
+    const out = Object.assign({}, P, { nc: nk, dist: Float32Array.from(keep, c => P.dist[c]), depth: Float32Array.from(keep, c => P.depth[c]), goodFrac: Float32Array.from(keep, c => P.goodFrac[c]), binIdx: keep });
+    for (const k of ['U', 'V', 'W', 'E', 'A', 'X', 'echo', 'corr', 'pg']) out[k] = sub(P[k]);
+    return out;
+  }
+  /* CSV: builders return {head:[...], rows:[[...]]}; toCSV formats with chosen separator/decimal */
+  function toCSV(T, o) {
+    o = Object.assign({ sep: ',', dec: '.' }, o);
+    const f = v => typeof v === 'number' ? (Number.isFinite(v) ? (o.dec === '.' ? String(+v.toFixed(5)) : String(+v.toFixed(5)).replace('.', ',')) : '') : String(v ?? '');
+    const out = [T.head.join(o.sep)]; for (const r of T.rows) out.push(r.map(f).join(o.sep));
+    return '\ufeff' + out.join('\r\n');
+  }
+  const binName = (P, c) => `bin${String((P.binIdx ? P.binIdx[c] : c) + 1).padStart(2, '0')}_${P.dist[c].toFixed(2)}m`;
+  function tabMatrix(P, k, depthRows) {
+    const f = field(P, k), nc = P.nc;
+    if (depthRows) return { head: ['bin', 'dist_m', 'depth_m', ...Array.from(P.time, iso)], rows: Array.from({ length: nc }, (_, c) => [(P.binIdx ? P.binIdx[c] : c) + 1, P.dist[c], P.depth[c], ...Array.from({ length: P.ne }, (_, j) => f[j * nc + c])]) };
+    const rows = []; for (let j = 0; j < P.ne; j++) { const r = [iso(P.time[j])]; for (let c = 0; c < nc; c++) r.push(f[j * nc + c]); rows.push(r); }
+    return { head: ['time', ...Array.from({ length: nc }, (_, c) => binName(P, c))], rows };
+  }
+  function tabLong(P) {
+    const sp = field(P, 'spd'), dr = field(P, 'dir'), rot = P.settings.rotAngle !== null && P.settings.rotAngle !== '';
+    const head = ['time', 'bin', 'dist_m', 'depth_m', 'u_ms', 'v_ms', 'w_ms', 'err_ms', 'speed_ms', 'dir_deg', ...(rot ? ['along_ms', 'cross_ms'] : []), 'echo', 'corr', 'pg'], rows = [];
+    for (let j = 0; j < P.ne; j++) { const t = iso(P.time[j]); for (let c = 0; c < P.nc; c++) { const q = j * P.nc + c; rows.push([t, (P.binIdx ? P.binIdx[c] : c) + 1, P.dist[c], P.depth[c], P.U[q], P.V[q], P.W[q], P.E[q], sp[q], dr[q], ...(rot ? [P.A[q], P.X[q]] : []), P.echo[q], P.corr[q], P.pg[q]]); } }
+    return { head, rows };
+  }
+  function tabBin(P, c) {
+    const sp = field(P, 'spd'), dr = field(P, 'dir'), rot = P.settings.rotAngle !== null && P.settings.rotAngle !== '';
+    const head = ['time', 'u_ms', 'v_ms', 'w_ms', 'err_ms', 'speed_ms', 'dir_deg', ...(rot ? ['along_ms', 'cross_ms'] : []), 'heading', 'pitch', 'roll', 'temp_C', 'pressure_dbar', 'inst_depth_m'], rows = [];
+    for (let j = 0; j < P.ne; j++) { const q = j * P.nc + c; rows.push([iso(P.time[j]), P.U[q], P.V[q], P.W[q], P.E[q], sp[q], dr[q], ...(rot ? [P.A[q], P.X[q]] : []), P.heading[j], P.pitch[j], P.roll[j], P.temp[j], P.pressure[j], P.instDepth[j]]); }
+    return { head, rows };
+  }
+
+  /* ---------------- synthetic sample writer ---------------- */
+  function makeSample() {
+    const nc = 30, nb = 4, ne = 1008 + 6, cell = 0.5, bin1 = 1.25, ang = 20, th = ang * D2R, depth0 = 15;
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647, gauss = () => Math.sqrt(-2 * Math.log(rnd() + 1e-12)) * Math.cos(2 * Math.PI * rnd());
+    const t0 = Date.UTC(2026, 6, 1, 0, 0, 0), dt = 600000, axis = 40 * D2R;
+    const lenFix = 59, lenVar = 65, lenV = 2 + nc * nb * 2, lenB = 2 + nc * nb, nt = 6, hdr = 6 + 2 * nt;
+    const offs = [hdr]; for (const L of [lenFix, lenVar, lenV, lenB, lenB]) offs.push(offs[offs.length - 1] + L);
+    const L = offs[5] + lenB, bufs = new Uint8Array(ne * (L + 2)), dv = new DataView(bufs.buffer);
+    const a = 1 / (2 * Math.sin(th)), bb = 1 / (4 * Math.cos(th));
+    for (let e = 0; e < ne; e++) {
+      const o = e * (L + 2), t = t0 + e * dt, hr = (t - t0) / 3600000;
+      const out = e < 3 || e >= ne - 3;
+      bufs[o] = 0x7f; bufs[o + 1] = 0x7f; dv.setUint16(o + 2, L, true); bufs[o + 5] = nt;
+      for (let k = 0; k < nt; k++) dv.setUint16(o + 6 + 2 * k, offs[k], true);
+      // fixed leader
+      let p = o + offs[0]; dv.setUint16(p, 0x0000, true); bufs[p + 2] = 51; bufs[p + 3] = 41;
+      bufs[p + 4] = 0b11001011; bufs[p + 5] = 0b01000001; bufs[p + 8] = nb; bufs[p + 9] = nc; dv.setUint16(p + 10, 120, true);
+      dv.setUint16(p + 12, cell * 100, true); dv.setUint16(p + 14, 88, true); bufs[p + 16] = 1; bufs[p + 17] = 64; bufs[p + 19] = 0;
+      dv.setUint16(p + 20, 2000, true); bufs[p + 23] = 5; bufs[p + 25] = 0b00000111; dv.setUint16(p + 32, bin1 * 100, true);
+      dv.setUint16(p + 34, 55, true); dv.setUint32(p + 54, 24680, true); bufs[p + 58] = ang;
+      // variable leader
+      const d = new Date(t); p = o + offs[1]; dv.setUint16(p, 0x0080, true); dv.setUint16(p + 2, (e + 1) & 0xffff, true);
+      bufs[p + 4] = d.getUTCFullYear() % 100; bufs[p + 5] = d.getUTCMonth() + 1; bufs[p + 6] = d.getUTCDate(); bufs[p + 7] = d.getUTCHours(); bufs[p + 8] = d.getUTCMinutes(); bufs[p + 9] = d.getUTCSeconds();
+      const tide = 1.1 * Math.cos(2 * Math.PI * hr / 12.42) + 0.45 * Math.cos(2 * Math.PI * hr / 23.93 + 1) + 0.2 * Math.cos(2 * Math.PI * hr / 12 + 2);
+      const dep = out ? 0.2 * rnd() : depth0 + tide;
+      const head = out ? 360 * rnd() : (215 + 4 * Math.sin(2 * Math.PI * hr / 12.42) + gauss()) % 360, pit = out ? 40 * gauss() : 1.5 + 0.3 * gauss(), rol = out ? 40 * gauss() : -2.1 + 0.3 * gauss();
+      const temp = 29 + 0.6 * Math.sin(2 * Math.PI * hr / 24) - 0.3 * tide;
+      dv.setUint16(p + 14, 1543, true); dv.setUint16(p + 16, Math.round(dep * 10), true); dv.setUint16(p + 18, Math.round(((head % 360) + 360) % 360 * 100), true);
+      dv.setInt16(p + 20, Math.round(pit * 100), true); dv.setInt16(p + 22, Math.round(rol * 100), true); dv.setUint16(p + 24, 32, true); dv.setInt16(p + 26, Math.round(temp * 100), true);
+      dv.setUint32(p + 48, Math.round(dep / (1e4 / (1025 * 9.80665)) * 1000), true);
+      bufs[p + 57] = 20; bufs[p + 58] = d.getUTCFullYear() % 100; bufs[p + 59] = d.getUTCMonth() + 1; bufs[p + 60] = d.getUTCDate(); bufs[p + 61] = d.getUTCHours(); bufs[p + 62] = d.getUTCMinutes(); bufs[p + 63] = d.getUTCSeconds();
+      const M = earthMatrix(head, pit, rol, true, true);
+      const pv = o + offs[2], pc = o + offs[3], pe = o + offs[4], pgp = o + offs[5];
+      dv.setUint16(pv, 0x0100, true); dv.setUint16(pc, 0x0200, true); dv.setUint16(pe, 0x0300, true); dv.setUint16(pgp, 0x0400, true);
+      const amp = 0.55 * Math.cos(2 * Math.PI * hr / 12.42 - 0.6) + 0.22 * Math.cos(2 * Math.PI * hr / 23.93 + 0.4) + 0.12 * Math.cos(2 * Math.PI * hr / 12 + 1.3);
+      for (let c = 0; c < nc; c++) {
+        const z = bin1 + c * cell, hab = z + 0.6, prof = Math.log(hab / 0.02) / Math.log((depth0 + 0.6) / 0.02);
+        const above = z > dep * Math.cos(th);
+        let ua = amp * prof, uc = 0.05 * Math.sin(2 * Math.PI * hr / 12.42) * (z / depth0 - 0.5) + 0.03;
+        let E_ = ua * Math.sin(axis) + uc * Math.cos(axis), N_ = ua * Math.cos(axis) - uc * Math.sin(axis), U_ = 0.002 * gauss();
+        const nz = above ? 0.8 : 0.03;
+        // earth → inst (transpose)
+        const X = M[0] * E_ + M[3] * N_ + M[6] * U_, Y = M[1] * E_ + M[4] * N_ + M[7] * U_, Z = M[2] * E_ + M[5] * N_ + M[8] * U_;
+        const s = Z / (2 * bb), dx = X / a, dy = Y / a;
+        const bm = [(s + dx) / 2, (s - dx) / 2, (s - dy) / 2, (s + dy) / 2];
+        for (let k = 0; k < nb; k++) {
+          let v = out ? 2 * gauss() : bm[k] + nz * gauss();
+          if (!out && rnd() < 0.004) v = NaN;
+          const q = c * nb + k;
+          dv.setInt16(pv + 2 + 2 * q, Number.isFinite(v) ? Math.max(-32767, Math.min(32767, Math.round(v * 1000))) : -32768, true);
+          const cor = out ? 20 + 10 * rnd() : above ? 30 + 25 * rnd() : 125 - 1.2 * c + 6 * gauss();
+          bufs[pc + 2 + q] = Math.max(0, Math.min(255, Math.round(cor)));
+          const ec = out ? 40 + 5 * rnd() : (above ? 120 + 20 * rnd() : 150 - 2.3 * c + 3 * gauss()) + (Math.abs(z - dep * Math.cos(th)) < 0.8 ? 60 : 0);
+          bufs[pe + 2 + q] = Math.max(0, Math.min(255, Math.round(ec)));
+          bufs[pgp + 2 + q] = out ? 10 : above ? 40 : 100;
+        }
+      }
+      let s = 0; for (let k = o; k < o + L; k++) s += bufs[k]; dv.setUint16(o + L, s & 0xffff, true);
+    }
+    return bufs.buffer;
+  }
+
+  return { parse, merge, process, field, depthMean, principalAxis, autoRange, earthMatrix, beamToInst, makeSample, matVars, mat4, zip, toCSV, dropEmptyBins, tabMatrix, tabLong, tabBin, binName, iso, datenum, nanmean, median, QC, DEFAULTS };
+})();
+if (typeof module !== 'undefined') module.exports = PD0;
+
+</script>
+<script>
+{
+const $ = id => document.getElementById(id);
+const TABS = [['overview','Overview'],['contour','Contour'],['series','Time series'],['profile','Profiles'],['vectors','Vectors'],['quality','Quality'],['export','Export'],['log','Log']];
+const SKEYS = Object.keys(PD0.DEFAULTS).filter(k => $(k));
+const st = { raws: [], R: null, P: null, tab: 'overview', bin: 0, ens: 0 };
+let plotlyOK = typeof Plotly !== 'undefined';
+
+/* ---------- helpers ---------- */
+const showErr = m => { const e = $('err'); e.textContent = m; e.style.display = m ? 'block' : 'none'; };
+const busy = (on, msg) => { $('busy').textContent = msg || 'Working…'; $('busy').classList.toggle('on', on); };
+const fmtN = (v, d = 2) => Number.isFinite(v) ? v.toFixed(d) : '–';
+const unit = () => +$('unit').value, uLab = () => unit() === 100 ? 'cm/s' : 'm/s';
+const colors = () => { const g = c => getComputedStyle(document.querySelector('.p-' + c)).color; return { ink: g('ink'), grid: g('grid'), mut: g('mut'), mid: g('mid') }; };
+const isoT = ms => PD0.iso(ms);
+function dur(ms) { const d = ms / 86400000; return d >= 1 ? d.toFixed(1) + ' days' : (ms / 3600000).toFixed(1) + ' h'; }
+function stride(n, max) { return Math.max(1, Math.ceil(n / max)); }
+
+function compLabels(coord) {
+  const c = coord === 'earth' ? ['East', 'North', 'Up'] : coord === 'beam' ? ['Beam 1', 'Beam 2', 'Beam 3'] : ['X', 'Y', 'Z'];
+  return { U: c[0], V: c[1], W: c[2], E: coord === 'beam' ? 'Beam 4' : 'Error', spd: 'Speed', dir: 'Direction', A: 'Along-axis', X: 'Cross-axis', echo: 'Echo intensity', corr: 'Correlation', pg: 'Percent good' };
+}
+function varList() {
+  const P = st.P, L = compLabels(P.coord), v = ['U', 'V', 'W', 'E'];
+  if (P.coord !== 'beam') v.push('spd', 'dir');
+  if (P.settings.rotAngle !== null && P.settings.rotAngle !== '') v.push('A', 'X');
+  v.push('echo', 'corr', 'pg');
+  return v.map(k => [k, L[k]]);
+}
+const isVel = k => ['U', 'V', 'W', 'E', 'A', 'X', 'spd'].includes(k);
+function units(k) { return k === 'dir' ? '°T' : k === 'echo' || k === 'corr' ? 'counts' : k === 'pg' ? '%' : uLab(); }
+function scaleOf(k) { return isVel(k) ? unit() : 1; }
+
+function yAxis() {
+  const P = st.P, m = $('yaxis').value;
+  if (m === 'bin') return { y: Array.from({ length: P.nc }, (_, i) => i + 1), title: 'Bin', rev: false };
+  if (m === 'depth') return { y: Array.from(P.depth), title: 'Depth (m, mean)', rev: true };
+  return { y: Array.from(P.dist), title: P.up ? 'Height above ADCP (m)' : 'Distance below ADCP (m)', rev: !P.up };
+}
+function colorscale(k) {
+  const c = colors();
+  if (k === 'dir') return [[0, '#2b4f8f'], [.25, '#7a3fa0'], [.5, '#e4002b'], [.75, '#e8a33d'], [1, '#2b4f8f']];
+  if (['U', 'V', 'W', 'E', 'A', 'X'].includes(k)) return [[0, '#1d3f7a'], [.25, '#5f8fcf'], [.5, c.mid], [.75, '#f0806b'], [1, '#b0001f']];
+  if (k === 'spd') return 'Viridis';
+  return 'Cividis';
+}
+function baseLayout(extra) {
+  const c = colors();
+  return Object.assign({
+    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: { family: 'Archivo, system-ui, sans-serif', color: c.ink, size: 12.5 },
+    margin: { l: 64, r: 24, t: 24, b: 48 }, hovermode: 'closest', showlegend: true, legend: { orientation: 'h', y: 1.01, yanchor: 'bottom', x: 0 },
+  }, extra);
+}
+const ttl = t => ({ text: t, x: 0, xref: 'paper', y: 0.985, yref: 'container', yanchor: 'top', font: { size: 15 } });
+function ax(title, more) { const c = colors(); return Object.assign({ title: { text: title }, gridcolor: c.grid, zerolinecolor: c.mut, linecolor: c.ink, ticks: 'outside', tickcolor: c.ink }, more); }
+const CFG = { responsive: true, displaylogo: false, toImageButtonOptions: { format: 'png', scale: 2 } };
+const FIG = {};
+function draw(id, data, layout, meta) {
+  FIG[id] = Object.assign({ data, layout }, meta || {});
+  const lab = document.querySelector(`.figbar[data-for="${id}"] span`); if (lab && meta && meta.note) lab.textContent = meta.note;
+  if (!plotlyOK) { $(id).innerHTML = '<p class="note">The plotting library could not load. Check your connection; processing and export still work.</p>'; return; }
+  Plotly.react(id, data, layout, CFG);
+}
+
+/* ---------- settings ---------- */
+function readS() {
+  const S = {};
+  for (const k of SKEYS) {
+    const el = $(k);
+    if (el.type === 'checkbox') S[k] = el.checked;
+    else if (el.type === 'number') S[k] = el.value === '' ? (k === 'rotAngle' ? null : k === 'beamAngle' ? 0 : PD0.DEFAULTS[k]) : +el.value;
+    else S[k] = el.value;
+  }
+  return S;
+}
+function writeS(S) {
+  for (const k of SKEYS) { if (!(k in S)) continue; const el = $(k), v = S[k]; if (el.type === 'checkbox') el.checked = !!v; else el.value = v === null || (k === 'beamAngle' && !v) ? '' : v; }
+}
+function savePrefs() { try { const S = readS(); delete S.i0; delete S.i1; localStorage.setItem('pd0proc.settings', JSON.stringify(S)); } catch (e) { } }
+function loadPrefs() { try { const s = JSON.parse(localStorage.getItem('pd0proc.settings') || 'null'); if (s) writeS(s); } catch (e) { } }
+
+/* ---------- loading ---------- */
+async function loadFiles(files) {
+  showErr(''); busy(true, 'Reading ensembles…');
+  await new Promise(r => setTimeout(r, 30));
+  try {
+    const raws = [];
+    for (const f of files) {
+      const buf = f.buf || await f.arrayBuffer();
+      raws.push(PD0.parse(buf, f.name));
+    }
+    st.raws = raws; st.R = PD0.merge(raws);
+    const R = st.R, ar = PD0.autoRange(R);
+    $('i0').max = $('i1').max = R.nEns - 1;
+    $('i0').value = ar.i0; $('i1').value = ar.i1;
+    $('btRef').disabled = !R.btVel; $('btNote').textContent = R.btVel ? 'Bottom track found in this file.' : 'No bottom-track data in this file.';
+    if (!R.btVel) $('btRef').checked = false;
+    $('beamAngle').placeholder = R.beamAngle + ' (file)';
+    remember(R);
+    $('empty').hidden = true; $('work').hidden = false;
+    run();
+  } catch (e) { showErr(e.message || String(e)); }
+  busy(false);
+}
+function remember(R) {
+  try {
+    const L = JSON.parse(localStorage.getItem('pd0proc.recent') || '[]').filter(x => x.name !== R.name);
+    L.unshift({ name: R.name, bytes: R.bytes, n: R.nEns, t0: R.time[0], t1: R.time[R.nEns - 1], freq: R.fixed.freq, opened: Date.now() });
+    localStorage.setItem('pd0proc.recent', JSON.stringify(L.slice(0, 20)));
+  } catch (e) { }
+}
+
+/* ---------- processing ---------- */
+let timer = 0;
+function schedule() { clearTimeout(timer); timer = setTimeout(run, 250); }
+function run() {
+  if (!st.R) return;
+  try {
+    const S = readS(); st.P = PD0.process(st.R, S); savePrefs();
+    $('tsBin').max = $('vBin').max = st.P.nc - 1; st.bin = Math.min(st.bin, st.P.nc - 1);
+    if (!run.binSet) { st.bin = Math.floor(st.P.nc / 3); run.binSet = true; }
+    $('tsBin').value = $('vBin').value = st.bin; $('pEns').max = st.P.ne - 1; st.ens = Math.min(st.ens, st.P.ne - 1); $('pEns').value = st.ens;
+    fillVarSelects(); summary(); render();
+  } catch (e) { showErr('Processing failed: ' + e.message); console.error(e); }
+}
+function fillVarSelects() {
+  const vl = varList();
+  for (const id of ['cVar']) {
+    const el = $(id), cur = el.value;
+    el.innerHTML = vl.map(([k, l]) => `<option value="${k}">${l}</option>`).join('');
+    el.value = vl.some(v => v[0] === cur) ? cur : (st.P.coord === 'earth' ? (st.P.settings.rotAngle !== null && st.P.settings.rotAngle !== '' ? 'A' : 'spd') : 'U');
+  }
+  const has = st.P.settings.rotAngle !== null && st.P.settings.rotAngle !== '';
+  $('tsComp').querySelector('[value=ax]').disabled = !has; if (!has && $('tsComp').value === 'ax') $('tsComp').value = 'enu';
+}
+function summary() {
+  const R = st.R, P = st.P, f = R.fixed;
+  const items = [['File', R.name], ['Instrument', `${f.freq} kHz · ${R.nBeams} beams · ${R.beamAngle}°`], ['Period', `${isoT(R.time[0]).slice(0, 16)} → ${isoT(R.time[R.nEns - 1]).slice(0, 16)}`], ['Output', `${P.ne} profiles · ${P.nc} cells · ${P.coord}`]];
+  $('sum').innerHTML = items.map(([a, b]) => `<span>${a} <b>${b}</b></span>`).join('');
+  $('flist').innerHTML = st.raws.map(r => `<li><b>${r.name}</b><span>${(r.bytes / 1048576).toFixed(1)} MB · ${r.nEns} ens</span></li>`).join('');
+}
+
+/* ---------- tabs ---------- */
+function setTab(t) {
+  st.tab = t;
+  for (const [k] of TABS) { $('t-' + k).classList.toggle('on', k === t); }
+  for (const b of $('tabs').children) b.setAttribute('aria-selected', b.dataset.t === t);
+  try { if (location.hash !== '#' + t) history.replaceState(null, '', '#' + t); } catch (e) { }
+  render();
+}
+$('tabs').innerHTML = TABS.map(([k, l]) => `<button role="tab" data-t="${k}">${l}</button>`).join('');
+$('tabs').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setTab(b.dataset.t); });
+
+function render() {
+  if (!st.P) return;
+  ({ overview: rOverview, contour: rContour, series: rSeries, profile: rProfile, vectors: rVectors, quality: rQuality, export: rExport, log: rLog })[st.tab]();
+}
+
+/* ---------- per-figure save picture / save data ---------- */
+function setFig(id, name, raw, table) { FIG[id] = Object.assign(FIG[id] || {}, { name, table }); const lab = document.querySelector(`.figbar[data-for="${id}"] span`); if (lab) lab.textContent = raw ? 'Data: raw record from the file (before processing)' : procState(); }
+const colT = (head, cols, n) => ({ head, rows: Array.from({ length: n }, (_, i) => cols.map(c => typeof c === 'function' ? c(i) : c[i])) });
+function matT(k) { const T = PD0.tabMatrix(PX(), k, false), sc = scaleOf(k); if (sc !== 1) for (const r of T.rows) for (let i = 1; i < r.length; i++) r[i] *= sc; T.head[0] = `time (${units(k)})`; return T; }
+async function savePic(id) {
+  const F = FIG[id], el = $(id); if (!F || !plotlyOK) return;
+  const bg = getComputedStyle(document.body).backgroundColor;
+  const lay = Object.assign({}, F.layout, { paper_bgcolor: bg, plot_bgcolor: bg });
+  try {
+    const url = await Plotly.toImage({ data: F.data, layout: lay }, { format: 'png', width: el.clientWidth || 1200, height: el.clientHeight || 600, scale: 2 });
+    const bin = atob(url.split(',')[1]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    save(`${base()}_${F.name}.png`, new Blob([u8], { type: 'image/png' }));
+  } catch (e) { showErr('Could not render the picture: ' + (e.message || e)); }
+}
+function saveDat(id) { const F = FIG[id]; if (F && F.table) save(`${base()}_${F.name}.csv`, CSV(F.table())); }
+for (const el of document.querySelectorAll('.plot')) {
+  const b = document.createElement('div'); b.className = 'figbar'; b.dataset.for = el.id;
+  b.innerHTML = '<span></span><button data-a="pic">Save picture (.png)</button><button data-a="dat">Save data (.csv)</button>';
+  const w = document.createElement('div'); el.parentNode.insertBefore(w, el); w.append(b, el);
+  b.addEventListener('click', e => { const t = e.target.closest('button'); if (!t) return; t.dataset.a === 'pic' ? savePic(el.id) : saveDat(el.id); });
+}
+
+/* ---------- overview ---------- */
+function rOverview() {
+  const R = st.R, P = st.P, f = R.fixed, n = R.nEns, s = stride(n, 4000), x = [], c = colors();
+  const dt = n > 1 ? (R.time[n - 1] - R.time[0]) / (n - 1) : 0;
+  $('ovStats').innerHTML = [[n.toLocaleString(), 'ensembles in file'], [dur(R.time[n - 1] - R.time[0]), 'record length'], [(dt / 60000).toFixed(dt < 60000 ? 2 : 1) + ' min', 'ensemble interval'],
+  [`${R.nCells} × ${R.cellSize} m`, 'cells × size'], [`${(100 * meanGood()).toFixed(0)}%`, 'cells kept after QC'], [fmtN(P.meanDepth, 1) + ' m', 'mean instrument depth']]
+    .map(([a, b]) => `<div><div class="n">${a}</div><div class="l">${b}</div></div>`).join('');
+  for (let i = 0; i < n; i += s) x.push(isoT(R.time[i]));
+  const pick = (a, sc = 1) => { const o = []; for (let i = 0; i < n; i += s) o.push(a[i] * sc); return o; };
+  const v = $('ovVar').value; let data = [], lay = baseLayout({ xaxis: ax('', { type: 'date' }) });
+  const pf = 1e4 / (+$('rho').value * 9.80665);
+  if (v === 'depth') {
+    const d = R.hasPressure ? pick(R.pressure, pf) : pick(R.xdcrDepth);
+    const tilt = []; for (let i = 0; i < n; i += s) { const r = Math.abs(R.roll[i]) > 90 ? 180 - Math.abs(R.roll[i]) : R.roll[i]; tilt.push(Math.acos(Math.cos(R.pitch[i] * Math.PI / 180) * Math.cos(r * Math.PI / 180)) * 180 / Math.PI); }
+    data = [{ x, y: d, name: R.hasPressure ? 'Depth from pressure (m)' : 'Transducer depth (m)', line: { color: c.ink, width: 1.4 } }, { x, y: tilt, name: 'Tilt (°)', yaxis: 'y2', line: { color: '#e4002b', width: 1.2 } }];
+    lay.yaxis = ax('Depth (m)'); lay.yaxis2 = ax('Tilt (°)', { overlaying: 'y', side: 'right', showgrid: false });
+  } else if (v === 'hdg') {
+    data = [{ x, y: pick(R.heading), name: 'Heading (°)', mode: 'markers', marker: { size: 3, color: c.ink } }, { x, y: pick(R.pitch), name: 'Pitch (°)', yaxis: 'y2', line: { color: '#e4002b', width: 1 } }, { x, y: pick(R.roll), name: 'Roll (°)', yaxis: 'y2', line: { color: '#5f8fcf', width: 1 } }];
+    lay.yaxis = ax('Heading (°)', { range: [0, 360] }); lay.yaxis2 = ax('Pitch, roll (°)', { overlaying: 'y', side: 'right', showgrid: false });
+  } else {
+    data = [{ x, y: pick(R.temp), name: 'Temperature (°C)', line: { color: '#e4002b', width: 1.3 } }, { x, y: pick(R.sos), name: 'Sound speed (m/s)', yaxis: 'y2', line: { color: c.ink, width: 1 } }];
+    lay.yaxis = ax('Temperature (°C)'); lay.yaxis2 = ax('Sound speed (m/s)', { overlaying: 'y', side: 'right', showgrid: false });
+  }
+  lay.shapes = [{ type: 'rect', xref: 'x', yref: 'paper', x0: isoT(R.time[P.i0]), x1: isoT(R.time[P.i1]), y0: 0, y1: 1, fillcolor: '#e4002b', opacity: .08, line: { width: 0 } }];
+  lay.margin.r = 64;
+  draw('ovPlot', data, lay);
+  setFig('ovPlot', 'overview_' + v, true, () => { const t = i => isoT(R.time[i]); if (v === 'depth') return colT(['time', R.hasPressure ? 'depth_from_pressure_m' : 'transducer_depth_m', 'pitch_deg', 'roll_deg', 'in_processed_range'], [t, i => R.hasPressure ? R.pressure[i] * pf : R.xdcrDepth[i], R.pitch, R.roll, i => i >= P.i0 && i <= P.i1 ? 1 : 0], n); if (v === 'hdg') return colT(['time', 'heading_deg', 'pitch_deg', 'roll_deg'], [t, R.heading, R.pitch, R.roll], n); return colT(['time', 'temp_C', 'sound_speed_ms'], [t, R.temp, R.sos], n); });
+  const yes = b => b ? 'Yes' : 'No';
+  $('cfgA').innerHTML = [['Frequency', f.freq + ' kHz'], ['Beams / angle', `${R.nBeams} × ${R.beamAngle}° ${f.convex ? 'convex' : 'concave'}`], ['Orientation', f.up ? 'Upward' : 'Downward'], ['Firmware', f.fw], ['Serial', f.serial ?? '–'],
+  ['Cells', `${R.nCells} × ${R.cellSize} m (WS)`], ['Bin 1 centre', R.bin1 + ' m'], ['Blank after transmit', f.blank + ' m (WF)'], ['Pings per ensemble', f.pings + ' (WP)'], ['Time per ping', f.tpp.toFixed(2) + ' s'],
+  ['Profiling mode', 'WM' + f.mode], ['Coordinate frame', `${R.coord} (EX ${f.ex.toString(2).padStart(8, '0')})`], ['Tilts used / 3-beam / bin map', `${yes(f.tiltsUsed)} / ${yes(f.threeBeamOn)} / ${yes(f.binMap)}`],
+  ['Heading alignment / bias', `${f.ea}° / ${f.eb}°`], ['Onboard thresholds', `WC ${f.corrThr}, WG ${f.pgMin}%, WE ${f.errMax} m/s`]].map(([a, b]) => `<tr><td>${a}</td><td class="n">${b}</td></tr>`).join('');
+  $('cfgB').innerHTML = [['Name', R.name], ['Size', (R.bytes / 1048576).toFixed(2) + ' MB'], ['Ensembles read', R.nEns], ['Skipped (geometry change)', R.skipped], ['Checksum failures', R.badChecksums], ['Data types', R.ids.join(' ')],
+  ['Pressure sensor', R.hasPressure ? 'Yes' : 'No'], ['Bottom track', R.btVel ? 'Yes' : 'No'], ['Navigation (VmDas)', R.lat ? 'Yes' : 'No'], ['Vertical beam', R.vb ? `${R.vb.n} cells` : 'No'],
+  ['First ensemble', `#${R.ensNum[0]} ${isoT(R.time[0])}`], ['Last ensemble', `#${R.ensNum[n - 1]} ${isoT(R.time[n - 1])}`]].map(([a, b]) => `<tr><td>${a}</td><td class="n">${b}</td></tr>`).join('');
+}
+function meanGood() { let g = 0; for (const v of st.P.goodFrac) g += v; return g / st.P.nc; }
+
+/* ---------- contour ---------- */
+function grid2(P, k, s) {
+  const f = PD0.field(P, k), sc = scaleOf(k), z = [], x = [];
+  for (let j = 0; j < P.ne; j += s) x.push(isoT(P.time[j]));
+  for (let c = 0; c < P.nc; c++) { const r = []; for (let j = 0; j < P.ne; j += s) { const v = f[j * P.nc + c]; r.push(Number.isFinite(v) ? v * sc : null); } z.push(r); }
+  return { x, z };
+}
+function autoRange(z, sym) {
+  const a = []; for (const r of z) for (const v of r) if (v !== null) a.push(v);
+  if (!a.length) return [0, 1]; a.sort((p, q) => p - q);
+  const lo = a[Math.floor(a.length * .01)], hi = a[Math.floor(a.length * .99)];
+  if (sym) { const m = Math.max(Math.abs(lo), Math.abs(hi)); return [-m, m]; } return [lo, hi];
+}
+function rContour() {
+  const P = st.P, k = $('cVar').value, s = stride(P.ne, 1600), { x, z } = grid2(P, k, s), Y = yAxis(), L = compLabels(P.coord);
+  const sym = ['U', 'V', 'W', 'E', 'A', 'X'].includes(k);
+  let [lo, hi] = k === 'dir' ? [0, 360] : autoRange(z, sym);
+  if ($('cMin').value !== '') lo = +$('cMin').value; if ($('cMax').value !== '') hi = +$('cMax').value;
+  $('cMin').placeholder = lo.toFixed(2); $('cMax').placeholder = hi.toFixed(2);
+  const data = [{ type: 'heatmap', x, y: Y.y, z, zmin: lo, zmax: hi, colorscale: colorscale(k), zsmooth: false, hoverongaps: false, colorbar: { title: { text: units(k), side: 'right' }, thickness: 14, outlinewidth: 0 }, hovertemplate: `%{x}<br>${Y.title}: %{y}<br>${L[k]}: %{z:.3f} ${units(k)}<extra></extra>`, name: L[k] }];
+  if ($('cLine').value === '1' && $('yaxis').value !== 'bin') {
+    const ly = []; for (let j = 0; j < P.ne; j += s) { const d = P.up ? P.instDepth[j] : P.side[j] / Math.cos(P.beamAngle * Math.PI / 180) + P.cellSize; ly.push(Number.isFinite(d) ? ($('yaxis').value === 'depth' ? (P.up ? P.meanDepth - d : P.meanDepth + d) : d) : null); }
+    data.push({ x, y: ly, mode: 'lines', line: { color: colors().ink, width: 1.2 }, name: P.up ? 'Surface' : 'Bottom (BT)', hoverinfo: 'skip' });
+  }
+  const yr = [Math.min(...Y.y) - .5 * ($('yaxis').value === 'bin' ? 1 : P.cellSize), Math.max(...Y.y) + .5 * ($('yaxis').value === 'bin' ? 1 : P.cellSize)];
+  draw('cPlot', data, baseLayout({ showlegend: data.length > 1, xaxis: ax('', { type: 'date' }), yaxis: ax(Y.title, { range: Y.rev ? [yr[1], yr[0]] : yr }), margin: { l: 64, r: 16, t: 76, b: 44 }, title: ttl(`${L[k]} (${units(k)})`) }));
+  setFig('cPlot', 'contour_' + slug(L[k]), false, () => matT(k));
+}
+
+/* ---------- time series ---------- */
+function binLabel(c) { const P = st.P; return `Bin ${c + 1} · ${P.dist[c].toFixed(2)} m from ADCP · ≈${P.depth[c].toFixed(1)} m depth · ${(100 * P.goodFrac[c]).toFixed(0)}% good`; }
+function series(k, mean) { const P = st.P; if (mean) return PD0.depthMean(P, k); const f = PD0.field(P, k), o = new Float32Array(P.ne); for (let j = 0; j < P.ne; j++) o[j] = f[j * P.nc + st.bin]; return o; }
+const QD = [.62, .78];
+function rSeries() {
+  const P = st.P, mean = $('tsMode').value === 'mean', s = stride(P.ne, 6000), L = compLabels(P.coord), c = colors(), sc = unit();
+  $('tsBinLab').textContent = mean ? 'Depth-averaged over all good cells' : binLabel(st.bin);
+  const x = []; for (let j = 0; j < P.ne; j += s) x.push(isoT(P.time[j]));
+  const pk = (a, m = 1) => { const o = []; for (let j = 0; j < P.ne; j += s) o.push(Number.isFinite(a[j]) ? a[j] * m : null); return o; };
+  const comp = $('tsComp').value, ks = comp === 'enu' ? ['U', 'V', 'W'] : comp === 'ax' ? ['A', 'X'] : ['E'], pal = [c.ink, '#e4002b', '#5f8fcf'];
+  const data = ks.map((k, i) => ({ x, y: pk(series(k, mean), sc), name: L[k], line: { color: pal[i], width: 1.2 }, xaxis: 'x', yaxis: 'y' }));
+  if (P.coord === 'earth') {
+    data.push({ x, y: pk(series('spd', mean), sc), name: 'Speed', line: { color: c.ink, width: 1.2 }, yaxis: 'y2' });
+    data.push({ x, y: pk(series('dir', mean)), name: 'Direction', mode: 'markers', marker: { size: 3, color: '#e4002b' }, yaxis: 'y3' });
+  }
+  data.push({ x, y: pk(P.instDepth), name: 'Instrument depth', line: { color: c.ink, width: 1.2 }, yaxis: 'y4' });
+  data.push({ x, y: pk(P.temp), name: 'Temperature', line: { color: '#e4002b', width: 1.2 }, yaxis: 'y5' });
+  data.push({ x, y: pk(P.pitch), name: 'Pitch', line: { color: '#e4002b', width: 1 }, yaxis: 'y6' }, { x, y: pk(P.roll), name: 'Roll', line: { color: '#5f8fcf', width: 1 }, yaxis: 'y6' });
+  data.push({ x, y: pk(P.heading), name: 'Heading', mode: 'markers', marker: { size: 2.5, color: c.ink }, yaxis: 'y7' });
+  if (P.coord === 'earth') {
+    // quiver: vector-average u,v into windows, draw sticks with equal pixel scale in both directions
+    const u = series('U', mean), v = series('V', mean), nA = +$('tsArrows').value, g = Math.max(1, Math.ceil(P.ne / nA));
+    const qt = [], qu = [], qv = []; let vmax = 0;
+    for (let j0 = 0; j0 < P.ne; j0 += g) { let su = 0, sv = 0, st_ = 0, n = 0; for (let j = j0; j < Math.min(P.ne, j0 + g); j++) if (Number.isFinite(u[j]) && Number.isFinite(v[j])) { su += u[j]; sv += v[j]; st_ += P.time[j]; n++; } if (n) { qt.push(st_ / n); qu.push(su / n * sc); qv.push(sv / n * sc); vmax = Math.max(vmax, Math.hypot(su / n, sv / n) * sc); } }
+    const el = $('tsPlot'), Wpx = Math.max(200, (el.clientWidth || 900) - 64 - 84), Hpx = Math.max(60, ((el.clientHeight || 1080) - 70) * (QD[1] - QD[0])), yr = (vmax || 1) * 1.1;
+    const span = Math.max(1, P.time[P.ne - 1] - P.time[0]), k = (Hpx / (2 * yr)) * (span / Wpx);
+    const lx = [], ly = [], tx = [], ty = [], ang = [], txt = [];
+    for (let i = 0; i < qt.length; i++) { const x1 = qt[i] + qu[i] * k; lx.push(qt[i], x1, null); ly.push(0, qv[i], null); tx.push(x1); ty.push(qv[i]); ang.push((Math.atan2(qu[i], qv[i]) * 180 / Math.PI + 360) % 360); txt.push(`${isoT(qt[i])}<br>${Math.hypot(qu[i], qv[i]).toFixed(3)} ${uLab()} toward ${ang[i].toFixed(0)}°T`); }
+    data.push({ x: lx, y: ly, mode: 'lines', line: { color: c.ink, width: 1 }, name: 'Quiver', yaxis: 'y8', hoverinfo: 'skip' });
+    data.push({ x: tx, y: ty, mode: 'markers', marker: { symbol: 'arrow', size: 7, angle: ang, color: c.ink }, text: txt, hovertemplate: '%{text}<extra></extra>', showlegend: false, yaxis: 'y8' });
+    st.quiverRange = [-yr, yr];
+  }
+  const D = [[.81, 1], [.42, .59], [.21, .38], [0, .17]];
+  const lay = baseLayout({
+    xaxis: ax('', { type: 'date', anchor: 'y6' }), margin: { l: 64, r: 84, t: 30, b: 40 },
+    yaxis: ax(`Velocity (${uLab()})`, { domain: D[0] }), yaxis2: ax(`Speed (${uLab()})`, { domain: D[1], anchor: 'x' }), yaxis3: ax('Dir (°T)', { overlaying: 'y2', side: 'right', range: [0, 360], showgrid: false, anchor: 'x' }),
+    yaxis4: ax('Depth (m)', { domain: D[2], anchor: 'x' }), yaxis5: ax('Temp (°C)', { overlaying: 'y4', side: 'right', showgrid: false, anchor: 'x' }),
+    yaxis6: ax('Pitch, roll (°)', { domain: D[3], anchor: 'x' }), yaxis7: ax('Heading (°)', { overlaying: 'y6', side: 'right', showgrid: false, range: [0, 360], anchor: 'x' }),
+    yaxis8: ax(`North (${uLab()})`, { domain: QD, anchor: 'x', range: st.quiverRange || [-1, 1], zeroline: true, visible: P.coord === 'earth' })
+  });
+  if (P.coord !== 'earth') lay.yaxis2.visible = false;
+  draw('tsPlot', data, lay);
+  setFig('tsPlot', mean ? 'timeseries_depthmean' : 'timeseries_bin' + (st.bin + 1), false, () => { const cols = [i => isoT(P.time[i])], head = ['time']; for (const k of ks) { head.push(`${slug(L[k])}_${uLab().replace('/', 'p')}`); const a = series(k, mean); cols.push(i => a[i] * sc); } if (P.coord === 'earth') { const a = series('spd', mean), d = series('dir', mean); head.push(`speed_${uLab().replace('/', 'p')}`, 'dir_degT'); cols.push(i => a[i] * sc, d); } head.push('inst_depth_m', 'temp_C', 'pitch_deg', 'roll_deg', 'heading_deg'); cols.push(P.instDepth, P.temp, P.pitch, P.roll, P.heading); return colT(head, cols, P.ne); });
+}
+
+/* ---------- profiles ---------- */
+function rProfile() {
+  const P = st.P, m = $('pMode').value, L = compLabels(P.coord), c = colors(), Y = yAxis(), sc = unit(), nc = P.nc;
+  $('pEns').disabled = m !== 'ens';
+  $('pEnsLab').textContent = m === 'ens' ? `Profile ${st.ens + 1} of ${P.ne} · ${isoT(P.time[st.ens])}` : 'Ensemble (single-ensemble mode)';
+  const ks = P.coord === 'earth' ? (P.settings.rotAngle !== null && P.settings.rotAngle !== '' ? ['A', 'X', 'W'] : ['U', 'V', 'W']) : ['U', 'V', 'W'];
+  if (P.coord === 'earth') ks.push('spd');
+  const pal = { U: c.ink, V: '#e4002b', W: '#5f8fcf', A: c.ink, X: '#e4002b', spd: '#8a8a8a' };
+  const data = [];
+  const stat = (f, cIdx) => { let s = 0, s2 = 0, n = 0; for (let j = 0; j < P.ne; j++) { const v = f[j * nc + cIdx]; if (Number.isFinite(v)) { s += v; s2 += v * v; n++; } } const mu = n ? s / n : NaN; return [mu, n > 1 ? Math.sqrt(Math.max(0, s2 / n - mu * mu)) : NaN]; };
+  if (m === 'max' && P.coord === 'earth') {
+    // flood/ebb: max of depth-mean along-axis (or principal axis) positive and negative
+    const pa = PD0.principalAxis(PD0.depthMean(P, 'U'), PD0.depthMean(P, 'V')), ang = P.settings.rotAngle ?? (pa ? pa.compass : 0), ph = ang * Math.PI / 180;
+    const dm = Float32Array.from(PD0.depthMean(P, 'U'), (u, j) => u * Math.sin(ph) + PD0.depthMean(P, 'V')[j] * Math.cos(ph));
+    let jx = -1, jn = -1; for (let j = 0; j < P.ne; j++) { if (!Number.isFinite(dm[j])) continue; if (jx < 0 || dm[j] > dm[jx]) jx = j; if (jn < 0 || dm[j] < dm[jn]) jn = j; }
+    for (const [j, nm, col] of [[jx, 'Max +along', '#e4002b'], [jn, 'Max −along', c.ink]]) { if (j < 0) continue; const x = []; for (let q = 0; q < nc; q++) { const u = P.U[j * nc + q], v = P.V[j * nc + q]; x.push(Number.isFinite(u) ? (u * Math.sin(ph) + v * Math.cos(ph)) * sc : null); } data.push({ x, y: Y.y, name: `${nm} ${isoT(P.time[j]).slice(5, 16)}`, mode: 'lines+markers', marker: { size: 4 }, line: { color: col } }); }
+    $('pEnsLab').textContent = `Along-axis ${ang.toFixed(1)}°T`;
+  } else for (const k of ks) {
+    const f = PD0.field(P, k), x = [], lo = [], hi = [];
+    for (let q = 0; q < nc; q++) {
+      if (m === 'ens') { const v = f[st.ens * nc + q]; x.push(Number.isFinite(v) ? v * sc : null); }
+      else { const [mu, sd] = stat(f, q); x.push(Number.isFinite(mu) ? mu * sc : null); lo.push(Number.isFinite(sd) ? (mu - sd) * sc : null); hi.push(Number.isFinite(sd) ? (mu + sd) * sc : null); }
+    }
+    if (m === 'mean') data.push({ x: hi.concat(lo.slice().reverse()), y: Y.y.concat(Y.y.slice().reverse()), fill: 'toself', fillcolor: pal[k], opacity: .12, line: { width: 0 }, hoverinfo: 'skip', showlegend: false });
+    data.push({ x, y: Y.y, name: L[k], mode: 'lines+markers', marker: { size: 4, color: pal[k] }, line: { color: pal[k], width: 1.6 } });
+  }
+  // echo & corr on right panel
+  for (const [k, col] of [['echo', c.ink], ['corr', '#e4002b']]) {
+    const f = PD0.field(P, k), x = []; for (let q = 0; q < nc; q++) x.push(m === 'ens' ? f[st.ens * nc + q] : stat(f, q)[0]);
+    data.push({ x, y: Y.y, name: L[k], xaxis: 'x2', line: { color: col, width: 1.4, dash: 'dot' } });
+  }
+  draw('pPlot', data, baseLayout({ xaxis: ax(`Velocity (${uLab()})`, { domain: [0, .64], zeroline: true }), xaxis2: ax('Echo, correlation (counts)', { domain: [.72, 1] }), yaxis: ax(Y.title, { autorange: Y.rev ? 'reversed' : true }), margin: { l: 64, r: 16, t: 40, b: 48 } }));
+  setFig('pPlot', 'profile_' + m + (m === 'ens' ? st.ens + 1 : ''), false, () => { const tr = data.filter(d => d.name && d.x && d.x.length === nc && d.showlegend !== false), head = ['bin', 'dist_m', 'depth_m', ...tr.map(d => slug(d.name) + (d.xaxis === 'x2' ? '_counts' : '_' + uLab().replace('/', 'p')))]; if (m === 'mean') head.push(...ks.map(k => slug(L[k]) + '_sd')); const sds = m === 'mean' ? ks.map(k => { const f = PD0.field(P, k); return Array.from({ length: nc }, (_, q) => stat(f, q)[1] * sc); }) : []; return colT(head, [i => i + 1, P.dist, P.depth, ...tr.map(d => d.x), ...sds], nc); });
+}
+
+/* ---------- vectors ---------- */
+function rVectors() {
+  const P = st.P, mean = $('vMode').value === 'mean', c = colors(), sc = unit();
+  $('vBinLab').textContent = mean ? 'Depth-averaged' : binLabel(st.bin);
+  if (P.coord !== 'earth') { $('paNote').textContent = 'Vector plots need earth coordinates.'; if (plotlyOK) { Plotly.purge('vScatter'); Plotly.purge('vPvd'); } return; }
+  const u = series('U', mean), v = series('V', mean), pa = PD0.principalAxis(u, v), s = stride(P.ne, 8000);
+  const xu = [], yv = []; for (let j = 0; j < P.ne; j += s) { xu.push(Number.isFinite(u[j]) ? u[j] * sc : null); yv.push(Number.isFinite(v[j]) ? v[j] * sc : null); }
+  const data = [{ x: xu, y: yv, mode: 'markers', marker: { size: 3, color: c.ink, opacity: .45 }, name: 'u, v' }];
+  let m = 0; for (let i = 0; i < xu.length; i++) if (xu[i] !== null) m = Math.max(m, Math.abs(xu[i]), Math.abs(yv[i])); m *= 1.05;
+  if (pa) {
+    const ph = pa.compass * Math.PI / 180, L2 = m;
+    data.push({ x: [-L2 * Math.sin(ph) + pa.mu * sc, L2 * Math.sin(ph) + pa.mu * sc], y: [-L2 * Math.cos(ph) + pa.mv * sc, L2 * Math.cos(ph) + pa.mv * sc], mode: 'lines', line: { color: '#e4002b', width: 2 }, name: `Principal axis ${pa.compass.toFixed(1)}°T` });
+    const ex = [], ey = []; for (let t = 0; t <= 64; t++) { const a = t / 64 * 2 * Math.PI, A = pa.major * 2 * Math.cos(a), B = pa.minor * 2 * Math.sin(a); ex.push((pa.mu + A * Math.sin(ph) + B * Math.cos(ph)) * sc); ey.push((pa.mv + A * Math.cos(ph) - B * Math.sin(ph)) * sc); }
+    data.push({ x: ex, y: ey, mode: 'lines', line: { color: '#e4002b', width: 1, dash: 'dot' }, name: '2 s.d. ellipse' });
+    $('paNote').textContent = `Principal axis ${pa.compass.toFixed(1)}°T / ${((pa.compass + 180) % 360).toFixed(1)}°T · major s.d. ${(pa.major * sc).toFixed(3)} ${uLab()} · minor s.d. ${(pa.minor * sc).toFixed(3)} ${uLab()} · mean flow ${(Math.hypot(pa.mu, pa.mv) * sc).toFixed(3)} ${uLab()} toward ${((Math.atan2(pa.mu, pa.mv) * 180 / Math.PI + 360) % 360).toFixed(0)}°T · n = ${pa.n}.`;
+  }
+  st.pa = pa;
+  draw('vScatter', data, baseLayout({ xaxis: ax(`East (${uLab()})`, { range: [-m, m], zeroline: true }), yaxis: ax(`North (${uLab()})`, { range: [-m, m], scaleanchor: 'x', zeroline: true }), title: ttl('Current scatter'), margin: { l: 64, r: 16, t: 80, b: 48 } }));
+  setFig('vScatter', 'scatter_' + (mean ? 'depthmean' : 'bin' + (st.bin + 1)), false, () => colT(['time', `east_${uLab().replace('/', 'p')}`, `north_${uLab().replace('/', 'p')}`], [i => isoT(P.time[i]), i => u[i] * sc, i => v[i] * sc], P.ne));
+  // progressive vector diagram (km)
+  const px = [0], py = [0], tt = [isoT(P.time[0])]; let X = 0, Yy = 0;
+  for (let j = 1; j < P.ne; j++) { const dt = (P.time[j] - P.time[j - 1]) / 1000, a = Number.isFinite(u[j]) ? u[j] : 0, b = Number.isFinite(v[j]) ? v[j] : 0; X += a * dt / 1000; Yy += b * dt / 1000; if (j % s === 0) { px.push(X); py.push(Yy); tt.push(isoT(P.time[j])); } }
+  draw('vPvd', [{ x: px, y: py, text: tt, mode: 'lines', line: { color: c.ink, width: 1.4 }, name: 'Path', hovertemplate: '%{text}<br>%{x:.2f} km E, %{y:.2f} km N<extra></extra>' }, { x: [0], y: [0], mode: 'markers', marker: { color: '#e4002b', size: 9 }, name: 'Start' }],
+    baseLayout({ xaxis: ax('East (km)'), yaxis: ax('North (km)', { scaleanchor: 'x' }), title: ttl('Progressive vector diagram'), margin: { l: 64, r: 16, t: 80, b: 48 } }));
+  setFig('vPvd', 'pvd_' + (mean ? 'depthmean' : 'bin' + (st.bin + 1)), false, () => { const ex = [0], ny = [0]; for (let j = 1; j < P.ne; j++) { const dt = (P.time[j] - P.time[j - 1]) / 1000; ex.push(ex[j - 1] + (Number.isFinite(u[j]) ? u[j] : 0) * dt / 1000); ny.push(ny[j - 1] + (Number.isFinite(v[j]) ? v[j] : 0) * dt / 1000); } return colT(['time', 'east_km', 'north_km'], [i => isoT(P.time[i]), ex, ny], P.ne); });
+  const tr = $('vTrack');
+  if (P.lat && PD0.nanmean(P.lat) === PD0.nanmean(P.lat)) { tr.style.display = 'block'; tr.previousElementSibling.style.display = ''; setFig('vTrack', 'ship_track', false, () => colT(['time', 'lat', 'lon'], [i => isoT(P.time[i]), P.lat, P.lon], P.ne)); draw('vTrack', [{ x: Array.from(P.lon), y: Array.from(P.lat), mode: 'lines', line: { color: c.ink }, name: 'Ship track' }], baseLayout({ xaxis: ax('Longitude (°)'), yaxis: ax('Latitude (°)', { scaleanchor: 'x' }), title: ttl('Ship track (VmDas navigation)') })); }
+  else { tr.style.display = 'none'; tr.previousElementSibling.style.display = 'none'; }
+}
+
+/* ---------- quality ---------- */
+function rQuality() {
+  const P = st.P, Y = yAxis(), c = colors();
+  draw('qPlot', [{ x: Array.from(P.goodFrac, v => v * 100), y: Y.y, type: 'bar', orientation: 'h', marker: { color: Array.from(P.goodFrac, v => v >= .8 ? c.ink : v >= .5 ? '#8a8a8a' : '#e4002b') }, name: '% good', hovertemplate: '%{y}: %{x:.1f}% good<extra></extra>' }],
+    baseLayout({ showlegend: false, xaxis: ax('Good cells (%)', { range: [0, 100] }), yaxis: ax(Y.title, { autorange: Y.rev ? 'reversed' : true }), title: ttl('Data return by cell (before averaging)'), margin: { l: 64, r: 16, t: 56, b: 48 } }));
+  setFig('qPlot', 'data_return', false, () => colT(['bin', 'dist_m', 'depth_m', 'good_pct'], [i => i + 1, P.dist, P.depth, i => P.goodFrac[i] * 100], P.nc));
+  const S = P.settings, names = { corr: `Correlation < ${S.corrMin}`, echo: `Echo < ${S.echoMin}`, pg: `Percent good < ${S.pgMin}`, err: `|Error vel| > ${S.errMax || 'off'}`, w: `|Vertical vel| > ${S.wMax || 'off'}`, spd: `Speed > ${S.spdMax || 'off'}`, side: 'Beyond side-lobe limit', tilt: `Tilt > ${S.tiltMax || 'off'}°`, fish: `Fish Δecho > ${S.fishThr || 'off'}`, orig: 'Missing in file / no solution' };
+  const rows = Object.keys(names).map(k => `<tr><td>${names[k]}</td><td class="n">${P.counts[k].toLocaleString()}</td><td class="n">${(100 * P.counts[k] / P.N).toFixed(1)}%</td></tr>`).join('');
+  $('qTable').innerHTML = `<tr><th>Test</th><th class="n">Cells</th><th class="n">Share</th></tr>${rows}<tr><td><b>Total cells examined</b></td><td class="n"><b>${P.N.toLocaleString()}</b></td><td></td></tr>`;
+}
+
+/* ---------- export ---------- */
+let dl = null;
+async function save(name, data) {
+  try {
+    if (dl) { await dl.save({ filename: name, data }); return; }
+    const blob = data instanceof Blob ? data : new Blob([data]), a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  } catch (e) { if (e && e.code !== 'declined') showErr('Download failed: ' + (e.message || e.code || e)); }
+}
+const base = () => (st.R.name.split(' + ')[0].replace(/\.[^.]+$/, '') || 'adcp') + (st.P.settings.avgMode !== 'none' ? '_avg' : '');
+const csvOpt = () => $('csvFmt').value === 'semi' ? { sep: ';', dec: ',' } : { sep: ',', dec: '.' };
+const CSV = T => PD0.toCSV(T, csvOpt());
+const PX = () => $('dropEmpty').value === '1' ? PD0.dropEmptyBins(st.P) : st.P;
+const slug = l => l.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+function procState() {
+  const S = st.P.settings, a = S.avgMode === 'none' ? 'no averaging (every ensemble)' : S.avgMode === 'ens' ? `averaged every ${S.avgN} ensembles` : `averaged into ${S.avgMin}-minute bins`;
+  return `Processed data: ${a}, ${st.P.ne.toLocaleString()} profiles × ${st.P.nc} cells, ${st.P.coord} coordinates`;
+}
+const EXPORTS = [
+  ['MATLAB / Python (.mat in .zip)', () => 'All 2-D fields (cells × profiles) plus time (datenum), depth, attitude, temperature, pressure.', () => save(base() + '_mat.zip', PD0.zip([{ name: base() + '.mat', data: PD0.mat4(PD0.matVars(PX())) }, { name: 'processing_log.txt', data: logText() }]))],
+  ['CSV matrices (.zip)', () => { const byT = $('matLay').value === 'time', n = byT ? st.P.nc + 1 : st.P.ne + 3; return `One table per variable (${byT ? 'rows are times, columns are bins' : 'rows are bins, columns are times'}).` + (n > 16384 ? ` ⚠ ${n.toLocaleString()} columns exceeds Excel's 16,384 limit — switch the layout.` : ''); },
+    () => { const P = PX(), byD = $('matLay').value === 'depth', files = varList().map(([k, l]) => ({ name: `${base()}_${slug(l)}.csv`, data: CSV(PD0.tabMatrix(P, k, byD)) })); files.push({ name: 'processing_log.txt', data: logText() }); save(base() + '_csv.zip', PD0.zip(files)); }],
+  ['CSV long table', () => { const n = st.P.ne * st.P.nc; return `One row per profile and cell (${n.toLocaleString()} rows) — for pandas, R or pivot tables.` + (n > 1048575 ? ' ⚠ More rows than Excel can open; use the matrices or average more.' : ''); }, () => save(base() + '_long.csv', CSV(PD0.tabLong(PX())))],
+  ['CSV at selected bin', () => binLabel(st.bin) + ', with attitude, temperature and pressure. Change the bin on the Time series tab.', () => save(`${base()}_bin${st.bin + 1}.csv`, CSV(PD0.tabBin(st.P, st.bin)))],
+  ['Settings preset (.json)', () => 'Reload later with “Load preset” to repeat the same processing.', () => save('pd0_preset.json', JSON.stringify(readS(), null, 1))],
+  ['Processing log (.txt)', () => '', () => save(base() + '_log.txt', logText())]
+];
+function rExport() {
+  const P = st.P;
+  $('exState').innerHTML = `<b>${procState()}.</b> Every download on this page and every “Save data” button uses this processed data, not the raw file. Velocities are in m/s here; times are UTC as recorded by the ADCP clock.` + (() => { const n = st.P.nc - PD0.dropEmptyBins(st.P).nc; return n ? ` <b>${n} bin${n > 1 ? 's have' : ' has'} no valid data at all</b> (usually above the surface or beyond the side-lobe limit) — ${$('dropEmpty').value === '1' ? 'left out of the matrices, long table and .mat' : 'kept as empty columns'}.` : ''; })();
+  $('exTable').innerHTML = EXPORTS.map((e, i) => `<tr><td><b>${e[0]}</b><br><span class="note" style="color:var(--mut)">${e[1]()}</span></td><td class="n"><button data-x="${i}">Download</button></td></tr>`).join('');
+  $('snip').textContent = `% MATLAB\nload('${base()}.mat')            % u, v, w, err, speed, dir: ${P.nc} cells x ${P.ne} profiles\npcolor(time, depth, u); shading flat; datetick('x'); colorbar\n\n# Python\nfrom scipy.io import loadmat\nimport pandas as pd\nd = loadmat('${base()}.mat', squeeze_me=True)\nt = pd.to_datetime(d['time'] - 719529, unit='D')\nu = d['u']        # shape (${P.nc}, ${P.ne}), NaN = rejected\n\n# CSV matrix (rows = time)\ndf = pd.read_csv('${base()}_east.csv'${$('csvFmt').value === 'semi' ? ", sep=';', decimal=','" : ''}, parse_dates=['time'], index_col='time')`;
+}
+try { const d = (1.5).toLocaleString(); $('csvFmt').value = localStorage.getItem('pd0proc.csvFmt') || (d.includes(',') ? 'semi' : 'comma'); $('matLay').value = localStorage.getItem('pd0proc.matLay') || 'time'; $('dropEmpty').value = localStorage.getItem('pd0proc.dropEmpty') || '1'; } catch (e) { }
+for (const id of ['csvFmt', 'matLay', 'dropEmpty']) $(id).addEventListener('input', () => { try { localStorage.setItem('pd0proc.' + id, $(id).value); } catch (e) { } rExport(); });
+$('exTable').addEventListener('click', e => { const b = e.target.closest('button'); if (b) EXPORTS[+b.dataset.x][2](); });
+function logText() {
+  const R = st.R, P = st.P;
+  return [`PD0 Processor log — ${new Date().toISOString()}`, `Files: ${R.name}`, `Instrument: ${R.fixed.freq} kHz, ${R.nBeams} beams, ${R.beamAngle}°, serial ${R.fixed.serial ?? '-'}, firmware ${R.fixed.fw}`,
+  `Record: ${isoT(R.time[0])} to ${isoT(R.time[R.nEns - 1])}, ${R.nEns} ensembles, ${R.badChecksums} checksum failures, ${R.skipped} skipped`, '', ...P.log, '', 'Settings:', JSON.stringify(P.settings, null, 1)].join('\n');
+}
+
+/* ---------- log ---------- */
+function rLog() {
+  $('logBox').textContent = logText();
+  let L = []; try { L = JSON.parse(localStorage.getItem('pd0proc.recent') || '[]'); } catch (e) { }
+  $('recent').innerHTML = L.length ? `<tr><th>File</th><th class="n">Ensembles</th><th class="n">Period</th><th class="n">Opened</th></tr>` + L.map(r => `<tr><td>${r.name}</td><td class="n">${r.n}</td><td class="n">${isoT(r.t0).slice(0, 10)} → ${isoT(r.t1).slice(0, 10)}</td><td class="n">${new Date(r.opened).toLocaleString()}</td></tr>`).join('') : '<tr><td>No files yet.</td></tr>';
+}
+
+/* ---------- events ---------- */
+const pick = () => $('file').click();
+$('openBtn').onclick = $('openBtn2').onclick = pick;
+$('file').onchange = e => { if (e.target.files.length) loadFiles([...e.target.files]); e.target.value = ''; };
+const sample = () => loadFiles([{ name: 'SYNTHETIC_600kHz_up.000', buf: PD0.makeSample() }]);
+$('sampleBtn').onclick = $('sampleBtn2').onclick = sample;
+const drop = $('drop');
+for (const ev of ['dragenter', 'dragover']) document.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('on'); });
+for (const ev of ['dragleave', 'drop']) document.addEventListener(ev, e => { e.preventDefault(); if (ev === 'drop' || e.target === drop) drop.classList.remove('on'); });
+document.addEventListener('drop', e => { const f = [...(e.dataTransfer?.files || [])]; if (f.length) loadFiles(f); });
+$('side').addEventListener('input', e => { if (e.target.id === 'presetFile') return; if (['unit', 'yaxis'].includes(e.target.id)) { savePrefs(); render(); } else schedule(); });
+$('autoBtn').onclick = () => { if (!st.R) return; const a = PD0.autoRange(st.R); $('i0').value = a.i0; $('i1').value = a.i1; run(); };
+$('allBtn').onclick = () => { if (!st.R) return; $('i0').value = 0; $('i1').value = st.R.nEns - 1; run(); };
+$('resetBtn').onclick = () => { const i0 = $('i0').value, i1 = $('i1').value; writeS(Object.assign({}, PD0.DEFAULTS, { i0, i1, rotAngle: '' })); $('beamAngle').value = ''; $('unit').value = '1'; $('yaxis').value = 'dist'; run(); };
+$('presetSave').onclick = () => save('pd0_preset.json', JSON.stringify(readS(), null, 1));
+$('presetLoad').onclick = () => $('presetFile').click();
+$('presetFile').onchange = async e => { try { const S = JSON.parse(await e.target.files[0].text()); delete S.i0; delete S.i1; writeS(S); run(); } catch (x) { showErr('Not a valid preset file.'); } e.target.value = ''; };
+for (const id of ['cVar', 'cMin', 'cMax', 'cLine']) $(id).addEventListener('input', () => st.tab === 'contour' && rContour());
+for (const id of ['tsMode', 'tsComp', 'tsArrows']) $(id).addEventListener('input', rSeries);
+for (const id of ['pMode']) $(id).addEventListener('input', rProfile);
+$('vMode').addEventListener('input', rVectors); $('ovVar').addEventListener('input', rOverview);
+$('tsBin').addEventListener('input', e => { st.bin = +e.target.value; $('vBin').value = st.bin; rSeries(); });
+$('vBin').addEventListener('input', e => { st.bin = +e.target.value; $('tsBin').value = st.bin; rVectors(); });
+$('pEns').addEventListener('input', e => { st.ens = +e.target.value; rProfile(); });
+$('cVar').addEventListener('change', () => { $('cMin').value = ''; $('cMax').value = ''; rContour(); });
+$('usePA').onclick = () => { if (st.pa) { $('rotAngle').value = st.pa.compass.toFixed(1); run(); } };
+new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+window.addEventListener('hashchange', () => { const t = location.hash.slice(1); if (TABS.some(x => x[0] === t) && t !== st.tab) setTab(t); });
+
+loadPrefs();
+{ const t = location.hash.slice(1); setTab(TABS.some(x => x[0] === t) ? t : 'overview'); }
+if (window.claude && claude.use) claude.use('downloads').then(d => { dl = d; }).catch(() => { });
+window.__pd0 = st;
+}
+</script>
+</body>
+</html>
