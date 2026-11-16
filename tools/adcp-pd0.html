@@ -207,6 +207,13 @@ pre{background:var(--panel);padding:12px 14px;font-size:12.5px;overflow-x:auto;w
     </div>
     <div class="two"><div class="plot" id="vScatter"></div><div class="plot" id="vPvd"></div></div>
     <p class="note" id="paNote"></p>
+    <h2>Current rose</h2>
+    <div class="ctl">
+      <label>Sectors <select id="rSec"><option value="8">8 (N, NE, E …)</option><option value="16" selected>16 (N, NNE, NE …)</option></select></label>
+      <label>Speed class width <input id="rStep" type="number" step="0.01" min="0" placeholder="auto" style="width:110px;min-width:0"></label>
+      <label>Number of classes <select id="rN"><option>4</option><option>5</option><option selected>6</option><option>8</option></select></label>
+    </div>
+    <div class="two"><div class="plot" id="vRose" style="height:560px"></div><div><table id="roseTable"></table><p class="note" id="roseNote"></p></div></div>
     <div class="plot" id="vTrack" style="height:420px;display:none"></div>
   </section>
 
@@ -1166,7 +1173,7 @@ function rProfile() {
 function rVectors() {
   const P = st.P, mean = $('vMode').value === 'mean', c = colors(), sc = unit();
   $('vBinLab').textContent = mean ? 'Depth-averaged' : binLabel(st.bin);
-  if (P.coord !== 'earth') { $('paNote').textContent = 'Vector plots need earth coordinates.'; if (plotlyOK) { Plotly.purge('vScatter'); Plotly.purge('vPvd'); } return; }
+  if (P.coord !== 'earth') { $('paNote').textContent = 'Vector plots need earth coordinates.'; if (plotlyOK) { Plotly.purge('vScatter'); Plotly.purge('vPvd'); Plotly.purge('vRose'); } $('roseTable').innerHTML = ''; $('roseNote').textContent = ''; return; }
   const u = series('U', mean), v = series('V', mean), pa = PD0.principalAxis(u, v), s = stride(P.ne, 8000);
   const xu = [], yv = []; for (let j = 0; j < P.ne; j += s) { xu.push(Number.isFinite(u[j]) ? u[j] * sc : null); yv.push(Number.isFinite(v[j]) ? v[j] * sc : null); }
   const data = [{ x: xu, y: yv, mode: 'markers', marker: { size: 3, color: c.ink, opacity: .45 }, name: 'u, v' }];
@@ -1179,6 +1186,7 @@ function rVectors() {
     $('paNote').textContent = `Principal axis ${pa.compass.toFixed(1)}°T / ${((pa.compass + 180) % 360).toFixed(1)}°T · major s.d. ${(pa.major * sc).toFixed(3)} ${uLab()} · minor s.d. ${(pa.minor * sc).toFixed(3)} ${uLab()} · mean flow ${(Math.hypot(pa.mu, pa.mv) * sc).toFixed(3)} ${uLab()} toward ${((Math.atan2(pa.mu, pa.mv) * 180 / Math.PI + 360) % 360).toFixed(0)}°T · n = ${pa.n}.`;
   }
   st.pa = pa;
+  rRose(u, v, mean);
   draw('vScatter', data, baseLayout({ xaxis: ax(`East (${uLab()})`, { range: [-m, m], zeroline: true }), yaxis: ax(`North (${uLab()})`, { range: [-m, m], scaleanchor: 'x', zeroline: true }), title: ttl('Current scatter'), margin: { l: 64, r: 16, t: 80, b: 48 } }));
   setFig('vScatter', 'scatter_' + (mean ? 'depthmean' : 'bin' + (st.bin + 1)), false, () => colT(['time', `east_${uLab().replace('/', 'p')}`, `north_${uLab().replace('/', 'p')}`], [i => isoT(P.time[i]), i => u[i] * sc, i => v[i] * sc], P.ne));
   // progressive vector diagram (km)
@@ -1190,6 +1198,37 @@ function rVectors() {
   const tr = $('vTrack');
   if (P.lat && PD0.nanmean(P.lat) === PD0.nanmean(P.lat)) { tr.style.display = 'block'; tr.previousElementSibling.style.display = ''; setFig('vTrack', 'ship_track', false, () => colT(['time', 'lat', 'lon'], [i => isoT(P.time[i]), P.lat, P.lon], P.ne)); draw('vTrack', [{ x: Array.from(P.lon), y: Array.from(P.lat), mode: 'lines', line: { color: c.ink }, name: 'Ship track' }], baseLayout({ xaxis: ax('Longitude (°)'), yaxis: ax('Latitude (°)', { scaleanchor: 'x' }), title: ttl('Ship track (VmDas navigation)') })); }
   else { tr.style.display = 'none'; tr.previousElementSibling.style.display = 'none'; }
+}
+
+/* ---------- current rose ---------- */
+const COMPASS16 = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+function rRose(u, v, mean) {
+  const P = st.P, sc = unit(), ns = +$('rSec').value, w = 360 / ns, names = ns === 16 ? COMPASS16 : COMPASS16.filter((_, i) => i % 2 === 0);
+  const sp = [], dr = []; for (let j = 0; j < P.ne; j++) if (Number.isFinite(u[j]) && Number.isFinite(v[j])) { sp.push(Math.hypot(u[j], v[j]) * sc); dr.push((Math.atan2(u[j], v[j]) * 180 / Math.PI + 360) % 360); }
+  const N = sp.length; if (!N) { $('roseNote').textContent = 'No valid data for this selection.'; return; }
+  let nk = +$('rN').value; const smax = Math.max(...sp), auto = !(+$('rStep').value > 0);
+  let step = +$('rStep').value; if (auto) { const raw = smax / nk, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p; step = (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; }
+  $('rStep').placeholder = 'auto (' + +step.toPrecision(3) + ')';
+  if (auto) nk = Math.max(2, Math.min(nk, Math.floor(smax / step) + 1));
+  const edges = Array.from({ length: nk }, (_, k) => k * step), cls = s => Math.min(nk - 1, Math.floor(s / step));
+  const cnt = Array.from({ length: nk }, () => new Uint32Array(ns));
+  for (let i = 0; i < N; i++) cnt[cls(sp[i])][Math.floor(((dr[i] + w / 2) % 360) / w)]++;
+  const fmtE = x => +x.toFixed(3), lab = k => k < nk - 1 ? `${fmtE(edges[k])}–${fmtE(edges[k] + step)}` : `≥ ${fmtE(edges[k])}`;
+  const pal = ['#f2d43b', '#9ccc3d', '#3fae6b', '#1f8a8a', '#2b6aa0', '#3b3f8f', '#5b2a7a', '#2a0f3d'].slice(0, nk);
+  const theta = Array.from({ length: ns }, (_, i) => i * w);
+  const data = cnt.map((c, k) => ({ type: 'barpolar', r: Array.from(c, x => 100 * x / N), theta, width: Array(ns).fill(w * 0.94), name: `${lab(k)} ${uLab()}`, marker: { color: pal[k], line: { color: colors().ink, width: .4 } }, hovertemplate: `%{theta}°: %{r:.1f}%<extra>${lab(k)} ${uLab()}</extra>` }));
+  const c = colors(), where = mean ? 'depth-averaged' : `bin ${st.bin + 1} (${P.dist[st.bin].toFixed(2)} m from ADCP)`;
+  draw('vRose', data, baseLayout({ title: ttl(`Current rose — ${where}`), margin: { l: 40, r: 40, t: 80, b: 40 }, legend: { orientation: 'v', x: 1.02, y: 1, title: { text: 'Speed' } },
+    polar: { bgcolor: 'rgba(0,0,0,0)', barmode: 'stack', angularaxis: { rotation: 90, direction: 'clockwise', tickvals: theta, ticktext: names, gridcolor: c.grid, linecolor: c.mut, color: c.ink }, radialaxis: { ticksuffix: '%', angle: 90, tickangle: 90, gridcolor: c.grid, linecolor: c.mut, color: c.mut } } }));
+  // frequency table: sectors × classes in percent
+  const tot = Array.from({ length: ns }, (_, i) => cnt.reduce((a, cc) => a + cc[i], 0));
+  const clsTot = cnt.map(cc => cc.reduce((a, b) => a + b, 0));
+  $('roseTable').innerHTML = `<tr><th>Toward</th>${cnt.map((_, k) => `<th class="n">${lab(k)}</th>`).join('')}<th class="n">Total</th></tr>` +
+    names.map((nm, i) => `<tr><td>${nm}</td>${cnt.map(cc => `<td class="n">${cc[i] ? (100 * cc[i] / N).toFixed(1) : '–'}</td>`).join('')}<td class="n"><b>${(100 * tot[i] / N).toFixed(1)}</b></td></tr>`).join('') +
+    `<tr><td><b>Total</b></td>${clsTot.map(t => `<td class="n"><b>${(100 * t / N).toFixed(1)}</b></td>`).join('')}<td class="n"><b>100</b></td></tr>`;
+  const imax = tot.indexOf(Math.max(...tot));
+  $('roseNote').textContent = `Percent of ${N.toLocaleString()} ${P.settings.avgMode === 'none' ? 'ensembles' : 'averaged profiles'}, speed classes in ${uLab()}. Directions are where the current flows toward, relative to true north if a declination is set. Most frequent: ${names[imax]} (${(100 * tot[imax] / N).toFixed(1)}%); mean speed ${(sp.reduce((a, b) => a + b, 0) / N).toFixed(3)} ${uLab()}, max ${smax.toFixed(3)} ${uLab()}.`;
+  setFig('vRose', `rose${ns}_` + (mean ? 'depthmean' : 'bin' + (st.bin + 1)), false, () => ({ head: ['toward', 'center_deg', ...cnt.map((_, k) => `${lab(k).replace('≥ ', 'ge_')}_${uLab().replace('/', 'p')}_pct`), 'total_pct', 'count'], rows: [...names.map((nm, i) => [nm, theta[i], ...cnt.map(cc => 100 * cc[i] / N), 100 * tot[i] / N, tot[i]]), ['total', '', ...clsTot.map(t => 100 * t / N), 100, N]] }));
 }
 
 /* ---------- backscatter ---------- */
@@ -1353,7 +1392,8 @@ $('presetFile').onchange = async e => { try { const S = JSON.parse(await e.targe
 for (const id of ['cVar', 'cMin', 'cMax', 'cLine']) $(id).addEventListener('input', () => st.tab === 'contour' && rContour());
 for (const id of ['tsMode', 'tsComp', 'tsArrows']) $(id).addEventListener('input', rSeries);
 for (const id of ['pMode']) $(id).addEventListener('input', rProfile);
-$('vMode').addEventListener('input', rVectors); $('ovVar').addEventListener('input', rOverview);
+$('vMode').addEventListener('input', rVectors);
+for (const id of ['rSec', 'rStep', 'rN']) $(id).addEventListener('input', rVectors); $('ovVar').addEventListener('input', rOverview);
 $('tsBin').addEventListener('input', e => { st.bin = +e.target.value; $('vBin').value = st.bin; rSeries(); });
 $('vBin').addEventListener('input', e => { st.bin = +e.target.value; $('tsBin').value = st.bin; rVectors(); });
 $('pEns').addEventListener('input', e => { st.ens = +e.target.value; rProfile(); });
