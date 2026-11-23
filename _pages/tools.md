@@ -44,4 +44,11 @@ Kumpulan aplikasi web yang saya kembangkan untuk membantu pengolahan data oseano
     <p><a class="btn btn--primary" href="https://tidereport.streamlit.app/" target="_blank" rel="noopener">Buka Tide Agent</a></p>
   </div>
 
+  <div class="tool-card">
+    <p class="tool-tag">Cuaca maritim · Pengabdian masyarakat</p>
+    <h2>SINERGI Karimunjawa</h2>
+    <p>Website informasi cuaca maritim untuk masyarakat pesisir. Menampilkan tinggi gelombang, angin, arus, dan kondisi pasang surut di Batam, Natuna, Karimunjawa, Surabaya, dan Makassar, lengkap dengan status risiko pelayaran (aman, waspada, bahaya), peta, grafik riwayat 1 hari dan prakiraan 3 hari, serta daftar peringatan. Data diambil langsung dari Open-Meteo setiap kali halaman dibuka. Dikembangkan dalam Program Pengabdian Masyarakat ITB 2026.</p>
+    <p><a class="btn btn--primary" href="https://fkhadami.github.io/lautkarimun/" target="_blank" rel="noopener">Buka SINERGI Karimunjawa</a> <a class="btn btn--inverse" href="{{ '/files/modul-penggunaan-sinergi-karimunjawa.pdf' | relative_url }}" target="_blank" rel="noopener">Modul penggunaan (PDF)</a></p>
+  </div>
+
 </div>

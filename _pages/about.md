@@ -89,6 +89,23 @@ redirect_from:
 </div>
 <p class="home-more"><a href="{{ '/tools/' | relative_url }}">Semua tools →</a></p>
 
+<h2 class="home-h">Layanan informasi untuk masyarakat</h2>
+
+<div class="home-service">
+  <a class="home-service__img" href="https://fkhadami.github.io/lautkarimun/" target="_blank" rel="noopener">
+    <img src="{{ '/images/sinergi-karimunjawa-dashboard.jpg' | relative_url }}" alt="Tampilan Dashboard SINERGI Karimunjawa: peta lokasi pemantauan dan ringkasan kondisi laut" loading="lazy" width="960" height="523">
+  </a>
+  <div class="home-service__body">
+    <p class="home-hl__tag">Pengabdian Masyarakat ITB 2026 · Ketua</p>
+    <h3>SINERGI Karimunjawa — Info Cuaca Maritim</h3>
+    <p>Kondisi gelombang, angin, arus, dan pasang surut beserta status risiko pelayaran untuk nelayan, kapal kecil, dan wisata bahari di Karimunjawa dan sekitarnya. Data diperbarui otomatis dari Open-Meteo, dengan prakiraan hingga tiga hari ke depan.</p>
+    <p class="home-service__actions">
+      <a class="btn btn--primary" href="https://fkhadami.github.io/lautkarimun/" target="_blank" rel="noopener">Buka website →</a>
+      <a class="btn btn--inverse" href="{{ '/files/modul-penggunaan-sinergi-karimunjawa.pdf' | relative_url }}" target="_blank" rel="noopener">Unduh modul penggunaan (PDF)</a>
+    </p>
+  </div>
+</div>
+
 <h2 class="home-h">Lokasi riset &amp; kegiatan</h2>
 
 <div id="home-map" class="home-map" role="img" aria-label="Peta lokasi riset, pengabdian, dan konsultansi Faruq Khadami di Indonesia"></div>
@@ -134,7 +151,7 @@ Untuk kolaborasi riset, pertanyaan tentang tools, atau masukan, hubungi saya di 
       ['riset',  -7.70, 108.90, 'Segara Anakan', 'Asimetri pasang surut dan hidrodinamika estuari'],
       ['riset',  -6.70, 108.60, 'Pesisir Cirebon', 'Lab Observasi Oseanografi Fisis (Arjawinangun) dan stasiun MAWAS'],
       ['riset',  -5.95, 107.15, 'Pesisir Bekasi–Karawang', 'Kerentanan pesisir dan sosial terhadap perubahan iklim'],
-      ['abdi',   -5.85, 110.45, 'Karimunjawa', 'SINERGI Karimunjawa: literasi cuaca maritim'],
+      ['abdi',   -5.85, 110.45, 'Karimunjawa', 'SINERGI Karimunjawa: literasi cuaca maritim', 'https://fkhadami.github.io/lautkarimun/'],
       ['abdi',   -8.22, 124.40, 'Pulau Alor', 'SINERGI Alor: lingkungan dan wisata desa'],
       ['abdi',   -5.81, 106.28, 'Pulau Tunda', 'SINERGI Tunda: lingkungan dan wisata pulau'],
       ['abdi',   -5.35, 102.25, 'Pulau Enggano', 'SINERGI Enggano: lingkungan dan wisata desa'],
@@ -149,7 +166,8 @@ Untuk kolaborasi riset, pertanyaan tentang tools, atau masukan, hubungi saya di 
     lokasi.forEach(function (d) {
       L.circleMarker([d[1], d[2]], {
         radius: 7, color: '#fff', weight: 1.5, fillColor: warna[d[0]], fillOpacity: 0.95
-      }).bindPopup('<strong>' + d[3] + '</strong><br>' + d[4]).addTo(map);
+      }).bindPopup('<strong>' + d[3] + '</strong><br>' + d[4] +
+        (d[5] ? '<br><a href="' + d[5] + '" target="_blank" rel="noopener">Buka website →</a>' : '')).addTo(map);
     });
   })();
 </script>
